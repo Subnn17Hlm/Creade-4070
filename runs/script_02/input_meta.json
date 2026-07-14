@@ -1,0 +1,30 @@
+{
+  "script_source": "manual",
+  "product_name": "Creade吹风机",
+  "raw_script_chars": 173,
+  "cleaned_script_chars": 173,
+  "script_changed": false,
+  "change_reason": "none",
+  "material_csv": "assets/asset_manifest_new_no_chuifa.csv",
+  "sentences": [
+    "每次出差旅行",
+    "是不是都在为带哪个吹风机发愁",
+    "酒店的吹风机风小还伤发",
+    "我真的会谢",
+    "还好被我挖到了这个出差神器",
+    "它折起来就比手机大一点点",
+    "放包里",
+    "行李箱里巨省地方",
+    "别看它小",
+    "11万转的风力可不是盖的",
+    "我这长头发几分钟就搞定了",
+    "而且它这个屏显调温我真的超爱",
+    "想要什么温度自己调",
+    "清清楚楚",
+    "经常出门的姐妹",
+    "这个颜值高又强悍的小东西",
+    "必须焊在你的行李箱里"
+  ],
+  "sentence_count": 17,
+  "run_dir": "/workspace/projects/runs/script_02"
+}

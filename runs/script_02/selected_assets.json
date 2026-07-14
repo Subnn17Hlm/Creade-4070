@@ -1,0 +1,1446 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "每次出差旅行",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_052",
+        "file_name": "NEW_052__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_053",
+        "file_name": "NEW_053__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_054",
+        "file_name": "NEW_054__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "NEW_052",
+    "selected_file_name": "NEW_052__旅行场景.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_052_d4c7df1e.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_052",
+        "file_name": "NEW_052__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_053",
+        "file_name": "NEW_053__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_054",
+        "file_name": "NEW_054__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "是不是都在为带哪个吹风机发愁",
+    "required_tags": [
+      "痛点共鸣",
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_078",
+        "file_name": "NEW_078__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_079",
+        "file_name": "NEW_079__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_080",
+        "file_name": "NEW_080__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_081",
+        "file_name": "NEW_081__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_082",
+        "file_name": "NEW_082__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "selected_material_id": "NEW_073",
+    "selected_file_name": "NEW_073__痛点共鸣.mov",
+    "selected_primary_scene_tag": "痛点共鸣",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_073_dfb46e81.mov",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣', '旅行场景'] → 痛点共鸣",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "酒店的吹风机",
+    "required_tags": [
+      "痛点共鸣",
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_078",
+        "file_name": "NEW_078__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_079",
+        "file_name": "NEW_079__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_080",
+        "file_name": "NEW_080__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_081",
+        "file_name": "NEW_081__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_082",
+        "file_name": "NEW_082__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "selected_material_id": "NEW_074",
+    "selected_file_name": "NEW_074__痛点共鸣.mp4",
+    "selected_primary_scene_tag": "痛点共鸣",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_074_0bd297ca.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣', '旅行场景'] → 痛点共鸣",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "风小还伤发",
+    "required_tags": [
+      "痛点共鸣",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_078",
+        "file_name": "NEW_078__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_079",
+        "file_name": "NEW_079__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_080",
+        "file_name": "NEW_080__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_081",
+        "file_name": "NEW_081__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_082",
+        "file_name": "NEW_082__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "selected_material_id": "NEW_075",
+    "selected_file_name": "NEW_075__痛点共鸣.mov",
+    "selected_primary_scene_tag": "痛点共鸣",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_075_9de1d5a5.mov",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣', '吹发动作'] → 痛点共鸣",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "我真的会谢",
+    "required_tags": [
+      "痛点共鸣"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_078",
+        "file_name": "NEW_078__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_079",
+        "file_name": "NEW_079__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_080",
+        "file_name": "NEW_080__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_081",
+        "file_name": "NEW_081__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_082",
+        "file_name": "NEW_082__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "selected_material_id": "NEW_076",
+    "selected_file_name": "NEW_076__痛点共鸣.mp4",
+    "selected_primary_scene_tag": "痛点共鸣",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_076_4b55238b.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣'] → 痛点共鸣",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_073",
+        "file_name": "NEW_073__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_074",
+        "file_name": "NEW_074__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_075",
+        "file_name": "NEW_075__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_076",
+        "file_name": "NEW_076__痛点共鸣.mp4",
+        "primary_scene_tag": "痛点共鸣"
+      },
+      {
+        "material_id": "NEW_077",
+        "file_name": "NEW_077__痛点共鸣.mov",
+        "primary_scene_tag": "痛点共鸣"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "还好被我挖到了这个出差神器",
+    "required_tags": [
+      "手持展示",
+      "包装展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_062",
+        "file_name": "NEW_062__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_063",
+        "file_name": "NEW_063__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_064",
+        "file_name": "NEW_064__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_065",
+        "file_name": "NEW_065__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_066",
+        "file_name": "NEW_066__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_067",
+        "file_name": "NEW_067__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "NEW_058",
+    "selected_file_name": "NEW_058__手持展示.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_058_d063e35d.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示', '包装展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_062",
+        "file_name": "NEW_062__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "它折起来就比手机大一点点",
+    "required_tags": [
+      "折叠动作",
+      "手持大小对比"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_092",
+        "file_name": "NEW_092__折叠动作.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "NEW_093",
+        "file_name": "NEW_093__折叠动作.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "NEW_057",
+        "file_name": "NEW_057__手持大小对比.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "selected_material_id": "NEW_092",
+    "selected_file_name": "NEW_092__折叠动作.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_092_87d1de4e.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作', '手持大小对比'] → 折叠动作",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_092",
+        "file_name": "NEW_092__折叠动作.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "NEW_093",
+        "file_name": "NEW_093__折叠动作.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "NEW_057",
+        "file_name": "NEW_057__手持大小对比.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "放包里",
+    "required_tags": [
+      "放进包包"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_028",
+        "file_name": "NEW_028__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "NEW_029",
+        "file_name": "NEW_029__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "NEW_030",
+        "file_name": "NEW_030__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "selected_material_id": "NEW_028",
+    "selected_file_name": "NEW_028__放进包包.mp4",
+    "selected_primary_scene_tag": "放进包包",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_028_5d80a82c.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进包包'] → 放进包包",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_028",
+        "file_name": "NEW_028__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "NEW_029",
+        "file_name": "NEW_029__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "NEW_030",
+        "file_name": "NEW_030__放进包包.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "行李箱里巨省地方",
+    "required_tags": [
+      "放进行李箱"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_033",
+        "file_name": "NEW_033__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_034",
+        "file_name": "NEW_034__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_035",
+        "file_name": "NEW_035__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_036",
+        "file_name": "NEW_036__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      }
+    ],
+    "selected_material_id": "NEW_031",
+    "selected_file_name": "NEW_031__放进行李箱.mp4",
+    "selected_primary_scene_tag": "放进行李箱",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_031_a6928ac8.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进行李箱'] → 放进行李箱",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_033",
+        "file_name": "NEW_033__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_034",
+        "file_name": "NEW_034__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_035",
+        "file_name": "NEW_035__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "别看它小",
+    "required_tags": [
+      "手持大小对比",
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_057",
+        "file_name": "NEW_057__手持大小对比.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_062",
+        "file_name": "NEW_062__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_063",
+        "file_name": "NEW_063__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_064",
+        "file_name": "NEW_064__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_065",
+        "file_name": "NEW_065__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_066",
+        "file_name": "NEW_066__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "NEW_057",
+    "selected_file_name": "NEW_057__手持大小对比.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_057_f52ed36d.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '手持展示'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_057",
+        "file_name": "NEW_057__手持大小对比.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "11万转的风力可不是盖的",
+    "required_tags": [
+      "风力展示",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_037",
+        "file_name": "NEW_037__风力展示.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "NEW_037",
+    "selected_file_name": "NEW_037__风力展示.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_037_e21a4739.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示', '吹发动作'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_037",
+        "file_name": "NEW_037__风力展示.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "我这长头发",
+    "required_tags": [
+      "吹发动作",
+      "护发效果"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_040",
+        "file_name": "NEW_040__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_041",
+        "file_name": "NEW_041__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_042",
+        "file_name": "NEW_042__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_043",
+        "file_name": "NEW_043__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_044",
+        "file_name": "NEW_044__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_045",
+        "file_name": "NEW_045__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "selected_material_id": "NEW_040",
+    "selected_file_name": "NEW_040__护发效果.mp4",
+    "selected_primary_scene_tag": "护发效果",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_040_01ecb9b5.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作', '护发效果'] → 护发效果",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_040",
+        "file_name": "NEW_040__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_041",
+        "file_name": "NEW_041__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_042",
+        "file_name": "NEW_042__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_043",
+        "file_name": "NEW_043__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_044",
+        "file_name": "NEW_044__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "几分钟就搞定了",
+    "required_tags": [
+      "吹发动作",
+      "护发效果"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_040",
+        "file_name": "NEW_040__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_041",
+        "file_name": "NEW_041__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_042",
+        "file_name": "NEW_042__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_043",
+        "file_name": "NEW_043__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_044",
+        "file_name": "NEW_044__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_045",
+        "file_name": "NEW_045__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "selected_material_id": "NEW_041",
+    "selected_file_name": "NEW_041__护发效果.mp4",
+    "selected_primary_scene_tag": "护发效果",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_041_7799bd03.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作', '护发效果'] → 护发效果",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_040",
+        "file_name": "NEW_040__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_041",
+        "file_name": "NEW_041__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_042",
+        "file_name": "NEW_042__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_043",
+        "file_name": "NEW_043__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "NEW_044",
+        "file_name": "NEW_044__护发效果.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "而且它这个屏显调温我真的超爱",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "NEW_055",
+    "selected_file_name": "NEW_055__屏显调温.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_055_7491af3a.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "想要什么温度自己调",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "NEW_056",
+    "selected_file_name": "NEW_056__屏显调温.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_056_40d8afcc.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "清清楚楚",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "NEW_055",
+    "selected_file_name": "NEW_055__屏显调温.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_055_7491af3a.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_055",
+        "file_name": "NEW_055__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "NEW_056",
+        "file_name": "NEW_056__屏显调温.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": "素材已用完，复用NEW_055"
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "经常出门的姐妹",
+    "required_tags": [
+      "旅行场景",
+      "放进行李箱"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_052",
+        "file_name": "NEW_052__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_053",
+        "file_name": "NEW_053__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_054",
+        "file_name": "NEW_054__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_033",
+        "file_name": "NEW_033__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_034",
+        "file_name": "NEW_034__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_035",
+        "file_name": "NEW_035__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_036",
+        "file_name": "NEW_036__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      }
+    ],
+    "selected_material_id": "NEW_053",
+    "selected_file_name": "NEW_053__旅行场景.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_053_ee6419ff.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景', '放进行李箱'] → 旅行场景",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_052",
+        "file_name": "NEW_052__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_053",
+        "file_name": "NEW_053__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_054",
+        "file_name": "NEW_054__旅行场景.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "这个颜值高又强悍的小东西",
+    "required_tags": [
+      "手持展示",
+      "包装展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_062",
+        "file_name": "NEW_062__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_063",
+        "file_name": "NEW_063__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_064",
+        "file_name": "NEW_064__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_065",
+        "file_name": "NEW_065__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_066",
+        "file_name": "NEW_066__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_067",
+        "file_name": "NEW_067__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "NEW_059",
+    "selected_file_name": "NEW_059__手持展示.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_059_5c648e1e.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示', '包装展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_058",
+        "file_name": "NEW_058__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_059",
+        "file_name": "NEW_059__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_060",
+        "file_name": "NEW_060__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_061",
+        "file_name": "NEW_061__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "NEW_062",
+        "file_name": "NEW_062__手持展示.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 19,
+    "sentence_text": "必须焊在你的行李箱里",
+    "required_tags": [
+      "放进行李箱",
+      "CTA促单"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_033",
+        "file_name": "NEW_033__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_034",
+        "file_name": "NEW_034__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_035",
+        "file_name": "NEW_035__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_036",
+        "file_name": "NEW_036__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_001",
+        "file_name": "NEW_001__CTA促单.mov",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "NEW_002",
+        "file_name": "NEW_002__CTA促单.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "NEW_003",
+        "file_name": "NEW_003__CTA促单.mov",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "NEW_004",
+        "file_name": "NEW_004__CTA促单.mp4",
+        "primary_scene_tag": "CTA促单"
+      }
+    ],
+    "selected_material_id": "NEW_032",
+    "selected_file_name": "NEW_032__放进行李箱.mp4",
+    "selected_primary_scene_tag": "放进行李箱",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials/NEW_032_9b7ab02c.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进行李箱', 'CTA促单'] → 放进行李箱",
+    "alternative_candidates": [
+      {
+        "material_id": "NEW_031",
+        "file_name": "NEW_031__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_032",
+        "file_name": "NEW_032__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_033",
+        "file_name": "NEW_033__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_034",
+        "file_name": "NEW_034__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      },
+      {
+        "material_id": "NEW_035",
+        "file_name": "NEW_035__放进行李箱.mp4",
+        "primary_scene_tag": "放进行李箱"
+      }
+    ],
+    "repeated_material_reason": ""
+  }
+]
