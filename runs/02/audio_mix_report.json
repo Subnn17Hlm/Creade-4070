@@ -1,0 +1,19 @@
+{
+  "tts_file": "/workspace/projects/runs/02/tts.wav",
+  "bgm_file": "/workspace/projects/assets/bgm/bgm_01.mp3",
+  "tts_volume": 1.0,
+  "bgm_volume": 0.40,
+  "tts_duration": 30.89,
+  "bgm_duration": 53.107,
+  "video_duration": 30.8,
+  "output_duration": 30.816,
+  "mix_strategy": "step_by_step_mix",
+  "bgm_trimmed_exists": true,
+  "mixed_audio_exists": true,
+  "output_codec": "aac",
+  "output_bitrate": "128k",
+  "final_audio_mean_volume": -23.4,
+  "tts_mean_volume": -24.0,
+  "bgm_mean_volume": -17.9,
+  "mixed_audio_mean_volume": -23.4
+}

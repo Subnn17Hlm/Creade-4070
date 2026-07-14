@@ -460,6 +460,14 @@ def quality_check_node(
     tts_dur = get_media_duration(tts_wav_path) if tts_wav_exists else 0.0
     bgm_dur = get_media_duration(bgm_path) if bgm_exists else 0.0
     
+    # 检查调试音频文件
+    bgm_trimmed_path = os.path.join(run_dir, "bgm_trimmed.wav")
+    tts_normalized_path = os.path.join(run_dir, "tts_normalized.wav")
+    mixed_audio_path = os.path.join(run_dir, "mixed_audio.wav")
+    
+    bgm_trimmed_exists = os.path.exists(bgm_trimmed_path)
+    mixed_audio_exists = os.path.exists(mixed_audio_path)
+    
     # 检测音频音量
     def get_audio_volume(file_path: str) -> float:
         """获取音频的平均音量（dB）"""
@@ -479,6 +487,9 @@ def quality_check_node(
     
     tts_mean_volume = get_audio_volume(tts_wav_path) if tts_wav_exists else -100.0
     bgm_mean_volume = get_audio_volume(bgm_path) if bgm_path and os.path.exists(bgm_path) else -100.0
+    
+    # 检测mixed_audio音量（如果存在）
+    mixed_audio_mean_volume = get_audio_volume(mixed_audio_path) if mixed_audio_exists else -100.0
     
     # 检测最终视频音频
     final_audio_duration = 0.0
@@ -677,6 +688,10 @@ def quality_check_node(
         "audio_mix_used": audio_mix_used,
         "tts_in_final": tts_in_final,
         "bgm_in_final": bgm_in_final,
+        # 音频调试文件检查（分步混音）
+        "bgm_trimmed_exists": bgm_trimmed_exists,
+        "mixed_audio_exists": mixed_audio_exists,
+        "mixed_audio_mean_volume": round(mixed_audio_mean_volume, 2),
         # BGM 人工确认字段（自动检测不可靠，需要人工听感确认）
         "bgm_audible_manual_check_required": True,
         "bgm_audible_manual_result": "pending",  # pending / pass / fail

@@ -179,9 +179,10 @@ def final_composition_node(
             subbed_duration = get_media_duration(subbed_path)
             logger.warning("[Node7] 回退到无字幕版本: %.2fs", subbed_duration)
 
-        # 3. 混音（TTS + BGM）
-        #    要求：TTS为主音轨(volume=1.0)，BGM为背景音乐(volume=0.10)
-        #    输出：AAC 128kbps，音频时长与视频同步
+        # 3. 混音（TTS + BGM）- 分步处理，确保BGM可听见
+        #    步骤：1. 截取BGM到视频时长 -> bgm_trimmed.wav
+        #          2. 混合TTS+BGM -> mixed_audio.wav
+        #          3. 将混合音频混入视频 -> final.mp4
         mixed_path = os.path.join(temp_dir, "mixed.mp4")
         
         # 获取视频时长
@@ -190,53 +191,96 @@ def final_composition_node(
         
         logger.info("[Node7] 视频时长=%.2fs, TTS时长=%.2fs", video_duration, tts_duration)
         
+        # 输出调试文件路径
+        bgm_trimmed_path = os.path.join(run_dir, "bgm_trimmed.wav")
+        tts_normalized_path = os.path.join(run_dir, "tts_normalized.wav")
+        mixed_audio_path = os.path.join(run_dir, "mixed_audio.wav")
+        
         if bgm_url:
             try:
                 local_bgm = _download_bgm(bgm_url, temp_dir)
                 bgm_duration = get_media_duration(local_bgm)
                 logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
                 
-                # 音频混流策略：
-                # - TTS: volume=1.0，主音轨
-                # - BGM: volume=0.22，背景音乐，人耳可听见但不盖住人声
-                # - 使用 amix 合并，normalize=0 避免自动响度调整导致音量过低
-                # - 添加 loudnorm 确保输出音量正常
+                # ========== 步骤1: 截取BGM到视频时长 ==========
+                logger.info("[Node7] 步骤1: 截取BGM到视频时长...")
                 run_ffmpeg([
                     "ffmpeg", "-y",
-                    "-i", subbed_path,           # 0:v 视频轨道
-                    "-i", tts_wav_path,          # 1:a TTS音频
-                    "-stream_loop", "-1", "-i", local_bgm,  # 2:a BGM循环
-                    "-t", str(video_duration),   # 限制输出时长为视频时长
+                    "-stream_loop", "-1", "-i", local_bgm,
+                    "-t", str(video_duration),
+                    "-c:a", "pcm_s16le",
+                    "-ar", "44100",
+                    "-ac", "1",
+                    bgm_trimmed_path
+                ], timeout=60)
+                bgm_trimmed_duration = get_media_duration(bgm_trimmed_path)
+                logger.info("[Node7] bgm_trimmed.wav 生成完成: %.2fs", bgm_trimmed_duration)
+                
+                # ========== 步骤2: 归一化TTS ==========
+                logger.info("[Node7] 步骤2: 归一化TTS...")
+                run_ffmpeg([
+                    "ffmpeg", "-y",
+                    "-i", tts_wav_path,
+                    "-af", "volume=1.0,loudnorm",
+                    "-c:a", "pcm_s16le",
+                    "-ar", "44100",
+                    "-ac", "1",
+                    tts_normalized_path
+                ], timeout=60)
+                logger.info("[Node7] tts_normalized.wav 生成完成")
+                
+                # ========== 步骤3: 混合TTS + BGM ==========
+                # BGM音量设为0.40，确保人耳可听见但不盖过人声
+                bgm_volume = 0.40
+                logger.info("[Node7] 步骤3: 混合TTS(volume=1.0) + BGM(volume=%.2f)...", bgm_volume)
+                run_ffmpeg([
+                    "ffmpeg", "-y",
+                    "-i", tts_normalized_path,
+                    "-i", bgm_trimmed_path,
                     "-filter_complex",
-                    "[1:a]volume=1.0,adelay=0|0[tts];"
-                    "[2:a]volume=0.22,adelay=0|0[bgm];"
-                    "[tts][bgm]amix=inputs=2:duration=first:normalize=0,loudnorm[aout]",
-                    "-map", "0:v", "-map", "[aout]",
+                    f"[0:a]volume=1.0[tts];[1:a]volume={bgm_volume}[bgm];[tts][bgm]amix=inputs=2:duration=first:normalize=0,loudnorm[aout]",
+                    "-map", "[aout]",
+                    "-c:a", "pcm_s16le",
+                    "-ar", "44100",
+                    "-ac", "1",
+                    mixed_audio_path
+                ], timeout=60)
+                mixed_audio_duration = get_media_duration(mixed_audio_path)
+                logger.info("[Node7] mixed_audio.wav 生成完成: %.2fs", mixed_audio_duration)
+                
+                # ========== 步骤4: 将混合音频混入视频 ==========
+                logger.info("[Node7] 步骤4: 将混合音频混入视频...")
+                run_ffmpeg([
+                    "ffmpeg", "-y",
+                    "-i", subbed_path,
+                    "-i", mixed_audio_path,
+                    "-map", "0:v", "-map", "1:a",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                     "-pix_fmt", "yuv420p",
                     "-c:a", "aac", "-b:a", "128k",
                     "-ar", "44100",
                     "-movflags", "+faststart",
+                    "-shortest",
                     mixed_path
                 ], timeout=180)
                 
                 # 验证音频是否正常
-                mixed_audio_duration = get_media_duration(mixed_path)
-                logger.info("[Node7] 混音完成: 视频=%.2fs, 音频=%.2fs", mixed_audio_duration, mixed_audio_duration)
+                final_audio_duration = get_media_duration(mixed_path)
+                logger.info("[Node7] 混音完成: 视频=%.2fs, 音频=%.2fs", final_audio_duration, final_audio_duration)
                 
                 # 生成音频混流报告
                 audio_mix_report = {
                     "tts_file": tts_wav_path,
                     "bgm_file": local_bgm,
                     "tts_volume": 1.0,
-                    "bgm_volume": 0.22,
+                    "bgm_volume": bgm_volume,
                     "tts_duration": tts_duration,
                     "bgm_duration": bgm_duration,
                     "video_duration": video_duration,
-                    "output_duration": mixed_audio_duration,
-                    "mix_strategy": "amix with loudnorm",
-                    "bgm_loop": True,
-                    "normalize": False,
+                    "output_duration": final_audio_duration,
+                    "mix_strategy": "step_by_step_mix",
+                    "bgm_trimmed_exists": os.path.exists(bgm_trimmed_path),
+                    "mixed_audio_exists": os.path.exists(mixed_audio_path),
                     "output_codec": "aac",
                     "output_bitrate": "128k"
                 }
