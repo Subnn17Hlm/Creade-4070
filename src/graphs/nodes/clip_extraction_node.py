@@ -70,16 +70,16 @@ def clip_extraction_node(
     has_issues = False
 
     for i, shot in enumerate(timeline_shots):
-        material_url = shot.get("material_url", "")
+        material_url = shot.get("selected_url", "")  # 修复：使用正确的字段名 selected_url
         material_id = shot.get("selected_material_id", "")
         duration = shot.get("duration", 2.0)
 
         # 检测素材烧录文字
-        file_name = shot.get("material_file_name", material_id)
+        file_name = shot.get("selected_file_name", material_id)  # 修复：使用正确的字段名 selected_file_name
         burned_info = _detect_burned_in_text(material_id, file_name)
 
         if not material_url:
-            logger.warning("[Node5] 片段%d: 无素材URL", i + 1)
+            logger.warning("[Node5] 片段%d: 无素材URL (material_id=%s)", i + 1, material_id)
             clip_records.append({
                 "sentence_id": i + 1,
                 "material_id": material_id,

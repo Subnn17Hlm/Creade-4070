@@ -422,7 +422,10 @@ def quality_check_node(
     if os.path.exists(state.original_script_path):
         with open(state.original_script_path, "r", encoding="utf-8") as f:
             orig_text = f.read().strip()
-    orig_chars = len(orig_text.replace(" ", "").replace("\n", ""))
+    # 保留原始字符数（含标点）用于报告
+    orig_chars_with_punct = len(orig_text.replace(" ", "").replace("\n", ""))
+    # 去除标点后计算覆盖率（字幕通常不显示标点）
+    orig_chars = len(re.sub(r'[，。！？、；：\s]+', '', orig_text))
 
     # 读取SRT拼接文案
     srt_text = ""
