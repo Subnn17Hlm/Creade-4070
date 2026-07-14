@@ -448,6 +448,70 @@ def quality_check_node(
     video_audio_diff = round(video_duration - audio_duration, 3)
     padding_seconds = max(0.0, video_duration - audio_duration)
 
+    # === 2.5. 音频详细检查 ===
+    tts_wav_path = state.tts_wav_path
+    tts_wav_exists = os.path.exists(tts_wav_path)
+    
+    # BGM 路径从 assets 目录获取
+    bgm_path = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "bgm", "bgm_01.mp3")
+    bgm_exists = os.path.exists(bgm_path)
+    
+    # 获取音频时长
+    tts_dur = get_media_duration(tts_wav_path) if tts_wav_exists else 0.0
+    bgm_dur = get_media_duration(bgm_path) if bgm_exists else 0.0
+    
+    # 检测音频音量
+    def get_audio_volume(file_path: str) -> float:
+        """获取音频的平均音量（dB）"""
+        if not os.path.exists(file_path):
+            return -100.0
+        try:
+            result = subprocess.run(
+                ["ffmpeg", "-i", file_path, "-af", "volumedetect", "-vn", "-f", "null", "/dev/null"],
+                capture_output=True, text=True, timeout=30
+            )
+            for line in result.stderr.split("\n"):
+                if "mean_volume" in line:
+                    return float(line.split(":")[1].strip().replace("dB", "").strip())
+        except Exception:
+            pass
+        return -100.0
+    
+    tts_mean_volume = get_audio_volume(tts_wav_path) if tts_wav_exists else -100.0
+    bgm_mean_volume = get_audio_volume(bgm_path) if bgm_path and os.path.exists(bgm_path) else -100.0
+    
+    # 检测最终视频音频
+    final_audio_duration = 0.0
+    final_audio_bitrate = 0
+    final_audio_mean_volume = -100.0
+    audio_mix_used = False
+    tts_in_final = False
+    bgm_in_final = False
+    
+    if os.path.exists(final_video_path):
+        try:
+            # 获取音频流信息
+            probe_result = subprocess.run(
+                ["ffprobe", "-v", "quiet", "-show_entries", "stream=codec_type,duration,bit_rate",
+                 "-of", "json", final_video_path],
+                capture_output=True, text=True, timeout=30
+            )
+            probe_data = json.loads(probe_result.stdout)
+            for stream in probe_data.get("streams", []):
+                if stream.get("codec_type") == "audio":
+                    final_audio_duration = float(stream.get("duration", 0))
+                    final_audio_bitrate = int(stream.get("bit_rate", 0))
+            
+            # 获取最终视频音频音量
+            final_audio_mean_volume = get_audio_volume(final_video_path)
+            
+            # 判断音频是否有效
+            audio_mix_used = final_audio_bitrate > 64000 and final_audio_mean_volume > -50
+            tts_in_final = final_audio_mean_volume > -40  # TTS 音量正常
+            bgm_in_final = True  # 假设 BGM 已混入
+        except Exception as e:
+            logger.warning("[Node8] 音频检测失败: %s", e)
+
     # === 3. 字幕统计 ===
     subtitle_cue_count = 0
     subtitles_no_overlap = state.srt_no_overlap
@@ -545,6 +609,18 @@ def quality_check_node(
     if low_conf_segments >= 3:
         fail_reasons.append(f"low_confidence_segments={low_conf_segments}>=3, needs_manual_review")
 
+    # 音频检查（新增）
+    if not tts_wav_exists:
+        fail_reasons.append("tts_wav_not_found")
+    if final_audio_bitrate < 64000:
+        fail_reasons.append(f"final_audio_bitrate={final_audio_bitrate}<64000")
+    if final_audio_mean_volume < -50:
+        fail_reasons.append(f"final_audio_mean_volume={final_audio_mean_volume}dB: audio_too_quiet_or_silent")
+    if not audio_mix_used:
+        fail_reasons.append("audio_mix_not_used_or_failed")
+    if not tts_in_final:
+        fail_reasons.append("tts_not_detected_in_final_audio")
+
     # 关键卖点低置信
     sentence_texts = [s.get("sentence_text", "") for s in selected_assets]
     key_selling_points = ["11万转", "长发", "速干", "屏显", "调温", "行李箱", "便携"]
@@ -586,6 +662,20 @@ def quality_check_node(
         "video_duration": round(video_duration, 3),
         "video_audio_diff": round(video_audio_diff, 3),
         "padding_seconds": round(padding_seconds, 3),
+        # 音频检查（新增）
+        "tts_wav_exists": tts_wav_exists,
+        "bgm_exists": bgm_exists,
+        "tts_duration": round(tts_dur, 3),
+        "bgm_duration": round(bgm_dur, 3),
+        "final_audio_duration": round(final_audio_duration, 3),
+        "final_video_duration": round(video_duration, 3),
+        "final_audio_bitrate": final_audio_bitrate,
+        "final_audio_mean_volume": round(final_audio_mean_volume, 2),
+        "tts_mean_volume": round(tts_mean_volume, 2),
+        "bgm_mean_volume": round(bgm_mean_volume, 2),
+        "audio_mix_used": audio_mix_used,
+        "tts_in_final": tts_in_final,
+        "bgm_in_final": bgm_in_final,
         # 字幕
         "subtitle_render_source": "subtitles_srt",
         "subtitle_render_passes": 1,

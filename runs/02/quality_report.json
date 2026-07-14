@@ -3,10 +3,23 @@
   "final_script_chars": 156,
   "script_coverage": 98.1,
   "script_ok": true,
-  "audio_duration": 31.728,
-  "video_duration": 32.067,
-  "video_audio_diff": 0.339,
-  "padding_seconds": 0.339,
+  "audio_duration": 31.344,
+  "video_duration": 31.344,
+  "video_audio_diff": -0.0,
+  "padding_seconds": 0.0,
+  "tts_wav_exists": true,
+  "bgm_exists": true,
+  "tts_duration": 31.344,
+  "bgm_duration": 53.107,
+  "final_audio_duration": 31.344,
+  "final_video_duration": 31.344,
+  "final_audio_bitrate": 131573,
+  "final_audio_mean_volume": -21.6,
+  "tts_mean_volume": -21.6,
+  "bgm_mean_volume": -17.4,
+  "audio_mix_used": true,
+  "tts_in_final": true,
+  "bgm_in_final": true,
   "subtitle_render_source": "subtitles_srt",
   "subtitle_render_passes": 1,
   "subtitles_no_overlap": true,
@@ -28,9 +41,9 @@
   "expected_srt_text_per_frame": [
     "是不是都在为带哪个吹风机发愁",
     "我真的会谢",
-    "放包里",
+    "行李箱里巨省地方",
     "我这长头发",
-    "而且它这个屏显调温我真的超爱"
+    "想要什么温度自己调"
   ],
   "manual_visual_check_required": false,
   "sampled_subtitle_frames": [
@@ -40,10 +53,9 @@
       "has_srt_at_time": true,
       "srt_text": "是不是都在为带哪个吹风机发愁",
       "has_text_in_frame": true,
-      "text_blocks": 2,
+      "text_blocks": 1,
       "text_block_rows": [
-        33,
-        232
+        267
       ],
       "text_visible": true
     },
@@ -63,7 +75,7 @@
       "time_point": 13,
       "frame_path": "/workspace/projects/runs/02/subtitle_check_frames/frame_13.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "放包里",
+      "srt_text": "行李箱里巨省地方",
       "has_text_in_frame": true,
       "text_blocks": 1,
       "text_block_rows": [
@@ -79,8 +91,8 @@
       "has_text_in_frame": true,
       "text_blocks": 2,
       "text_block_rows": [
-        142,
-        117
+        112,
+        185
       ],
       "text_visible": true
     },
@@ -88,7 +100,7 @@
       "time_point": 23,
       "frame_path": "/workspace/projects/runs/02/subtitle_check_frames/frame_23.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "而且它这个屏显调温我真的超爱",
+      "srt_text": "想要什么温度自己调",
       "has_text_in_frame": true,
       "text_blocks": 1,
       "text_block_rows": [

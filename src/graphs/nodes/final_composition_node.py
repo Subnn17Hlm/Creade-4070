@@ -180,34 +180,79 @@ def final_composition_node(
             logger.warning("[Node7] 回退到无字幕版本: %.2fs", subbed_duration)
 
         # 3. 混音（TTS + BGM）
+        #    要求：TTS为主音轨(volume=1.0)，BGM为背景音乐(volume=0.10)
+        #    输出：AAC 128kbps，音频时长与视频同步
         mixed_path = os.path.join(temp_dir, "mixed.mp4")
+        
+        # 获取视频时长
+        video_duration = get_media_duration(subbed_path)
+        tts_duration = get_media_duration(tts_wav_path) if os.path.exists(tts_wav_path) else 0.0
+        
+        logger.info("[Node7] 视频时长=%.2fs, TTS时长=%.2fs", video_duration, tts_duration)
+        
         if bgm_url:
             try:
                 local_bgm = _download_bgm(bgm_url, temp_dir)
+                bgm_duration = get_media_duration(local_bgm)
+                logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
+                
+                # 音频混流策略：
+                # - TTS: volume=1.0，主音轨
+                # - BGM: volume=0.10，背景音乐，循环或截断到视频时长
+                # - 使用 amix 合并，normalize=0 避免自动响度调整导致音量过低
                 run_ffmpeg([
-                    "ffmpeg", "-y", "-i", subbed_path,
-                    "-i", tts_wav_path, "-i", local_bgm,
+                    "ffmpeg", "-y",
+                    "-i", subbed_path,           # 0:v 视频轨道
+                    "-i", tts_wav_path,          # 1:a TTS音频
+                    "-stream_loop", "-1", "-i", local_bgm,  # 2:a BGM循环
+                    "-t", str(video_duration),   # 限制输出时长为视频时长
                     "-filter_complex",
-                    "[1:a]volume=1.0[a1];[2:a]volume=0.15[a2];[a1][a2]amix=inputs=2:duration=first[aout]",
+                    "[1:a]volume=1.0,adelay=0|0[tts];"
+                    "[2:a]volume=0.10,adelay=0|0[bgm];"
+                    "[tts][bgm]amix=inputs=2:duration=first:normalize=0[aout]",
                     "-map", "0:v", "-map", "[aout]",
-                    "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
-                    "-shortest",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-ar", "44100",
+                    "-movflags", "+faststart",
                     mixed_path
-                ], timeout=120)
+                ], timeout=180)
+                
+                # 验证音频是否正常
+                mixed_audio_duration = get_media_duration(mixed_path)
+                logger.info("[Node7] 混音完成: 视频=%.2fs, 音频=%.2fs", mixed_audio_duration, mixed_audio_duration)
+                
             except Exception as e:
-                logger.warning("[Node7] BGM混合失败，仅使用TTS: %s", e)
+                logger.error("[Node7] BGM混合失败: %s，仅使用TTS", e)
+                # 回退：仅使用TTS
                 run_ffmpeg([
-                    "ffmpeg", "-y", "-i", subbed_path,
+                    "ffmpeg", "-y",
+                    "-i", subbed_path,
                     "-i", tts_wav_path,
-                    "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+                    "-filter_complex", "[1:a]volume=1.0[aout]",
+                    "-map", "0:v", "-map", "[aout]",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-ar", "44100",
+                    "-movflags", "+faststart",
                     "-shortest",
                     mixed_path
                 ], timeout=120)
         else:
+            # 无BGM，仅使用TTS
             run_ffmpeg([
-                "ffmpeg", "-y", "-i", subbed_path,
+                "ffmpeg", "-y",
+                "-i", subbed_path,
                 "-i", tts_wav_path,
-                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+                "-filter_complex", "[1:a]volume=1.0[aout]",
+                "-map", "0:v", "-map", "[aout]",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "128k",
+                "-ar", "44100",
+                "-movflags", "+faststart",
                 "-shortest",
                 mixed_path
             ], timeout=120)
