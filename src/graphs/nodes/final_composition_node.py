@@ -198,8 +198,9 @@ def final_composition_node(
                 
                 # 音频混流策略：
                 # - TTS: volume=1.0，主音轨
-                # - BGM: volume=0.10，背景音乐，循环或截断到视频时长
+                # - BGM: volume=0.22，背景音乐，人耳可听见但不盖住人声
                 # - 使用 amix 合并，normalize=0 避免自动响度调整导致音量过低
+                # - 添加 loudnorm 确保输出音量正常
                 run_ffmpeg([
                     "ffmpeg", "-y",
                     "-i", subbed_path,           # 0:v 视频轨道
@@ -208,8 +209,8 @@ def final_composition_node(
                     "-t", str(video_duration),   # 限制输出时长为视频时长
                     "-filter_complex",
                     "[1:a]volume=1.0,adelay=0|0[tts];"
-                    "[2:a]volume=0.10,adelay=0|0[bgm];"
-                    "[tts][bgm]amix=inputs=2:duration=first:normalize=0[aout]",
+                    "[2:a]volume=0.22,adelay=0|0[bgm];"
+                    "[tts][bgm]amix=inputs=2:duration=first:normalize=0,loudnorm[aout]",
                     "-map", "0:v", "-map", "[aout]",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                     "-pix_fmt", "yuv420p",
@@ -222,6 +223,27 @@ def final_composition_node(
                 # 验证音频是否正常
                 mixed_audio_duration = get_media_duration(mixed_path)
                 logger.info("[Node7] 混音完成: 视频=%.2fs, 音频=%.2fs", mixed_audio_duration, mixed_audio_duration)
+                
+                # 生成音频混流报告
+                audio_mix_report = {
+                    "tts_file": tts_wav_path,
+                    "bgm_file": local_bgm,
+                    "tts_volume": 1.0,
+                    "bgm_volume": 0.22,
+                    "tts_duration": tts_duration,
+                    "bgm_duration": bgm_duration,
+                    "video_duration": video_duration,
+                    "output_duration": mixed_audio_duration,
+                    "mix_strategy": "amix with loudnorm",
+                    "bgm_loop": True,
+                    "normalize": False,
+                    "output_codec": "aac",
+                    "output_bitrate": "128k"
+                }
+                audio_mix_report_path = os.path.join(run_dir, "audio_mix_report.json")
+                with open(audio_mix_report_path, "w", encoding="utf-8") as f:
+                    json.dump(audio_mix_report, f, indent=2, ensure_ascii=False)
+                logger.info("[Node7] 音频混流报告已保存: %s", audio_mix_report_path)
                 
             except Exception as e:
                 logger.error("[Node7] BGM混合失败: %s，仅使用TTS", e)

@@ -508,7 +508,8 @@ def quality_check_node(
             # 判断音频是否有效
             audio_mix_used = final_audio_bitrate > 64000 and final_audio_mean_volume > -50
             tts_in_final = final_audio_mean_volume > -40  # TTS 音量正常
-            bgm_in_final = True  # 假设 BGM 已混入
+            # BGM 需要人工确认，因为自动检测不可靠
+            bgm_in_final = os.path.exists(bgm_path)  # 仅检查 BGM 文件是否存在，实际混入需要人工确认
         except Exception as e:
             logger.warning("[Node8] 音频检测失败: %s", e)
 
@@ -676,6 +677,9 @@ def quality_check_node(
         "audio_mix_used": audio_mix_used,
         "tts_in_final": tts_in_final,
         "bgm_in_final": bgm_in_final,
+        # BGM 人工确认字段（自动检测不可靠，需要人工听感确认）
+        "bgm_audible_manual_check_required": True,
+        "bgm_audible_manual_result": "pending",  # pending / pass / fail
         # 字幕
         "subtitle_render_source": "subtitles_srt",
         "subtitle_render_passes": 1,
