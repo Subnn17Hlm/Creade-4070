@@ -3,26 +3,26 @@
   "final_script_chars": 156,
   "script_coverage": 98.1,
   "script_ok": true,
-  "audio_duration": 31.368,
-  "video_duration": 31.368,
-  "video_audio_diff": 0.0,
+  "audio_duration": 31.776,
+  "video_duration": 31.72,
+  "video_audio_diff": -0.056,
   "padding_seconds": 0.0,
   "tts_wav_exists": true,
   "bgm_exists": true,
-  "tts_duration": 31.368,
+  "tts_duration": 31.776,
   "bgm_duration": 53.107,
-  "final_audio_duration": 31.368,
-  "final_video_duration": 31.368,
-  "final_audio_bitrate": 131365,
-  "final_audio_mean_volume": -23.3,
-  "tts_mean_volume": -21.1,
+  "final_audio_duration": 31.718,
+  "final_video_duration": 31.72,
+  "final_audio_bitrate": 130590,
+  "final_audio_mean_volume": -23.5,
+  "tts_mean_volume": -22.3,
   "bgm_mean_volume": -17.4,
   "audio_mix_used": true,
   "tts_in_final": true,
   "bgm_in_final": true,
   "bgm_trimmed_exists": true,
   "mixed_audio_exists": true,
-  "mixed_audio_mean_volume": -23.3,
+  "mixed_audio_mean_volume": -23.5,
   "bgm_audible_manual_check_required": true,
   "bgm_audible_manual_result": "pending",
   "subtitle_render_source": "subtitles_srt",
@@ -46,9 +46,9 @@
   "expected_srt_text_per_frame": [
     "是不是都在为带哪个吹风机发愁",
     "我真的会谢",
-    "行李箱里巨省地方",
-    "我这长头发",
-    "想要什么温度自己调"
+    "放包里",
+    "11万转的风力可不是盖的",
+    "而且它这个屏显调温我真的超爱"
   ],
   "manual_visual_check_required": false,
   "sampled_subtitle_frames": [
@@ -81,17 +81,19 @@
       "time_point": 13,
       "frame_path": "/workspace/projects/runs/02/subtitle_check_frames/frame_13.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "行李箱里巨省地方",
-      "has_text_in_frame": false,
-      "text_blocks": 0,
-      "text_block_rows": [],
-      "text_visible": false
+      "srt_text": "放包里",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        346
+      ],
+      "text_visible": true
     },
     {
       "time_point": 18,
       "frame_path": "/workspace/projects/runs/02/subtitle_check_frames/frame_18.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "我这长头发",
+      "srt_text": "11万转的风力可不是盖的",
       "has_text_in_frame": true,
       "text_blocks": 1,
       "text_block_rows": [
@@ -103,13 +105,11 @@
       "time_point": 23,
       "frame_path": "/workspace/projects/runs/02/subtitle_check_frames/frame_23.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "想要什么温度自己调",
+      "srt_text": "而且它这个屏显调温我真的超爱",
       "has_text_in_frame": true,
-      "text_blocks": 3,
+      "text_blocks": 1,
       "text_block_rows": [
-        32,
-        20,
-        6
+        346
       ],
       "text_visible": true
     }

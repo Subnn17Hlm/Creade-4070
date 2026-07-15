@@ -67,14 +67,24 @@ def _calculate_sentence_timing(
         ratio = w / total_weight
         durations.append(total_duration * ratio)
 
-    # 确保每个片段最短1.0秒（避免快闪，同时保证总时长不超过TTS时长）
-    MIN_DURATION = 1.0
+    # 不再统一缩放，直接按照字数比例分配时长
+    # 允许某些短句低于1.0秒，但限制在0.9秒以上
+    # 这样可以避免为了匹配TTS时长而压缩所有片段
+    MIN_DURATION = 0.9
     durations = [max(d, MIN_DURATION) for d in durations]
 
+    # 如果总时长超过TTS时长，只压缩超过的部分，而不是统一缩放
     actual_total = sum(durations)
-    if actual_total > 0 and abs(actual_total - total_duration) > 0.01:
-        scale = total_duration / actual_total
-        durations = [d * scale for d in durations]
+    if actual_total > total_duration + 0.01:
+        # 找出超过的部分，按比例压缩
+        excess = actual_total - total_duration
+        # 只对超过MIN_DURATION的片段进行压缩
+        adjustable = [(i, d - MIN_DURATION) for i, d in enumerate(durations) if d > MIN_DURATION]
+        total_adjustable = sum(adj[1] for adj in adjustable)
+        if total_adjustable > 0:
+            scale = (total_adjustable - excess) / total_adjustable
+            for i, adj_d in adjustable:
+                durations[i] = MIN_DURATION + adj_d * scale
 
     result = []
     current = 0.0
