@@ -1,0 +1,1765 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "吹风机圈的小钢炮",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "手持大小对比_003",
+    "selected_file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%A4%A7%E5%B0%8F%E5%AF%B9%E6%AF%94_003_%E6%89%8B%E6%8B%BF%E7%93%B6%E8%A3%85%E6%B0%B4%E5%8F%98%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '吹发动作'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "巴掌大",
+    "required_tags": [
+      "手持大小对比",
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持大小对比_001",
+    "selected_file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%A4%A7%E5%B0%8F%E5%AF%B9%E6%AF%94_001_%E6%A1%8C%E9%9D%A2%E6%89%8B%E6%9C%BA%E5%AF%B9%E6%AF%94_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '手持展示'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "十一万转",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_001",
+    "selected_file_name": "风力展示_001_花朵风力_2s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_001_%E8%8A%B1%E6%9C%B5%E9%A3%8E%E5%8A%9B_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "风力给你拉满",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_005",
+    "selected_file_name": "风力展示_005_吹丝带_2s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_005_%E5%90%B9%E4%B8%9D%E5%B8%A6_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "长头发三五分钟",
+    "required_tags": [
+      "吹发动作",
+      "护发效果"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_006",
+        "file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_007",
+        "file_name": "吹发动作_007_半身背面吹发_4s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_008",
+        "file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_009",
+        "file_name": "吹发动作_009_坐着半身侧面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_010",
+        "file_name": "吹发动作_010_床上半身背面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "护发效果_006",
+    "selected_file_name": "护发效果_006_坐床边背面展示头发柔顺_3s.mp4",
+    "selected_primary_scene_tag": "护发效果",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_006_%E5%9D%90%E5%BA%8A%E8%BE%B9%E8%83%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E5%A4%B4%E5%8F%91%E6%9F%94%E9%A1%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作', '护发效果'] → 护发效果",
+    "alternative_candidates": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "短头发1分钟不到",
+    "required_tags": [
+      "吹发动作",
+      "护发效果"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_006",
+        "file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_007",
+        "file_name": "吹发动作_007_半身背面吹发_4s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_008",
+        "file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_009",
+        "file_name": "吹发动作_009_坐着半身侧面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_010",
+        "file_name": "吹发动作_010_床上半身背面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "护发效果_007",
+    "selected_file_name": "护发效果_007_卫生间背面慢动作头发柔顺_3s.mp4",
+    "selected_primary_scene_tag": "护发效果",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_007_%E5%8D%AB%E7%94%9F%E9%97%B4%E8%83%8C%E9%9D%A2%E6%85%A2%E5%8A%A8%E4%BD%9C%E5%A4%B4%E5%8F%91%E6%9F%94%E9%A1%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作', '护发效果'] → 护发效果",
+    "alternative_candidates": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "主打一个快",
+    "required_tags": [
+      "风力展示",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "风力展示_006",
+    "selected_file_name": "风力展示_006_远景切特写_2s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_006_%E8%BF%9C%E6%99%AF%E5%88%87%E7%89%B9%E5%86%99_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示', '吹发动作'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "赠送造型风嘴",
+    "required_tags": [
+      "赠品展示",
+      "价格促销",
+      "风嘴配件"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "赠品展示_001",
+        "file_name": "赠品展示_001_收纳袋展示_2s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_002",
+        "file_name": "赠品展示_002_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_003",
+        "file_name": "赠品展示_003_拿入收纳袋晃晃_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_004",
+        "file_name": "赠品展示_004_吹风机放入收纳袋合上定格展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_005",
+        "file_name": "赠品展示_005_赠品收纳袋展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_006",
+        "file_name": "赠品展示_006_收纳袋扔到沙发上_1s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_007",
+        "file_name": "赠品展示_007_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "价格促销_001",
+        "file_name": "价格促销_001_搭配促销权益_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      },
+      {
+        "material_id": "价格促销_002",
+        "file_name": "价格促销_002_全物品展示_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      },
+      {
+        "material_id": "价格促销_003",
+        "file_name": "价格促销_003_包装展示特效_3s.mp4",
+        "primary_scene_tag": "价格促销"
+      }
+    ],
+    "selected_material_id": "风嘴配件_001",
+    "selected_file_name": "风嘴配件_001_安装风嘴_2s.mp4",
+    "selected_primary_scene_tag": "风嘴配件",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%98%B4%E9%85%8D%E4%BB%B6_001_%E5%AE%89%E8%A3%85%E9%A3%8E%E5%98%B4_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 3,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['赠品展示', '价格促销', '风嘴配件'] → 风嘴配件",
+    "alternative_candidates": [
+      {
+        "material_id": "赠品展示_001",
+        "file_name": "赠品展示_001_收纳袋展示_2s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_002",
+        "file_name": "赠品展示_002_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_003",
+        "file_name": "赠品展示_003_拿入收纳袋晃晃_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_004",
+        "file_name": "赠品展示_004_吹风机放入收纳袋合上定格展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_005",
+        "file_name": "赠品展示_005_赠品收纳袋展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "吹完直接出门",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_006",
+        "file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_007",
+        "file_name": "吹发动作_007_半身背面吹发_4s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_008",
+        "file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_009",
+        "file_name": "吹发动作_009_坐着半身侧面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_010",
+        "file_name": "吹发动作_010_床上半身背面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_008",
+    "selected_file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_008_%E5%8D%8A%E8%BA%AB%E8%83%8C%E9%9D%A2%E5%90%B9%E5%8F%91_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "智能控温每秒一百次",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_006",
+        "file_name": "屏显调温_006_开机亮起全景_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_007",
+        "file_name": "屏显调温_007_屏显热风降到冷风_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_008",
+        "file_name": "屏显调温_008_屏显冷热循环_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_009",
+        "file_name": "屏显调温_009_分屏温度模式_4s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "屏显调温_003",
+    "selected_file_name": "屏显调温_003_温度模式_3s.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_003_%E6%B8%A9%E5%BA%A6%E6%A8%A1%E5%BC%8F_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "不伤头发",
+    "required_tags": [
+      "护发效果",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "护发效果_001",
+        "file_name": "护发效果_001_半身中景_4s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_002",
+        "file_name": "护发效果_002_坐着摸发尾_4s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_003",
+        "file_name": "护发效果_003_对镜背面展示柔顺_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_004",
+        "file_name": "护发效果_004_对镜美好展示_2s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_005",
+        "file_name": "护发效果_005_对镜甩头出门_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_006",
+        "file_name": "护发效果_006_坐床边背面展示头发柔顺_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_007",
+        "file_name": "护发效果_007_卫生间背面慢动作头发柔顺_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_008",
+        "file_name": "护发效果_008_模特床上头发飘动_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_009",
+        "file_name": "护发效果_009_模特背后展示柔顺_2s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_010",
+        "file_name": "护发效果_010_背面展示柔顺_2s.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "selected_material_id": "护发效果_008",
+    "selected_file_name": "护发效果_008_模特床上头发飘动_3s.mp4",
+    "selected_primary_scene_tag": "护发效果",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_008_%E6%A8%A1%E7%89%B9%E5%BA%8A%E4%B8%8A%E5%A4%B4%E5%8F%91%E9%A3%98%E5%8A%A8_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['护发效果', '吹发动作'] → 护发效果",
+    "alternative_candidates": [
+      {
+        "material_id": "护发效果_001",
+        "file_name": "护发效果_001_半身中景_4s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_002",
+        "file_name": "护发效果_002_坐着摸发尾_4s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_003",
+        "file_name": "护发效果_003_对镜背面展示柔顺_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_004",
+        "file_name": "护发效果_004_对镜美好展示_2s.mp4",
+        "primary_scene_tag": "护发效果"
+      },
+      {
+        "material_id": "护发效果_005",
+        "file_name": "护发效果_005_对镜甩头出门_3s.mp4",
+        "primary_scene_tag": "护发效果"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "独立温度屏显",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_006",
+        "file_name": "屏显调温_006_开机亮起全景_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_007",
+        "file_name": "屏显调温_007_屏显热风降到冷风_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_008",
+        "file_name": "屏显调温_008_屏显冷热循环_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_009",
+        "file_name": "屏显调温_009_分屏温度模式_4s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "屏显调温_008",
+    "selected_file_name": "屏显调温_008_屏显冷热循环_3s.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_008_%E5%B1%8F%E6%98%BE%E5%86%B7%E7%83%AD%E5%BE%AA%E7%8E%AF_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "实时显温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_006",
+        "file_name": "屏显调温_006_开机亮起全景_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_007",
+        "file_name": "屏显调温_007_屏显热风降到冷风_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_008",
+        "file_name": "屏显调温_008_屏显冷热循环_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_009",
+        "file_name": "屏显调温_009_分屏温度模式_4s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "屏显调温_001",
+    "selected_file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_001_%E5%B1%8F%E5%B9%95%E4%BA%AE%E8%B5%B7_5s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "折叠带走",
+    "required_tags": [
+      "折叠动作",
+      "放进包包"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "放进包包_001",
+        "file_name": "放进包包_001_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_002",
+        "file_name": "放进包包_002_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_003",
+        "file_name": "放进包包_003_过肩俯拍放入动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_004",
+        "file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_005",
+        "file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "selected_material_id": "折叠动作_001",
+    "selected_file_name": "折叠动作_001_折叠收起_3s.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_001_%E6%8A%98%E5%8F%A0%E6%94%B6%E8%B5%B7_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作', '放进包包'] → 折叠动作",
+    "alternative_candidates": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "健身出差旅游必备",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_006",
+        "file_name": "旅行场景_006_客房环绕到门口_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_007",
+        "file_name": "旅行场景_007_进酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_008",
+        "file_name": "旅行场景_008_酒店大堂看书_2s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_009",
+        "file_name": "旅行场景_009_机场行人_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_010",
+        "file_name": "旅行场景_010_健身房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "旅行场景_010",
+    "selected_file_name": "旅行场景_010_健身房_3s.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_010_%E5%81%A5%E8%BA%AB%E6%88%BF_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "alternative_candidates": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "现在买送旅行收纳袋",
+    "required_tags": [
+      "旅行场景",
+      "折叠动作",
+      "放进包包",
+      "赠品展示",
+      "CTA促单",
+      "价格促销"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_006",
+        "file_name": "旅行场景_006_客房环绕到门口_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_007",
+        "file_name": "旅行场景_007_进酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_008",
+        "file_name": "旅行场景_008_酒店大堂看书_2s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_009",
+        "file_name": "旅行场景_009_机场行人_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_010",
+        "file_name": "旅行场景_010_健身房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "放进包包_006",
+    "selected_file_name": "放进包包_006_特写打开收纳袋切拿出吹风机_3s.mp4",
+    "selected_primary_scene_tag": "放进包包",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_006_%E7%89%B9%E5%86%99%E6%89%93%E5%BC%80%E6%94%B6%E7%BA%B3%E8%A2%8B%E5%88%87%E6%8B%BF%E5%87%BA%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 6,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景', '折叠动作', '放进包包', '赠品展示', 'CTA促单', '价格促销'] → 放进包包",
+    "alternative_candidates": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "就这一波",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_001",
+    "selected_file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_001_%E5%93%8D%E6%8C%87%E5%87%BA%E7%8E%B0%E6%A1%8C%E9%9D%A2%E9%9D%99%E7%89%A9%E5%B1%95%E7%A4%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "闭眼冲就完了",
+    "required_tags": [
+      "CTA促单",
+      "价格促销"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "CTA促单_001",
+        "file_name": "CTA促单_001_产品定格收尾_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_002",
+        "file_name": "CTA促单_002_购买提醒收尾_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_003",
+        "file_name": "CTA促单_003_产品全展示运镜_3s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_004",
+        "file_name": "CTA促单_004_产品拿开后桌面静物展示_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "价格促销_001",
+        "file_name": "价格促销_001_搭配促销权益_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      },
+      {
+        "material_id": "价格促销_002",
+        "file_name": "价格促销_002_全物品展示_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      },
+      {
+        "material_id": "价格促销_003",
+        "file_name": "价格促销_003_包装展示特效_3s.mp4",
+        "primary_scene_tag": "价格促销"
+      },
+      {
+        "material_id": "价格促销_004",
+        "file_name": "价格促销_004_轻微运镜到桌上产品_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      }
+    ],
+    "selected_material_id": "CTA促单_001",
+    "selected_file_name": "CTA促单_001_产品定格收尾_2s.mp4",
+    "selected_primary_scene_tag": "CTA促单",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/CTA%E4%BF%83%E5%8D%95_001_%E4%BA%A7%E5%93%81%E5%AE%9A%E6%A0%BC%E6%94%B6%E5%B0%BE_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['CTA促单', '价格促销'] → CTA促单",
+    "alternative_candidates": [
+      {
+        "material_id": "CTA促单_001",
+        "file_name": "CTA促单_001_产品定格收尾_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_002",
+        "file_name": "CTA促单_002_购买提醒收尾_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_003",
+        "file_name": "CTA促单_003_产品全展示运镜_3s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "CTA促单_004",
+        "file_name": "CTA促单_004_产品拿开后桌面静物展示_2s.mp4",
+        "primary_scene_tag": "CTA促单"
+      },
+      {
+        "material_id": "价格促销_001",
+        "file_name": "价格促销_001_搭配促销权益_2s.mp4",
+        "primary_scene_tag": "价格促销"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  }
+]
