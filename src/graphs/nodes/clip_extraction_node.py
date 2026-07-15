@@ -35,9 +35,11 @@ KNOWN_BURNED_IN_TEXT_RULES: Dict[str, List[str]] = {
 # full_play_required: 是否必须完整播放（不裁剪）
 # preferred_min_duration: 推荐最小使用时长（秒）
 MATERIAL_EFFECTIVE_SEGMENT_RULES: Dict[str, Dict[str, Any]] = {
+    # 手持大小对比类素材：变形/转换类型，需要从产品已经出现的位置开始
+    "手持大小对比_003": {"effective_start": 1.5, "effective_start_source": "rule_by_filename_keyword"},  # 手拿瓶装水变吹风机，从变成吹风机后开始
     # 屏显调温类素材：分屏/完整演示，需要尽量全时长使用
-    "屏显调温_003": {"full_play_required": True, "preferred_min_duration": 3.0},
-    "屏显调温_009": {"full_play_required": True, "preferred_min_duration": 3.0},
+    "屏显调温_003": {"full_play_required": True, "preferred_min_duration": 3.0, "effective_start_source": "manual_config"},
+    "屏显调温_009": {"full_play_required": True, "preferred_min_duration": 3.0, "effective_start_source": "manual_config"},
     "屏显调温_001": {"effective_start": 0.5, "preferred_min_duration": 2.0},
     "屏显调温_002": {"effective_start": 0.5, "preferred_min_duration": 2.0},
     "屏显调温_004": {"effective_start": 0.5, "preferred_min_duration": 2.0},
@@ -146,12 +148,10 @@ def clip_extraction_node(
             # 如果句子时长小于素材有效时长，仍然使用完整有效段落
             used_duration = clip_duration
         else:
-            # 普通裁剪：从 effective_start 开始，截取句子时长
+            # 普通裁剪：从 effective_start 开始，严格截取句子时长
+            # 关键：clip_duration 绝不超过句子TTS时长，确保总视觉时长 = TTS总时长
             clip_start = effective_start
             clip_duration = min(duration, 5.0)
-            # 如果有推荐最小时长，且句子时长小于推荐时长，使用推荐时长
-            if preferred_min_duration > 0 and duration < preferred_min_duration:
-                clip_duration = min(preferred_min_duration, source_duration - effective_start)
             used_duration = clip_duration
             clip_end = clip_start + clip_duration
         
