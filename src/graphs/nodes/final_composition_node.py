@@ -257,16 +257,10 @@ def final_composition_node(
             if os.path.exists(bgm_dir):
                 bgm_files = sorted([f for f in os.listdir(bgm_dir) if f.endswith(".mp3")])
                 if bgm_files:
-                    # 按 script_id 稳定选择（如果有的话），否则随机选择
+                    # 按 run_dir 稳定选择，保证相同 run_dir 总是选择同一个 BGM
                     import hashlib
-                    script_id = state.script_id if hasattr(state, 'script_id') else ""
-                    if script_id:
-                        # 使用 script_id 的 hash 来选择 BGM
-                        hash_val = int(hashlib.md5(script_id.encode()).hexdigest(), 16)
-                        bgm_index = hash_val % len(bgm_files)
-                    else:
-                        import random
-                        bgm_index = random.randint(0, len(bgm_files) - 1)
+                    hash_val = int(hashlib.md5(run_dir.encode()).hexdigest(), 16)
+                    bgm_index = hash_val % len(bgm_files)
                     bgm_url = os.path.join(bgm_dir, bgm_files[bgm_index])
                     logger.info("[Node7] 未指定 bgm_url，自动选择: %s", bgm_url)
                 else:

@@ -1,0 +1,19 @@
+{
+  "manifest_file_used": "asset_manifest_v2_clean.csv",
+  "total_manifest_assets": 126,
+  "available_assets_after_filter": 126,
+  "sentence_mapping_file": "auto_generated",
+  "exact_tag_match_count": 18,
+  "synonym_match_count": 0,
+  "semantic_fallback_count": 0,
+  "unmatched_sentence_ids": [],
+  "high_confidence": 18,
+  "medium_confidence": 0,
+  "low_confidence": 0,
+  "repeated_material_count": 4,
+  "tag_distribution_used": {
+    "旅行场景": 8,
+    "手持展示": 9,
+    "CTA促单": 1
+  }
+}
