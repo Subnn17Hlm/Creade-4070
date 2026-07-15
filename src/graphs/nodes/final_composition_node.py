@@ -28,9 +28,25 @@ logger = logging.getLogger(__name__)
 
 
 def _download_bgm(bgm_url: str, temp_dir: str) -> str:
-    """下载BGM到本地"""
+    """下载BGM到本地，支持URL和本地路径"""
     import requests
     local_bgm = os.path.join(temp_dir, "bgm.mp3")
+    
+    # 检查是否是本地路径
+    if os.path.exists(bgm_url):
+        # 本地路径，直接复制
+        import shutil
+        shutil.copy2(bgm_url, local_bgm)
+        return local_bgm
+    
+    # 检查是否是workspace相对路径
+    workspace_path = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), bgm_url)
+    if os.path.exists(workspace_path):
+        import shutil
+        shutil.copy2(workspace_path, local_bgm)
+        return local_bgm
+    
+    # URL路径，下载
     resp = requests.get(bgm_url, timeout=30)
     resp.raise_for_status()
     with open(local_bgm, "wb") as f:

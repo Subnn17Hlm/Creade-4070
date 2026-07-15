@@ -67,7 +67,9 @@ def _calculate_sentence_timing(
         ratio = w / total_weight
         durations.append(total_duration * ratio)
 
-    durations = [max(d, 0.3) for d in durations]
+    # 确保每个片段最短1.0秒（避免快闪，同时保证总时长不超过TTS时长）
+    MIN_DURATION = 1.0
+    durations = [max(d, MIN_DURATION) for d in durations]
 
     actual_total = sum(durations)
     if actual_total > 0 and abs(actual_total - total_duration) > 0.01:
@@ -122,7 +124,7 @@ def _split_long_sentence(
         cs = start_time + i / len(chars) * duration
         ce = start_time + min((i + chunk_size) / len(chars) * duration, duration)
         if ce <= cs:
-            ce = cs + 0.3
+            ce = cs + 1.2
         cues.append({
             "text": chunk_text,
             "start_time": round(cs, 3),
