@@ -1,0 +1,148 @@
+{
+  "original_script_chars": 201,
+  "final_script_chars": 199,
+  "script_coverage": 99.0,
+  "script_ok": true,
+  "audio_duration": 39.528,
+  "video_duration": 39.528,
+  "video_audio_diff": 0.0,
+  "padding_seconds": 0.0,
+  "tts_wav_exists": true,
+  "bgm_exists": true,
+  "tts_duration": 39.528,
+  "bgm_duration": 53.107,
+  "final_audio_duration": 39.528,
+  "final_video_duration": 39.528,
+  "final_audio_bitrate": 130780,
+  "final_audio_mean_volume": -23.5,
+  "tts_mean_volume": -21.8,
+  "bgm_mean_volume": -17.4,
+  "audio_mix_used": true,
+  "tts_in_final": true,
+  "bgm_in_final": true,
+  "bgm_trimmed_exists": true,
+  "mixed_audio_exists": true,
+  "mixed_audio_mean_volume": -23.5,
+  "bgm_audible_manual_check_required": true,
+  "bgm_audible_manual_result": "pending",
+  "subtitle_render_source": "subtitles_srt",
+  "subtitle_render_passes": 1,
+  "subtitles_no_overlap": true,
+  "subtitle_font_size": 38,
+  "subtitle_y_position_ratio": 0.82,
+  "subtitle_max_lines": 2,
+  "subtitle_area_ratio": 0.05,
+  "subtitle_style_pass": true,
+  "subtitle_cue_count": 25,
+  "subtitle_burned_into_final": true,
+  "subtitle_visible_in_final_video": true,
+  "sampled_subtitle_frame_paths": [
+    "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_2.0s.jpg",
+    "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_7.0s.jpg",
+    "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_13.0s.jpg",
+    "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_18.0s.jpg",
+    "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_23.0s.jpg"
+  ],
+  "expected_srt_text_per_frame": [
+    "出门旅行最怕什么",
+    "吹完头发像稻草一样",
+    "它只有巴掌大小",
+    "11万转高速电机",
+    "最绝的是它的护发功能"
+  ],
+  "manual_visual_check_required": false,
+  "sampled_subtitle_frames": [
+    {
+      "time_point": 2,
+      "frame_path": "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_2.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "出门旅行最怕什么",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        32
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 7,
+      "frame_path": "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_7.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "吹完头发像稻草一样",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        346
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 13,
+      "frame_path": "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_13.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "它只有巴掌大小",
+      "has_text_in_frame": true,
+      "text_blocks": 4,
+      "text_block_rows": [
+        44,
+        31,
+        4,
+        16
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 18,
+      "frame_path": "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_18.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "11万转高速电机",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        120
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 23,
+      "frame_path": "/workspace/projects/runs/script_03_v2/subtitle_check_frames/frame_23.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "最绝的是它的护发功能",
+      "has_text_in_frame": true,
+      "text_blocks": 2,
+      "text_block_rows": [
+        28,
+        33
+      ],
+      "text_visible": true
+    }
+  ],
+  "material_frame_modified": false,
+  "material_resize_applied": false,
+  "material_crop_applied": false,
+  "crop_or_mask_method": "none",
+  "has_black_padding": false,
+  "bottom_black_area_ratio": 0.0,
+  "dark_frame_ratio": 0.0,
+  "dim_overlay_detected": false,
+  "black_padding_detected": false,
+  "final_visual_text_only_from_srt": true,
+  "unexpected_visual_text_detected": [],
+  "material_label_text_burned_in": false,
+  "debug_text_burned_in": false,
+  "selected_materials_from_candidates": true,
+  "semantic_match_summary": {
+    "total_segments": 25,
+    "high_confidence": 25,
+    "medium_confidence": 0,
+    "low_confidence": 0
+  },
+  "low_confidence_segments": 0,
+  "timeline_split_method": "character_weighted_punctuation",
+  "timeline_average_split": false,
+  "used_manifest_file": "asset_manifest_v2_clean.csv",
+  "unique_material_count": 19,
+  "failure_category": "fully_successful",
+  "status": "success",
+  "fail_reason": ""
+}
