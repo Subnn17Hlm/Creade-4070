@@ -4,7 +4,7 @@ import csv
 import logging
 import random
 import time
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional, Set, Tuple
 from pydantic import BaseModel, Field
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
@@ -180,6 +180,269 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "焊在": ["放进行李箱", "旅行场景"], "焊在你的行李箱里": ["放进行李箱"],
     "也就一个科瑞德的事": ["产品展示", "CTA促单"],
 }
+
+# ==================== 强语义短句模式（禁止合并） ====================
+# 即使字数很短，只要有明确卖点，也要允许独立匹配
+_STRONG_SEMANTIC_SHORT_PATTERNS: List[str] = [
+    # 风力相关
+    "十一万转", "11万转", "万转", "高风速", "大风力",
+    # 大小相关
+    "巴掌大", "巴掌大小", "超mini", "超迷你", "小巧",
+    # 护发相关
+    "不伤发", "护发", "柔顺", "水润",
+    # 折叠相关
+    "折叠带走", "折叠", "折起来",
+    # 屏显相关
+    "实时显温", "显温", "屏显", "温度看得见",
+    # CTA相关
+    "闭眼冲", "闭眼入", "买它", "赶紧", "冲",
+    # 赠品相关
+    "送礼", "赠品", "收纳包", "收纳袋",
+    # 价格相关
+    "直降", "到手", "到手价",
+    # 负离子
+    "负离子",
+]
+
+# ==================== 短句合并条件关键词（弱语义） ====================
+# 这些关键词表示句子偏承接、铺垫、语气词、转折句，适合合并
+_WEAK_SEMANTIC_PATTERNS: List[str] = [
+    "就是", "就是这款", "就是这款",
+    "现在", "现在上新", "现在福利",
+    "但", "但它的", "但是",
+    "还", "还能", "还好",
+    "看", "别看",
+    "真的", "真的会",
+    "超", "超爱",
+    "想要", "想要的",
+    "也就", "也就是",
+    "不挑", "不占",
+    "自带",
+    "买就",
+    "趁着",
+    "到手还是",
+]
+
+
+def _is_strong_semantic_short(text: str) -> bool:
+    """判断短句是否有强语义（不应被合并）"""
+    text_lower = text.lower().strip()
+    for pattern in _STRONG_SEMANTIC_SHORT_PATTERNS:
+        if pattern in text_lower:
+            return True
+    # 检查是否包含明确卖点关键词
+    for keyword in _KEYWORD_TO_TAG:
+        if keyword in text_lower and len(keyword) >= 2:
+            # 如果匹配到的标签不是弱标签（如产品展示），则认为有强语义
+            tags = _KEYWORD_TO_TAG[keyword]
+            strong_tags = {"风力展示", "护发效果", "屏显调温", "折叠动作", 
+                          "手持大小对比", "赠品展示", "风嘴配件", "CTA促单",
+                          "价格促销", "放进行李箱", "放进包包"}
+            if any(t in strong_tags for t in tags):
+                return True
+    return False
+
+
+def _is_weak_semantic(text: str) -> bool:
+    """判断句子是否为弱语义（承接、铺垫、语气词、转折）"""
+    text_lower = text.lower().strip()
+    for pattern in _WEAK_SEMANTIC_PATTERNS:
+        if pattern in text_lower:
+            return True
+    # 纯语气词/感叹词
+    if text_lower in ["真的", "真的吗", "真的会", "超", "还", "但"]:
+        return True
+    return False
+
+
+def _build_visual_groups(
+    sentence_mappings: List[Dict[str, Any]],
+    timing: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    构建视觉组（visual_group）：将短句合并到相邻句子，确保每个视觉片段 >= 1.2秒。
+    
+    规则：
+    1. 短句判定：字数 <= 5 或 TTS时长 < 0.9秒
+    2. 短句必须语义不完整（弱语义），且有明确独立卖点标签的短句不合并
+    3. 优先合并到下一句；如果在结尾，合并到上一句
+    4. 每个视觉组的视觉片段时长 >= 1.2秒
+    
+    Args:
+        sentence_mappings: 句子标签映射列表
+        timing: 时间轴数据
+    
+    Returns:
+        visual_groups: 视觉组列表，每组包含 sentence_ids, sentence_texts, total_duration, primary_tag 等
+    """
+    if not sentence_mappings:
+        return []
+    
+    # 构建 timing 索引（按 sentence_id）
+    timing_by_id: Dict[int, Dict] = {}
+    for t in timing:
+        sid = t.get("sentence_id", 0)
+        if sid:
+            timing_by_id[sid] = t
+    
+    n = len(sentence_mappings)
+    
+    # 第一步：标记哪些句子是"可合并短句"
+    mergeable: List[bool] = [False] * n
+    for i, mapping in enumerate(sentence_mappings):
+        text = mapping.get("sentence_text", "")
+        duration = mapping.get("duration", 1.0)
+        char_count = len(text.strip())
+        
+        # 短句判定：字数 <= 5 或 时长 < 0.9秒
+        is_short = char_count <= 5 or duration < 0.9
+        
+        if not is_short:
+            mergeable[i] = False
+            continue
+        
+        # 强语义短句不合并
+        if _is_strong_semantic_short(text):
+            mergeable[i] = False
+            continue
+        
+        # 单独作为视觉片段时长会低于 1.2 秒
+        if duration >= 1.2:
+            mergeable[i] = False
+            continue
+        
+        mergeable[i] = True
+    
+    # 第二步：构建视觉组
+    visual_groups: List[Dict[str, Any]] = []
+    i = 0
+    
+    while i < n:
+        mapping = sentence_mappings[i]
+        sentence_id = mapping.get("sentence_id", i + 1)
+        text = mapping.get("sentence_text", "")
+        duration = mapping.get("duration", 1.0)
+        tags = mapping.get("required_tags", [])
+        primary_tag = mapping.get("primary_scene_tag", "")
+        
+        if not mergeable[i]:
+            # 不可合并的句子，独立成组
+            group = {
+                "group_id": len(visual_groups) + 1,
+                "sentence_ids": [sentence_id],
+                "sentence_texts": [text],
+                "original_sentence_durations": [duration],
+                "total_duration": duration,
+                "merged": False,
+                "merge_reason": "",
+                "primary_tag": primary_tag,
+                "required_tags": tags,
+                "is_strong_semantic": True,
+                "low_confidence": mapping.get("low_confidence", False),
+                "fallback_reason": mapping.get("fallback_reason", ""),
+            }
+            visual_groups.append(group)
+            i += 1
+        else:
+            # 可合并的短句，尝试合并到下一句
+            merged_texts = [text]
+            merged_ids = [sentence_id]
+            merged_durations = [duration]
+            merged_tags = list(tags)
+            merge_reason = ""
+            
+            if i + 1 < n:
+                # 合并到下一句
+                next_mapping = sentence_mappings[i + 1]
+                next_id = next_mapping.get("sentence_id", i + 2)
+                next_text = next_mapping.get("sentence_text", "")
+                next_duration = next_mapping.get("duration", 1.0)
+                next_tags = next_mapping.get("required_tags", [])
+                next_primary_tag = next_mapping.get("primary_scene_tag", "")
+                
+                merged_texts.append(next_text)
+                merged_ids.append(next_id)
+                merged_durations.append(next_duration)
+                
+                # 组的标签：优先取下一句（强语义句）的标签
+                if next_tags:
+                    merged_tags = next_tags
+                    primary_tag = next_primary_tag
+                
+                total_dur = duration + next_duration
+                merge_reason = f"短句'{text}'(时长{duration:.2f}s)合并到下一句'{next_text[:15]}...'"
+                
+                # 如果合并后仍然 < 1.2秒，且后面还有句子，继续合并
+                j = i + 2
+                while total_dur < 1.2 and j < n:
+                    more_mapping = sentence_mappings[j]
+                    more_id = more_mapping.get("sentence_id", j + 1)
+                    more_text = more_mapping.get("sentence_text", "")
+                    more_duration = more_mapping.get("duration", 1.0)
+                    more_tags = more_mapping.get("required_tags", [])
+                    
+                    merged_texts.append(more_text)
+                    merged_ids.append(more_id)
+                    merged_durations.append(more_duration)
+                    total_dur += more_duration
+                    
+                    # 如果新加入的句子有更强的标签，更新
+                    if more_tags and not merged_tags:
+                        merged_tags = more_tags
+                        primary_tag = more_mapping.get("primary_scene_tag", "")
+                    
+                    j += 1
+                
+                group = {
+                    "group_id": len(visual_groups) + 1,
+                    "sentence_ids": merged_ids,
+                    "sentence_texts": merged_texts,
+                    "original_sentence_durations": merged_durations,
+                    "total_duration": sum(merged_durations),
+                    "merged": True,
+                    "merge_reason": merge_reason,
+                    "primary_tag": primary_tag,
+                    "required_tags": merged_tags,
+                    "is_strong_semantic": False,
+                    "low_confidence": mapping.get("low_confidence", False) and not any(
+                        not sentence_mappings[k].get("low_confidence", False) 
+                        for k in range(i, min(j, n))
+                    ),
+                    "fallback_reason": mapping.get("fallback_reason", ""),
+                }
+                visual_groups.append(group)
+                i = j  # 跳过已合并的句子
+            else:
+                # 短句在结尾，合并到上一句
+                if visual_groups:
+                    prev_group = visual_groups[-1]
+                    prev_group["sentence_ids"].append(sentence_id)
+                    prev_group["sentence_texts"].append(text)
+                    prev_group["original_sentence_durations"].append(duration)
+                    prev_group["total_duration"] += duration
+                    prev_group["merged"] = True
+                    prev_group["merge_reason"] += f"; 结尾短句'{text}'(时长{duration:.2f}s)合并到上一句"
+                    i += 1
+                else:
+                    # 没有上一句，独立成组
+                    group = {
+                        "group_id": len(visual_groups) + 1,
+                        "sentence_ids": [sentence_id],
+                        "sentence_texts": [text],
+                        "original_sentence_durations": [duration],
+                        "total_duration": duration,
+                        "merged": False,
+                        "merge_reason": "首句且为短句，无法合并",
+                        "primary_tag": primary_tag,
+                        "required_tags": tags,
+                        "is_strong_semantic": False,
+                        "low_confidence": mapping.get("low_confidence", False),
+                        "fallback_reason": mapping.get("fallback_reason", ""),
+                    }
+                    visual_groups.append(group)
+                    i += 1
+    
+    return visual_groups
 
 
 def _generate_sentence_tag_mapping(
@@ -457,7 +720,23 @@ def material_matching_node(
     
     logger.info(f"句子标签映射: {len(sentence_mappings)} 条")
 
-    # 5. 执行匹配
+    # 4b. 构建视觉组（visual_grouping）：将短句合并到相邻句子
+    visual_groups = _build_visual_groups(sentence_mappings, state.timing)
+    merged_count = sum(1 for g in visual_groups if g.get("merged"))
+    merged_sentence_count = sum(
+        len(g["sentence_ids"]) - 1 for g in visual_groups if g.get("merged")
+    )
+    logger.info(
+        f"视觉组构建完成: {len(visual_groups)} 个组, "
+        f"{merged_count} 个组发生合并, {merged_sentence_count} 个短句被合并"
+    )
+    
+    # 保存视觉组报告
+    visual_grouping_report_path = os.path.join(run_dir, "visual_grouping_report.json")
+    with open(visual_grouping_report_path, 'w', encoding='utf-8') as f:
+        json.dump(visual_groups, f, ensure_ascii=False, indent=2)
+
+    # 5. 执行匹配（基于视觉组）
     selected_assets: List[Dict] = []
     used_material_ids: Set[str] = set()
     total_sentences = len(sentence_mappings)
@@ -470,11 +749,21 @@ def material_matching_node(
     low_conf = 0
     mismatch_ids: List[int] = []
 
-    for idx, mapping in enumerate(sentence_mappings):
-        sentence_id = mapping.get("sentence_id", idx + 1)
-        sentence_text = mapping.get("sentence_text", "")
-        required_tags = mapping.get("required_tags", [])
-        target_duration = mapping.get("duration", 3.0)
+    # 匹配循环：基于视觉组（每个视觉组匹配一个素材）
+    for group_idx, group in enumerate(visual_groups):
+        group_id = group.get("group_id", group_idx + 1)
+        sentence_ids = group.get("sentence_ids", [])
+        sentence_texts = group.get("sentence_texts", [])
+        total_duration = group.get("total_duration", 1.0)
+        required_tags = group.get("required_tags", [])
+        primary_tag = group.get("primary_tag", "")
+        group_low_confidence = group.get("low_confidence", False)
+        group_fallback_reason = group.get("fallback_reason", "")
+        
+        # 使用组的第一个句子作为代表文本
+        sentence_text = " ".join(sentence_texts) if sentence_texts else ""
+        sentence_id = sentence_ids[0] if sentence_ids else group_idx + 1
+        target_duration = total_duration  # 视觉组的总时长作为目标时长
 
         # 过滤候选素材
         candidates: List[Dict] = []
@@ -709,13 +998,13 @@ def material_matching_node(
 
         used_material_ids.add(selected["asset_id"])
 
-        # 获取 mapping 中的 low_confidence 标记
-        mapping_low_confidence = mapping.get("low_confidence", False)
-        mapping_fallback_reason = mapping.get("fallback_reason", "")
-        mapping_candidate_tags = mapping.get("candidate_tags", [])
+        # 获取 visual_group 中的 low_confidence 标记
+        mapping_low_confidence = group_low_confidence
+        mapping_fallback_reason = group_fallback_reason
+        mapping_candidate_tags = required_tags  # 使用组的标签
 
         # 计算置信度
-        # 如果 mapping 标记为 low_confidence（无关键词匹配触发兜底），则最终置信度为 low
+        # 如果 group 标记为 low_confidence（无关键词匹配触发兜底），则最终置信度为 low
         if mapping_low_confidence:
             match_confidence = "low"
             match_score = 0.3
@@ -786,6 +1075,13 @@ def material_matching_node(
             "low_confidence": mapping_low_confidence,
             "fallback_reason": mapping_fallback_reason,
             "candidate_tags": mapping_candidate_tags,
+            # visual_group 字段
+            "visual_group_id": group.get("group_id", group_idx + 1),
+            "visual_group_sentence_ids": group.get("sentence_ids", [sentence_id]),
+            "visual_group_sentence_texts": group.get("sentence_texts", [sentence_text]),
+            "visual_group_merged": group.get("merged", False),
+            "visual_group_merge_reason": group.get("merge_reason", ""),
+            "visual_group_total_duration": group.get("total_duration", target_duration),
         }
         selected_assets.append(entry)
 
@@ -831,42 +1127,68 @@ def material_matching_node(
         f"fallback={fallback_count}, high={high_conf}, medium={medium_conf}, low={low_conf}"
     )
 
-    # 9. 构建timeline_shots（合并timing与素材匹配结果）
-    # 由于timing拆句结果可能与sentence_tag_mapping不完全一致，
-    # 使用文本匹配方式：对每个timing segment，找到最匹配的selected_assets条目
+    # 9. 构建timeline_shots（基于视觉组）
+    # 每个视觉组对应一个timeline_shot，时长为组的总时长
     timeline_shots = []
-    for idx, shot in enumerate(state.timing):
-        shot_text = shot.get("text", "").strip()
+    
+    # 构建 timing 索引（按 sentence_id）
+    timing_by_sid: Dict[int, Dict] = {}
+    for t in state.timing:
+        sid = t.get("sentence_id", 0)
+        if sid:
+            timing_by_sid[sid] = t
+    
+    for entry in selected_assets:
+        group_sentence_ids = entry.get("visual_group_sentence_ids", [entry.get("sentence_id", 1)])
+        group_total_duration = entry.get("visual_group_total_duration", 0)
         
-        # 尝试按文本精确匹配
-        matched = None
-        for entry in selected_assets:
-            entry_text = entry.get("sentence_text", "").strip()
-            if entry_text and (entry_text in shot_text or shot_text in entry_text):
-                matched = entry
-                break
+        # 计算视觉组的起始时间（基于组内第一个句子的timing）
+        first_sid = group_sentence_ids[0] if group_sentence_ids else entry.get("sentence_id", 1)
+        first_timing = timing_by_sid.get(first_sid, {})
+        group_start = first_timing.get("start", 0)
         
-        # 如果文本匹配失败，尝试按索引匹配（如果数量一致时）
-        if not matched and idx < len(selected_assets):
-            matched = selected_assets[idx]
+        # 构建组的文本（合并所有句子文本）
+        group_texts = entry.get("visual_group_sentence_texts", [entry.get("sentence_text", "")])
+        group_text = " ".join(group_texts)
         
-        # 如果仍然没有匹配，使用第一个条目
-        if not matched and selected_assets:
-            matched = selected_assets[0]
+        # 构建字幕时间列表（组内每个句子的起止时间）
+        subtitle_start_end_list = []
+        cumulative_start = group_start
+        for sid in group_sentence_ids:
+            t = timing_by_sid.get(sid, {})
+            s_start = t.get("start", cumulative_start)
+            s_dur = t.get("duration", 1.0)
+            s_end = s_start + s_dur
+            subtitle_start_end_list.append({
+                "sentence_id": sid,
+                "start": s_start,
+                "end": s_end,
+                "duration": s_dur,
+            })
+            cumulative_start = s_end
         
-        matched = matched or {}
-        shot["sentence_id"] = matched.get("sentence_id", idx + 1)
-        shot["selected_material_id"] = matched.get("selected_material_id", "")
-        shot["selected_file_name"] = matched.get("selected_file_name", "")
-        shot["selected_primary_scene_tag"] = matched.get("selected_primary_scene_tag", "")
-        shot["selected_url"] = matched.get("selected_url", "")
-        shot["tag_match_type"] = matched.get("tag_match_type", "fallback")
-        shot["match_confidence"] = matched.get("match_confidence", "low")
-        shot["match_score"] = matched.get("match_score", 0.0)
-        shot["match_reason"] = matched.get("match_reason", "")
-        shot["semantic_fallback_used"] = matched.get("semantic_fallback_used", False)
-        shot["repeated_material_reason"] = matched.get("repeated_material_reason", "")
-        shot["selected_in_candidates"] = True
+        shot = {
+            "sentence_id": entry.get("sentence_id", 1),
+            "text": group_text,
+            "start": group_start,
+            "duration": group_total_duration if group_total_duration > 0 else entry.get("duration", 1.0),
+            "selected_material_id": entry.get("selected_material_id", ""),
+            "selected_file_name": entry.get("selected_file_name", ""),
+            "selected_primary_scene_tag": entry.get("selected_primary_scene_tag", ""),
+            "selected_url": entry.get("selected_url", ""),
+            "tag_match_type": entry.get("tag_match_type", "fallback"),
+            "match_confidence": entry.get("match_confidence", "low"),
+            "match_score": entry.get("match_score", 0.0),
+            "match_reason": entry.get("match_reason", ""),
+            "semantic_fallback_used": entry.get("semantic_fallback_used", False),
+            "repeated_material_reason": entry.get("repeated_material_reason", ""),
+            "selected_in_candidates": True,
+            # visual_group 字段
+            "visual_group_id": entry.get("visual_group_id", 1),
+            "visual_group_sentence_ids": group_sentence_ids,
+            "visual_group_merged": entry.get("visual_group_merged", False),
+            "subtitle_start_end_list": subtitle_start_end_list,
+        }
         timeline_shots.append(shot)
 
     if not timeline_shots:
@@ -879,6 +1201,9 @@ def material_matching_node(
                 "selected_url": entry["selected_url"],
                 "match_confidence": entry["match_confidence"],
                 "match_reason": entry["match_reason"],
+                "visual_group_id": entry.get("visual_group_id", 1),
+                "visual_group_sentence_ids": entry.get("visual_group_sentence_ids", []),
+                "visual_group_merged": entry.get("visual_group_merged", False),
             })
 
     return MaterialMatchOutput(

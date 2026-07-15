@@ -234,7 +234,8 @@ def timeline_assembly_node(
             "text": shot.get("text", ""),
             "start_time": time_info.get("start_time", 0.0),
             "end_time": time_info.get("end_time", 0.0),
-            "duration": time_info.get("duration", 0.0),
+            # 使用 shot 的 duration（visual_group 总时长），而不是 time_info（单句 TTS 时长）
+            "duration": shot.get("duration", 0.0) or time_info.get("duration", 0.0),
             "selected_material_id": shot.get("selected_material_id", ""),
             "clip_path": clip_path,
             "match_confidence": shot.get("match_confidence", "low"),
@@ -244,6 +245,9 @@ def timeline_assembly_node(
             "cross_sentence_continuation": False,
             "visual_continuation_from": None,
             "visual_continuation_asset_id": "",
+            "visual_group_id": shot.get("visual_group_id", 0),
+            "visual_group_merged": shot.get("visual_group_merged", False),
+            "subtitle_start_end_list": shot.get("subtitle_start_end_list", []),
         }
         final_timeline.append(entry)
 
@@ -287,12 +291,72 @@ def timeline_assembly_node(
             total_visual_duration - total_tts_duration
         )
 
+    # === end_hold: 结尾画面多停留1秒 ===
+    END_HOLD_SEC = 1.0  # 默认1.0秒，允许范围0.8-1.2秒
+    
+    # 找到最后一个有clip的条目
+    last_clip_idx = -1
+    for i in range(len(final_timeline) - 1, -1, -1):
+        if final_timeline[i].get("clip_path", ""):
+            last_clip_idx = i
+            break
+    
+    end_hold_applied = False
+    end_hold_sec = 0.0
+    end_hold_tag = ""
+    
+    if last_clip_idx >= 0:
+        last_entry = final_timeline[last_clip_idx]
+        last_clip_path = last_entry.get("clip_path", "")
+        last_tag = last_entry.get("selected_primary_scene_tag", "")
+        
+        # 只在特定标签类型上生效
+        end_hold_eligible_tags = {"CTA促单", "价格促销", "产品展示", "包装展示", 
+                                   "赠品展示", "折叠动作", "放进包包", "放进行李箱"}
+        
+        if last_tag in end_hold_eligible_tags or not last_tag:
+            # 获取clip的实际时长
+            clip_dur = _get_media_duration(last_clip_path) if last_clip_path else 0
+            
+            if clip_dur > 0:
+                # 记录end_hold信息
+                end_hold_applied = True
+                end_hold_sec = END_HOLD_SEC
+                end_hold_tag = last_tag
+                last_entry["end_hold_sec"] = END_HOLD_SEC
+                last_entry["end_hold_eligible"] = True
+                
+                logger.info(
+                    "[Node6] end_hold: 最后一个clip(句%d, 标签=%s)延长%.1fs",
+                    last_entry.get("sentence_id", 0), last_tag, END_HOLD_SEC
+                )
+        else:
+            logger.info(
+                "[Node6] end_hold: 最后一个clip标签=%s，不在适用标签列表中，跳过",
+                last_tag
+            )
+    
+    # 保存end_hold信息到timeline元数据
+    end_hold_meta = {
+        "end_hold_applied": end_hold_applied,
+        "end_hold_sec": end_hold_sec,
+        "end_hold_tag": end_hold_tag,
+        "total_tts_duration": total_tts_duration,
+        "expected_final_duration": total_tts_duration + end_hold_sec,
+    }
+
     # 保存最终timeline
     final_timeline_path = os.path.join(run_dir, "timeline.json")
     with open(final_timeline_path, "w", encoding="utf-8") as f:
         json.dump(final_timeline, f, ensure_ascii=False, indent=2)
+    
+    # 保存end_hold元数据
+    end_hold_meta_path = os.path.join(run_dir, "end_hold_meta.json")
+    with open(end_hold_meta_path, "w", encoding="utf-8") as f:
+        json.dump(end_hold_meta, f, ensure_ascii=False, indent=2)
 
-    logger.info("[Node6] 完成: %d个片段, %d个活跃clip", len(final_timeline), active_clips)
+    logger.info("[Node6] 完成: %d个片段, %d个活跃clip, end_hold=%.1fs", 
+                len(final_timeline), active_clips, end_hold_sec)
 
     return TimelineAssemblyOutput(
         final_timeline_path=final_timeline_path,

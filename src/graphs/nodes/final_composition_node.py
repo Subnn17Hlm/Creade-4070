@@ -113,15 +113,24 @@ def final_composition_node(
             run_ffmpeg(cmd, timeout=120)
         else:
             # 多个clip：先scale每个视频，再concat
-            # 构建filter_complex：每个输入先scale，再concat
+            # 构建filter_complex：每个输入先trim到TTS时长，再scale，再concat
             scale_filters = []
-            for i in range(len(clip_files)):
-                scale_filters.append(f"[{i}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}]")
-                scale_filters.append(f"[{i}:a]aresample=44100[a{i}]")
+            clip_idx = 0
+            for shot in timeline:
+                if not shot.get("clip_path"):
+                    continue
+                tts_dur = shot.get("duration", 0.0)
+                # 添加trim filter确保clip时长匹配TTS
+                if tts_dur > 0:
+                    scale_filters.append(f"[{clip_idx}:v]trim=duration={tts_dur:.3f},setpts=PTS-STARTPTS,scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{clip_idx}]")
+                else:
+                    scale_filters.append(f"[{clip_idx}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{clip_idx}]")
+                scale_filters.append(f"[{clip_idx}:a]aresample=44100[a{clip_idx}]")
+                clip_idx += 1
             
             # concat所有缩放后的视频
-            concat_inputs = "".join(f"[v{i}][a{i}]" for i in range(len(clip_files)))
-            concat_filter = f"{concat_inputs}concat=n={len(clip_files)}:v=1:a=1[outv][outa]"
+            concat_inputs = "".join(f"[v{i}][a{i}]" for i in range(clip_idx))
+            concat_filter = f"{concat_inputs}concat=n={clip_idx}:v=1:a=1[outv][outa]"
             
             filter_complex = ";".join(scale_filters) + ";" + concat_filter
             
@@ -141,6 +150,39 @@ def final_composition_node(
 
         concat_duration = get_media_duration(concat_path)
         logger.info("[Node7] 拼接完成: %.2fs", concat_duration)
+
+        # === end_hold: 结尾画面多停留 ===
+        end_hold_meta_path = os.path.join(run_dir, "end_hold_meta.json")
+        end_hold_sec = 0.0
+        if os.path.exists(end_hold_meta_path):
+            try:
+                with open(end_hold_meta_path, "r", encoding="utf-8") as f:
+                    end_hold_meta = json.load(f)
+                if end_hold_meta.get("end_hold_applied", False):
+                    end_hold_sec = end_hold_meta.get("end_hold_sec", 0.0)
+            except Exception as e:
+                logger.warning("[Node7] 读取end_hold_meta.json失败: %s", e)
+        
+        if end_hold_sec > 0:
+            # 使用 tpad filter 延长最后一个clip（冻结最后一帧）
+            extended_path = os.path.join(temp_dir, "concat_extended.mp4")
+            logger.info("[Node7] end_hold: 延长最后一帧 %.1fs", end_hold_sec)
+            try:
+                run_ffmpeg([
+                    "ffmpeg", "-y", "-i", concat_path,
+                    "-vf", f"tpad=stop_mode=clone:stop_duration={end_hold_sec}",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "copy",
+                    "-movflags", "+faststart",
+                    extended_path
+                ], timeout=120)
+                extended_duration = get_media_duration(extended_path)
+                logger.info("[Node7] end_hold完成: 原%.2fs → 延长后%.2fs", concat_duration, extended_duration)
+                concat_path = extended_path
+                concat_duration = extended_duration
+            except Exception as e:
+                logger.warning("[Node7] end_hold延长失败: %s，跳过", e)
 
         # 2. 渲染字幕 - 使用drawtext filter链
         #    ffmpeg的subtitles/ass filter存在渲染问题，改用drawtext逐句渲染
@@ -322,17 +364,34 @@ def final_composition_node(
                 
                 # ========== 步骤4: 将混合音频混入视频 ==========
                 logger.info("[Node7] 步骤4: 将混合音频混入视频...")
+                
+                # 如果有end_hold，需要延长音频（用静音填充end_hold部分）
+                if end_hold_sec > 0:
+                    # 用adelay和apad延长音频到视频时长
+                    target_audio_dur = video_duration  # video_duration已包含end_hold
+                    run_ffmpeg([
+                        "ffmpeg", "-y",
+                        "-i", mixed_audio_path,
+                        "-af", f"apad=whole_dur={target_audio_dur}",
+                        "-c:a", "pcm_s16le",
+                        "-ar", "44100",
+                        "-ac", "1",
+                        os.path.join(temp_dir, "mixed_audio_padded.wav")
+                    ], timeout=60)
+                    final_audio_input = os.path.join(temp_dir, "mixed_audio_padded.wav")
+                    logger.info("[Node7] 音频已延长到%.2fs（含end_hold %.1fs）", target_audio_dur, end_hold_sec)
+                else:
+                    final_audio_input = mixed_audio_path
+                
                 run_ffmpeg([
                     "ffmpeg", "-y",
                     "-i", subbed_path,
-                    "-i", mixed_audio_path,
+                    "-i", final_audio_input,
                     "-map", "0:v", "-map", "1:a",
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                    "-pix_fmt", "yuv420p",
+                    "-c:v", "copy",  # 不重新编码视频，保留end_hold延长的时长
                     "-c:a", "aac", "-b:a", "128k",
                     "-ar", "44100",
                     "-movflags", "+faststart",
-                    "-shortest",
                     mixed_path
                 ], timeout=180)
                 
@@ -363,7 +422,76 @@ def final_composition_node(
                 
             except Exception as e:
                 logger.error("[Node7] BGM混合失败: %s，仅使用TTS", e)
-                # 回退：仅使用TTS
+                # 回退：仅使用TTS，处理end_hold
+                if end_hold_sec > 0:
+                    target_audio_dur = video_duration
+                    padded_tts_path = os.path.join(temp_dir, "tts_padded_fallback.wav")
+                    run_ffmpeg([
+                        "ffmpeg", "-y",
+                        "-i", tts_wav_path,
+                        "-af", f"apad=whole_dur={target_audio_dur}",
+                        "-c:a", "pcm_s16le",
+                        "-ar", "44100",
+                        "-ac", "1",
+                        padded_tts_path
+                    ], timeout=60)
+                    logger.info("[Node7] 回退路径: TTS音频已延长到%.2fs", target_audio_dur)
+                    run_ffmpeg([
+                        "ffmpeg", "-y",
+                        "-i", subbed_path,
+                        "-i", padded_tts_path,
+                        "-map", "0:v", "-map", "1:a",
+                        "-c:v", "copy",
+                        "-c:a", "aac", "-b:a", "128k",
+                        "-ar", "44100",
+                        "-movflags", "+faststart",
+                        mixed_path
+                    ], timeout=120)
+                else:
+                    run_ffmpeg([
+                        "ffmpeg", "-y",
+                        "-i", subbed_path,
+                        "-i", tts_wav_path,
+                        "-filter_complex", "[1:a]volume=1.0[aout]",
+                        "-map", "0:v", "-map", "[aout]",
+                        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                        "-pix_fmt", "yuv420p",
+                        "-c:a", "aac", "-b:a", "128k",
+                        "-ar", "44100",
+                        "-movflags", "+faststart",
+                        mixed_path
+                    ], timeout=120)
+        else:
+            # 无BGM，仅使用TTS
+            # 如果有end_hold，需要延长音频（用静音填充end_hold部分）
+            if end_hold_sec > 0:
+                target_audio_dur = video_duration  # video_duration已包含end_hold
+                padded_tts_path = os.path.join(temp_dir, "tts_padded.wav")
+                run_ffmpeg([
+                    "ffmpeg", "-y",
+                    "-i", tts_wav_path,
+                    "-af", f"apad=whole_dur={target_audio_dur}",
+                    "-c:a", "pcm_s16le",
+                    "-ar", "44100",
+                    "-ac", "1",
+                    padded_tts_path
+                ], timeout=60)
+                padded_dur = get_media_duration(padded_tts_path)
+                logger.info("[Node7] TTS音频已延长: %.2fs → %.2fs（目标%.2fs）", tts_duration, padded_dur, target_audio_dur)
+                
+                # 直接合并视频和延长后的音频，不重新编码视频
+                run_ffmpeg([
+                    "ffmpeg", "-y",
+                    "-i", subbed_path,
+                    "-i", padded_tts_path,
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-ar", "44100",
+                    "-movflags", "+faststart",
+                    mixed_path
+                ], timeout=120)
+            else:
                 run_ffmpeg([
                     "ffmpeg", "-y",
                     "-i", subbed_path,
@@ -375,25 +503,8 @@ def final_composition_node(
                     "-c:a", "aac", "-b:a", "128k",
                     "-ar", "44100",
                     "-movflags", "+faststart",
-                    "-shortest",
                     mixed_path
                 ], timeout=120)
-        else:
-            # 无BGM，仅使用TTS
-            run_ffmpeg([
-                "ffmpeg", "-y",
-                "-i", subbed_path,
-                "-i", tts_wav_path,
-                "-filter_complex", "[1:a]volume=1.0[aout]",
-                "-map", "0:v", "-map", "[aout]",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "128k",
-                "-ar", "44100",
-                "-movflags", "+faststart",
-                "-shortest",
-                mixed_path
-            ], timeout=120)
 
         # 4. 复制到最终输出
         shutil.copy2(mixed_path, final_mp4)

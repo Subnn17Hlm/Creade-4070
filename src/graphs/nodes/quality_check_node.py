@@ -445,6 +445,24 @@ def quality_check_node(
     # === 2. 音视频同步 ===
     video_duration = get_media_duration(final_video_path) if os.path.exists(final_video_path) else 0.0
     audio_duration = tts_duration
+    
+    # 读取 end_hold 信息
+    run_dir = os.path.dirname(final_video_path) if final_video_path else ""
+    end_hold_meta_path = os.path.join(run_dir, "end_hold_meta.json")
+    end_hold_sec = 0.0
+    end_hold_applied = False
+    if os.path.exists(end_hold_meta_path):
+        try:
+            with open(end_hold_meta_path, "r", encoding="utf-8") as f:
+                eh_meta = json.load(f)
+            end_hold_applied = eh_meta.get("end_hold_applied", False)
+            end_hold_sec = eh_meta.get("end_hold_sec", 0.0)
+        except Exception:
+            pass
+    
+    # 计算 body_sync_diff：主体TTS对齐误差（排除end_hold部分）
+    body_sync_diff = round(abs(video_duration - end_hold_sec - audio_duration), 3)
+    # 兼容旧的 video_audio_diff 字段
     video_audio_diff = round(video_duration - audio_duration, 3)
     padding_seconds = max(0.0, video_duration - audio_duration)
 
@@ -587,6 +605,18 @@ def quality_check_node(
     if abs(video_audio_diff) > 1.5:
         fail_reasons.append(f"video_audio_diff={video_audio_diff}s>1.5s")
 
+    # end_hold 校验：如果应用了end_hold，检查end_hold_sec是否在0.8-1.2范围内
+    if end_hold_applied:
+        if end_hold_sec < 0.8 or end_hold_sec > 1.2:
+            fail_reasons.append(f"end_hold_sec={end_hold_sec}s不在0.8-1.2范围内")
+        # body_sync_diff 应该 <= 0.2s
+        if body_sync_diff > 0.2:
+            fail_reasons.append(f"body_sync_diff={body_sync_diff}s>0.2s")
+    else:
+        # 没有end_hold时，video_audio_diff应该 <= 0.5s
+        if abs(video_audio_diff) > 0.5:
+            fail_reasons.append(f"video_audio_diff={video_audio_diff}s>0.5s(无end_hold)")
+
     # 冻结帧填充
     if padding_seconds > 1.5:
         fail_reasons.append(f"padding_seconds={padding_seconds}s>1.5s")
@@ -671,6 +701,9 @@ def quality_check_node(
         "audio_duration": round(audio_duration, 3),
         "video_duration": round(video_duration, 3),
         "video_audio_diff": round(video_audio_diff, 3),
+        "body_sync_diff": round(body_sync_diff, 3),
+        "end_hold_sec": round(end_hold_sec, 3),
+        "end_hold_applied": end_hold_applied,
         "padding_seconds": round(padding_seconds, 3),
         # 音频检查（新增）
         "tts_wav_exists": tts_wav_exists,

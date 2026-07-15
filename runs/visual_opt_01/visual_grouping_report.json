@@ -1,0 +1,371 @@
+[
+  {
+    "group_id": 1,
+    "sentence_ids": [
+      1
+    ],
+    "sentence_texts": [
+      "Creade终于把高性能的风"
+    ],
+    "original_sentence_durations": [
+      2.486
+    ],
+    "total_duration": 2.486,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "产品展示",
+    "required_tags": [
+      "产品展示"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示"
+  },
+  {
+    "group_id": 2,
+    "sentence_ids": [
+      2
+    ],
+    "sentence_texts": [
+      "装进超minni的机身里"
+    ],
+    "original_sentence_durations": [
+      2.142
+    ],
+    "total_duration": 2.142,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 3,
+    "sentence_ids": [
+      3,
+      4
+    ],
+    "sentence_texts": [
+      "就是这款",
+      "随行折叠高速吹风机"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.628
+    ],
+    "total_duration": 2.528,
+    "merged": true,
+    "merge_reason": "短句'就是这款'(时长0.90s)合并到下一句'随行折叠高速吹风机...'",
+    "primary_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "折叠动作",
+      "风力展示",
+      "吹发动作"
+    ],
+    "is_strong_semantic": false,
+    "low_confidence": false,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示"
+  },
+  {
+    "group_id": 4,
+    "sentence_ids": [
+      5
+    ],
+    "sentence_texts": [
+      "现在上新福利"
+    ],
+    "original_sentence_durations": [
+      1.113
+    ],
+    "total_duration": 1.113,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "价格促销",
+    "required_tags": [
+      "价格促销"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 5,
+    "sentence_ids": [
+      6
+    ],
+    "sentence_texts": [
+      "买就送牛皮收纳包"
+    ],
+    "original_sentence_durations": [
+      1.456
+    ],
+    "total_duration": 1.456,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作",
+      "放进包包",
+      "价格促销",
+      "CTA促单",
+      "赠品展示"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 6,
+    "sentence_ids": [
+      7
+    ],
+    "sentence_texts": [
+      "巴掌大小"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "total_duration": 0.9,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 7,
+    "sentence_ids": [
+      8
+    ],
+    "sentence_texts": [
+      "还能折叠"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "total_duration": 0.9,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 8,
+    "sentence_ids": [
+      9,
+      10
+    ],
+    "sentence_texts": [
+      "出差旅行",
+      "随身携带也没负担"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.456
+    ],
+    "total_duration": 2.356,
+    "merged": true,
+    "merge_reason": "短句'出差旅行'(时长0.90s)合并到下一句'随身携带也没负担...'",
+    "primary_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "放进包包"
+    ],
+    "is_strong_semantic": false,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 9,
+    "sentence_ids": [
+      11
+    ],
+    "sentence_texts": [
+      "超高速强劲马达"
+    ],
+    "original_sentence_durations": [
+      1.284
+    ],
+    "total_duration": 1.284,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "风力展示",
+    "required_tags": [
+      "风力展示"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 10,
+    "sentence_ids": [
+      12
+    ],
+    "sentence_texts": [
+      "快速干发不伤发"
+    ],
+    "original_sentence_durations": [
+      1.284
+    ],
+    "total_duration": 1.284,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "风力展示",
+    "required_tags": [
+      "风力展示",
+      "护发效果",
+      "吹发动作"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 11,
+    "sentence_ids": [
+      13
+    ],
+    "sentence_texts": [
+      "升级屏显"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "total_duration": 0.9,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 12,
+    "sentence_ids": [
+      14
+    ],
+    "sentence_texts": [
+      "温度看的见"
+    ],
+    "original_sentence_durations": [
+      0.941
+    ],
+    "total_duration": 0.941,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 13,
+    "sentence_ids": [
+      15
+    ],
+    "sentence_texts": [
+      "智能温控技术"
+    ],
+    "original_sentence_durations": [
+      1.113
+    ],
+    "total_duration": 1.113,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 14,
+    "sentence_ids": [
+      16
+    ],
+    "sentence_texts": [
+      "保护头发强韧水润"
+    ],
+    "original_sentence_durations": [
+      1.456
+    ],
+    "total_duration": 1.456,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "护发效果",
+    "required_tags": [
+      "护发效果",
+      "吹发动作"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 15,
+    "sentence_ids": [
+      17
+    ],
+    "sentence_texts": [
+      "趁着现在活动"
+    ],
+    "original_sentence_durations": [
+      1.113
+    ],
+    "total_duration": 1.113,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "价格促销",
+    "required_tags": [
+      "价格促销"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  },
+  {
+    "group_id": 16,
+    "sentence_ids": [
+      18
+    ],
+    "sentence_texts": [
+      "想要的赶紧来吧"
+    ],
+    "original_sentence_durations": [
+      1.284
+    ],
+    "total_duration": 1.284,
+    "merged": false,
+    "merge_reason": "",
+    "primary_tag": "CTA促单",
+    "required_tags": [
+      "CTA促单"
+    ],
+    "is_strong_semantic": true,
+    "low_confidence": false,
+    "fallback_reason": ""
+  }
+]
