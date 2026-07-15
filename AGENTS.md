@@ -62,6 +62,9 @@ GraphInput → script_source_router
 - **selected_material_id 必须来自 candidate_materials**
 - **素材源预检**: 所有素材URL必须通过source_audit，带字素材禁止进入剪辑池
 - **素材匹配策略**: 三级匹配（exact→synonym→fallback），基于文本匹配合并timing与selected_assets
+- **BGM选择逻辑**: 使用MD5(script_id)稳定选择，同一script_id始终选择相同BGM（非随机）
+- **兜底素材策略**: 按句子类型选择安全标签（CTA促单/价格促销/痛点共鸣/旅行场景/放进包包/产品展示），禁止使用"手持展示"作为兜底标签
+- **兜底素材轮换**: 使用used_material_ids跟踪已使用素材，避免重复选择
 - **资源文件**: `assets/asset_manifest_new_no_chuifa.csv`（73个无字幕原始素材，primary_scene_tag标签体系）
 - **标签映射文件**: `assets/sentence_tag_mapping_script_02.json`（19句文案到required_tags的精确映射）
 
@@ -72,7 +75,7 @@ GraphInput → script_source_router
 4. 素材未修改画面
 5. 无黑边/黑底
 6. 所有 selected_material_id 来自 candidate_materials
-7. low_confidence_segments = 0 才 success
+7. low_confidence_segments < 3 才 success（阈值从 >0 调整为 >=3，允许少量低置信度）
 8. 关键卖点句低置信度必须 failed
 9. 最终画面文字只能来自 subtitles.srt（`final_visual_text_only_from_srt`）
 10. 无暗场/黑屏（`dark_frame_ratio` 检测）

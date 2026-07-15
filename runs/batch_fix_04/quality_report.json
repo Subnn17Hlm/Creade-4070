@@ -1,0 +1,130 @@
+{
+  "original_script_chars": 133,
+  "final_script_chars": 131,
+  "script_coverage": 98.5,
+  "script_ok": true,
+  "audio_duration": 24.024,
+  "video_duration": 22.96,
+  "video_audio_diff": -1.064,
+  "padding_seconds": 0.0,
+  "tts_wav_exists": true,
+  "bgm_exists": true,
+  "tts_duration": 24.024,
+  "bgm_duration": 53.107,
+  "final_audio_duration": 22.941,
+  "final_video_duration": 22.96,
+  "final_audio_bitrate": 132684,
+  "final_audio_mean_volume": -23.0,
+  "tts_mean_volume": -22.7,
+  "bgm_mean_volume": -17.4,
+  "audio_mix_used": true,
+  "tts_in_final": true,
+  "bgm_in_final": true,
+  "bgm_trimmed_exists": true,
+  "mixed_audio_exists": true,
+  "mixed_audio_mean_volume": -23.1,
+  "bgm_audible_manual_check_required": true,
+  "bgm_audible_manual_result": "pending",
+  "subtitle_render_source": "subtitles_srt",
+  "subtitle_render_passes": 1,
+  "subtitles_no_overlap": true,
+  "subtitle_font_size": 38,
+  "subtitle_y_position_ratio": 0.82,
+  "subtitle_max_lines": 2,
+  "subtitle_area_ratio": 0.05,
+  "subtitle_style_pass": true,
+  "subtitle_cue_count": 21,
+  "subtitle_burned_into_final": true,
+  "subtitle_visible_in_final_video": true,
+  "sampled_subtitle_frame_paths": [
+    "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_2.0s.jpg",
+    "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_7.0s.jpg",
+    "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_13.0s.jpg",
+    "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_18.0s.jpg"
+  ],
+  "expected_srt_text_per_frame": [
+    "到手还是这么多",
+    "行李箱边角缝隙就能放",
+    "真没了",
+    "一首歌的时间"
+  ],
+  "manual_visual_check_required": false,
+  "sampled_subtitle_frames": [
+    {
+      "time_point": 2,
+      "frame_path": "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_2.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "到手还是这么多",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        346
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 7,
+      "frame_path": "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_7.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "行李箱边角缝隙就能放",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        33
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 13,
+      "frame_path": "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_13.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "真没了",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        240
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 18,
+      "frame_path": "/workspace/projects/runs/batch_fix_04/subtitle_check_frames/frame_18.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "一首歌的时间",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        229
+      ],
+      "text_visible": true
+    }
+  ],
+  "material_frame_modified": false,
+  "material_resize_applied": false,
+  "material_crop_applied": false,
+  "crop_or_mask_method": "none",
+  "has_black_padding": false,
+  "bottom_black_area_ratio": 0.0,
+  "dark_frame_ratio": 0.0,
+  "dim_overlay_detected": false,
+  "black_padding_detected": false,
+  "final_visual_text_only_from_srt": true,
+  "unexpected_visual_text_detected": [],
+  "material_label_text_burned_in": false,
+  "debug_text_burned_in": false,
+  "selected_materials_from_candidates": true,
+  "semantic_match_summary": {
+    "total_segments": 21,
+    "high_confidence": 18,
+    "medium_confidence": 0,
+    "low_confidence": 3
+  },
+  "low_confidence_segments": 3,
+  "timeline_split_method": "character_weighted_punctuation",
+  "timeline_average_split": false,
+  "used_manifest_file": "asset_manifest_v2_clean.csv",
+  "unique_material_count": 21,
+  "failure_category": "needs_review",
+  "status": "failed",
+  "fail_reason": "low_confidence_segments=3>=3, needs_manual_review"
+}

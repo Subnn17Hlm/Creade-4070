@@ -1,0 +1,245 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "这么小的吹风机",
+    "primary_scene_tag": "吹发动作",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "duration": 1.227,
+    "reason": "关键词匹配: '这么小的吹风机...' → 吹发动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "还能号称吹风机里的小钢炮",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "duration": 2.062,
+    "reason": "关键词匹配: '还能号称吹风机里的小钢炮...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "这款Creade折叠吹风机",
+    "primary_scene_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作",
+      "吹发动作"
+    ],
+    "duration": 2.228,
+    "reason": "关键词匹配: '这款Creade折叠吹风机...' → 折叠动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "只有巴掌大小",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 1.06,
+    "reason": "关键词匹配: '只有巴掌大小...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "颜值高还轻巧",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 1.06,
+    "reason": "关键词匹配: '颜值高还轻巧...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "11万转每分钟的转速",
+    "primary_scene_tag": "风力展示",
+    "required_tags": [
+      "风力展示"
+    ],
+    "duration": 1.728,
+    "reason": "关键词匹配: '11万转每分钟的转速...' → 风力展示",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "风速能高达29米每秒",
+    "primary_scene_tag": "风力展示",
+    "required_tags": [
+      "风力展示"
+    ],
+    "duration": 1.728,
+    "reason": "关键词匹配: '风速能高达29米每秒...' → 风力展示",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "还配备磁吸风嘴",
+    "primary_scene_tag": "风嘴配件",
+    "required_tags": [
+      "风嘴配件"
+    ],
+    "duration": 1.227,
+    "reason": "关键词匹配: '还配备磁吸风嘴...' → 风嘴配件",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "吹头发吹得又快又顺滑",
+    "primary_scene_tag": "护发效果",
+    "required_tags": [
+      "护发效果",
+      "吹发动作",
+      "风力展示"
+    ],
+    "duration": 1.728,
+    "reason": "关键词匹配: '吹头发吹得又快又顺滑...' → 护发效果",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "2挡风速",
+    "primary_scene_tag": "风力展示",
+    "required_tags": [
+      "风力展示"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '2挡风速...' → 风力展示",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "5种风温",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '5种风温...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "10种选择",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '10种选择...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "怎么吹也不用担心烫伤",
+    "primary_scene_tag": "吹发动作",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "duration": 1.728,
+    "reason": "关键词匹配: '怎么吹也不用担心烫伤...' → 吹发动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "折叠随身携带",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "放进包包",
+      "折叠动作"
+    ],
+    "duration": 1.06,
+    "reason": "关键词匹配: '折叠随身携带...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "包包能放",
+    "primary_scene_tag": "放进包包",
+    "required_tags": [
+      "放进包包"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '包包能放...' → 放进包包",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "箱子不占地",
+    "primary_scene_tag": "放进行李箱",
+    "required_tags": [
+      "放进行李箱",
+      "放进包包"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '箱子不占地...' → 放进行李箱",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "这么精致小巧的高速吹风机",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比",
+      "风力展示",
+      "吹发动作"
+    ],
+    "duration": 2.062,
+    "reason": "关键词匹配: '这么精致小巧的高速吹风机...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "一定要试一试",
+    "primary_scene_tag": "CTA促单",
+    "required_tags": [
+      "CTA促单"
+    ],
+    "duration": 1.06,
+    "reason": "关键词匹配: '一定要试一试...' → CTA促单",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  }
+]

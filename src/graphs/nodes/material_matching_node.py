@@ -58,53 +58,118 @@ _TAG_SEMANTIC_FALLBACK: Dict[str, List[str]] = {
 
 # 关键词到标签的映射（用于句子标签映射生成）
 # 注意：所有标签必须来自 asset_manifest_v2_clean.csv 中已存在的 primary_scene_tag
+# 扩充版关键词映射，覆盖促销/CTA/口语化种草/痛点表达
 _KEYWORD_TO_TAG: Dict[str, List[str]] = {
-    # 旅行场景
+    # ==================== 旅行场景 ====================
     "出差": ["旅行场景"], "旅行": ["旅行场景"], "出行": ["旅行场景"],
     "酒店": ["旅行场景", "痛点共鸣"], "客房": ["旅行场景"],
+    "旅游": ["旅行场景"], "必备": ["旅行场景"],
+    "差旅": ["旅行场景"], "出门": ["旅行场景", "吹发动作"],
+    "随行": ["旅行场景"], "随身": ["旅行场景", "放进包包"],
+    "没负担": ["旅行场景", "放进包包"],
+    
+    # ==================== 放进行李箱 / 放进包包 ====================
     "行李箱": ["放进行李箱", "旅行场景"], "旅行箱": ["放进行李箱"],
-    "健身": ["旅行场景"], "旅游": ["旅行场景"], "必备": ["旅行场景"],
-    # 痛点共鸣
+    "箱子": ["放进行李箱", "放进包包"],
+    "包包": ["放进包包"], "背包": ["放进包包"],
+    "放包里": ["放进包包"], "放进包": ["放进包包"],
+    "随便一塞": ["放进包包"], "边角": ["放进包包"], "缝隙": ["放进包包"],
+    "不占空间": ["放进包包"], "不占地": ["放进包包"],
+    
+    # ==================== 痛点共鸣 ====================
     "怕": ["痛点共鸣"], "愁": ["痛点共鸣"], "烦": ["痛点共鸣"],
     "毛躁": ["痛点共鸣", "护发效果"], "打结": ["痛点共鸣"],
-    "吹不干": ["痛点共鸣", "吹发动作"], "伤发": ["痛点共鸣"],
+    "吹不干": ["痛点共鸣", "吹发动作"], 
     "稻草": ["痛点共鸣", "护发效果"], "旧": ["痛点共鸣"],
-    # 手持展示 - 只用于明确出现手持产品的句子
-    "巴掌": ["手持大小对比", "手持展示"], "小": ["手持大小对比"],
+    "发愁": ["痛点共鸣"], "风小": ["痛点共鸣"],
+    "手累": ["痛点共鸣"], "烫头皮": ["痛点共鸣"],
+    "真的会谢": ["痛点共鸣"], "会谢": ["痛点共鸣"],
+    "告别": ["痛点共鸣"],
+    
+    # ==================== 手持大小对比 ====================
+    "巴掌大": ["手持大小对比"], "巴掌大小": ["手持大小对比"],
+    "小钢炮": ["手持大小对比"], "小巧": ["手持大小对比"],
+    "小巧便捷": ["手持大小对比"], "超mini": ["手持大小对比"],
+    "minni": ["手持大小对比"], "迷你": ["手持大小对比"],
+    "比手机大一点": ["手持大小对比"], "手机大小": ["手持大小对比"],
+    "还没一瓶水重": ["手持大小对比"], "一瓶水": ["手持大小对比"],
+    "轻巧": ["手持大小对比"], "超轻": ["手持大小对比"], "超薄": ["手持大小对比"],
+    "巴掌": ["手持大小对比"],
+    
+    # ==================== 手持展示 - 只用于明确出现手持产品的句子 ====================
     "拿在": ["手持展示"], "握在": ["手持展示"], "手里": ["手持展示"],
-    # 折叠动作
-    "折": ["折叠动作"], "折叠": ["折叠动作"], "收纳": ["折叠动作", "放进包包"],
+    "手持": ["手持展示"], "单手": ["手持展示"],
+    
+    # ==================== 折叠动作 ====================
+    "折叠": ["折叠动作"], "折起来": ["折叠动作"], "能折叠": ["折叠动作"],
+    "折叠随身携带": ["折叠动作"],
+    "折": ["折叠动作"], "收纳": ["折叠动作", "放进包包"],
     "带走": ["折叠动作", "放进包包"],
-    # 放进包包
-    "包": ["放进包包"], "背包": ["放进包包"], "随身": ["放进包包"],
-    "收纳袋": ["放进包包", "赠品展示"],
-    # 风力展示
+    
+    # ==================== 风力展示 ====================
     "风力": ["风力展示"], "大风": ["风力展示"], "强劲": ["风力展示"],
-    "万转": ["风力展示"], "转": ["风力展示"], "速干": ["风力展示"],
-    "拉满": ["风力展示"], "快": ["风力展示", "吹发动作"],
-    # 护发效果
+    "万转": ["风力展示"], "转速": ["风力展示"], "每分钟": ["风力展示"],
+    "风速": ["风力展示"], "29米每秒": ["风力展示"],
+    "速干": ["风力展示"], "拉满": ["风力展示"],
+    "无刷": ["风力展示"], "无刷马达": ["风力展示"], "马达": ["风力展示"],
+    "高速": ["风力展示"], "超高速": ["风力展示"],
+    "一首歌的时间": ["风力展示", "吹发动作"],
+    "转": ["风力展示"],
+    
+    # ==================== 护发效果 ====================
     "护发": ["护发效果"], "柔顺": ["护发效果"], "顺滑": ["护发效果"],
-    "光泽": ["护发效果"], "负离子": ["护发效果"], "不伤": ["护发效果"],
-    # 屏显调温
+    "光泽": ["护发效果"], "负离子": ["护发效果"], 
+    "五亿级负离子": ["护发效果"],
+    "不伤发": ["护发效果"], "不伤头发": ["护发效果"], "不伤": ["护发效果"],
+    "强韧": ["护发效果"], "水润": ["护发效果"],
+    "沙龙养护": ["护发效果"], "枯草变瀑布": ["护发效果"], "养护": ["护发效果"],
+    
+    # ==================== 屏显调温 ====================
     "屏显": ["屏显调温"], "调温": ["屏显调温"], "温控": ["屏显调温"],
     "温度": ["屏显调温"], "显温": ["屏显调温"], "控温": ["屏显调温"],
-    # 吹发动作
+    "智能温控": ["屏显调温"], "智能恒温": ["屏显调温"],
+    "恒温": ["屏显调温"], "温档": ["屏显调温"],
+    "调节": ["屏显调温"], "5种风温": ["屏显调温"], "10种选择": ["屏显调温"],
+    "清清楚楚": ["屏显调温"],
+    
+    # ==================== 吹发动作 ====================
     "吹": ["吹发动作"], "吹干": ["吹发动作"], "吹发": ["吹发动作"],
     "干发": ["吹发动作"], "长头发": ["吹发动作"], "短头发": ["吹发动作"],
-    "头发": ["吹发动作", "护发效果"], "出门": ["吹发动作"],
-    # CTA促单
-    "下单": ["CTA促单", "价格促销"], "买": ["CTA促单", "价格促销"],
+    "头发": ["吹发动作", "护发效果"],
+    "快速干发": ["风力展示", "吹发动作"],
+    "快": ["风力展示", "吹发动作"],
+    
+    # ==================== CTA促单 ====================
+    "下单": ["CTA促单", "价格促销"], 
+    "赶紧": ["CTA促单"], "赶紧来": ["CTA促单"], "赶紧入手": ["CTA促单"],
+    "入手": ["CTA促单"], "闭眼入": ["CTA促单"], "闭眼冲": ["CTA促单"],
+    "必入": ["CTA促单"], "必买": ["CTA促单"], 
+    "试一试": ["CTA促单"], "一定要试": ["CTA促单"],
+    "想要的": ["CTA促单"], "就这一波": ["CTA促单"],
+    "冲": ["CTA促单", "价格促销"],
     "安排": ["CTA促单"], "必须": ["CTA促单"],
-    "姐妹": ["CTA促单"], "冲": ["CTA促单", "价格促销"],
+    "姐妹": ["CTA促单"],
     "闭眼": ["CTA促单"], "这波": ["CTA促单"],
-    # 赠品展示
-    "送": ["赠品展示", "价格促销"], "赠品": ["赠品展示"], "套装": ["赠品展示"],
-    "赠送": ["赠品展示"],
-    # 价格促销
+    "来吧": ["CTA促单"],
+    
+    # ==================== 价格促销 ====================
+    "买": ["价格促销", "CTA促单"],
     "价": ["价格促销"], "优惠": ["价格促销"], "促销": ["价格促销"],
     "性价比": ["价格促销", "CTA促单"],
-    # 风嘴配件
-    "风嘴": ["风嘴配件"], "造型": ["风嘴配件"], "喷嘴": ["风嘴配件"],
+    "福利": ["价格促销"], "活动": ["价格促销"],
+    "直降": ["价格促销"], "到手": ["价格促销"], "到手价": ["价格促销"],
+    "价格": ["价格促销"], "打到地板": ["价格促销"],
+    "再不买": ["价格促销", "CTA促单"], "真没了": ["价格促销", "CTA促单"],
+    
+    # ==================== 赠品展示 ====================
+    "送": ["赠品展示", "价格促销"], "赠品": ["赠品展示"], "套装": ["赠品展示"],
+    "赠送": ["赠品展示", "价格促销"], "买就送": ["赠品展示", "价格促销"],
+    "现在买": ["赠品展示", "价格促销"],
+    
+    # ==================== 风嘴配件 ====================
+    "风嘴": ["风嘴配件"], "造型风嘴": ["风嘴配件"], "磁吸风嘴": ["风嘴配件"],
+    "磁吸": ["风嘴配件"], "喷嘴": ["风嘴配件"], "配备": ["风嘴配件"],
+    "造型": ["风嘴配件"],
 }
 
 
@@ -150,9 +215,43 @@ def _generate_sentence_tag_mapping(
         
         if not matched_tags:
             is_low_confidence = True
-            # 兜底标签优先级：产品展示 > 手持大小对比 > 折叠动作 > 放进包包
-            # 注意：不包含"手持展示"，避免滥用
-            fallback_tags = ["产品展示", "手持大小对比", "折叠动作", "放进包包"]
+            
+            # 智能兜底：根据句子特征选择更安全的兜底标签
+            text_lower = sentence_text.lower()
+            
+            # 定义各类关键词
+            cta_keywords = ["赶紧", "来吧", "入手", "闭眼", "必入", "必买", "试一试", 
+                           "一定要", "想要的", "就这一波", "冲", "安排", "必须", "姐妹"]
+            price_keywords = ["福利", "活动", "直降", "到手", "价格", "优惠", "买就送",
+                             "现在买", "赠送", "送", "再不买", "真没了", "打到地板"]
+            pain_keywords = ["发愁", "风小", "伤发", "手累", "烫头皮", "真的会谢", 
+                            "会谢", "告别", "怕", "愁", "烦"]
+            travel_keywords = ["出差", "旅行", "旅游", "差旅", "出门", "随行", "随身",
+                              "行李箱", "箱子", "包包", "放包里", "放进包", "随便一塞",
+                              "边角", "缝隙", "不占空间", "不占地", "没负担"]
+            
+            # 1. CTA/促单类句子：包含号召性用语
+            if any(kw in text_lower for kw in cta_keywords):
+                fallback_tags = ["CTA促单", "价格促销"]
+            
+            # 2. 促销/价格类句子
+            elif any(kw in text_lower for kw in price_keywords):
+                fallback_tags = ["价格促销", "CTA促单"]
+            
+            # 3. 痛点/口语化句子
+            elif any(kw in text_lower for kw in pain_keywords):
+                fallback_tags = ["痛点共鸣", "护发效果"]
+            
+            # 4. 旅行/出门语境
+            elif any(kw in text_lower for kw in travel_keywords):
+                fallback_tags = ["旅行场景", "放进包包", "放进行李箱"]
+            
+            # 5. 产品介绍/泛化描述
+            else:
+                # 兜底标签优先级：产品展示 > 手持大小对比 > 折叠动作 > 放进包包
+                # 注意：不包含"手持展示"，避免滥用
+                fallback_tags = ["产品展示", "手持大小对比", "折叠动作", "放进包包",
+                                "价格促销", "CTA促单"]
             
             for tag in fallback_tags:
                 if tag in available_tags:
@@ -506,32 +605,90 @@ def material_matching_node(
                 selected = unused_with_score[0][0]
             repeated_reason = ""
         else:
-            # 素材已用完，需要复用
-            if is_short_sentence:
-                # 短句：优先复用时长较短的素材
-                short_candidates = [c for c in candidates if c.get("duration_sec", 3) <= 3]
-                if short_candidates:
-                    short_candidates_with_score = [
-                        (c, _calculate_material_score(c, sentence_text, True))
-                        for c in short_candidates
+            # 素材已用完，需要复用或扩展到相邻标签
+            # 首先尝试扩展到相邻安全标签
+            expanded_candidates = []
+            seen_expanded_ids = set(seen_material_ids)
+            
+            # 根据当前标签确定可扩展的相邻标签
+            current_tag = candidates[0]["primary_scene_tag"] if candidates else ""
+            expansion_tags = []
+            
+            if current_tag == "产品展示":
+                # 产品展示用完时，可扩展到：手持大小对比、折叠动作、放进包包、价格促销、CTA促单
+                expansion_tags = ["手持大小对比", "折叠动作", "放进包包", "价格促销", "CTA促单"]
+            elif current_tag in ["价格促销", "CTA促单"]:
+                # 促销/CTA用完时，可扩展到：产品展示
+                expansion_tags = ["产品展示"]
+            elif current_tag == "痛点共鸣":
+                # 痛点共鸣用完时，可扩展到：护发效果、旅行场景
+                expansion_tags = ["护发效果", "旅行场景"]
+            elif current_tag == "旅行场景":
+                # 旅行场景用完时，可扩展到：放进包包、放进行李箱
+                expansion_tags = ["放进包包", "放进行李箱"]
+            
+            # 从相邻标签收集中未使用的素材
+            for exp_tag in expansion_tags:
+                if exp_tag in tag_to_materials:
+                    for mat in tag_to_materials[exp_tag]:
+                        mid = mat["asset_id"]
+                        if mid not in seen_expanded_ids and mid not in used_material_ids:
+                            expanded_candidates.append(mat)
+                            seen_expanded_ids.add(mid)
+            
+            if expanded_candidates:
+                # 有未使用的相邻标签素材，从中选择
+                if is_short_sentence:
+                    short_expanded = [c for c in expanded_candidates if c.get("duration_sec", 3) <= 3]
+                    if short_expanded:
+                        short_expanded_with_score = [
+                            (c, _calculate_material_score(c, sentence_text, True))
+                            for c in short_expanded
+                        ]
+                        short_expanded_with_score.sort(key=lambda x: x[1], reverse=True)
+                        selected = short_expanded_with_score[0][0]
+                    else:
+                        expanded_with_score = [
+                            (c, _calculate_material_score(c, sentence_text, True))
+                            for c in expanded_candidates
+                        ]
+                        expanded_with_score.sort(key=lambda x: x[1], reverse=True)
+                        selected = expanded_with_score[0][0]
+                else:
+                    expanded_with_score = [
+                        (c, _calculate_material_score(c, sentence_text, False))
+                        for c in expanded_candidates
                     ]
-                    short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                    selected = short_candidates_with_score[0][0]
+                    expanded_with_score.sort(key=lambda x: x[1], reverse=True)
+                    selected = expanded_with_score[0][0]
+                repeated_reason = f"扩展到相邻标签: {current_tag} → {selected['primary_scene_tag']}"
+            else:
+                # 相邻标签也没有未使用的素材，只能复用
+                if is_short_sentence:
+                    # 短句：优先复用时长较短的素材
+                    short_candidates = [c for c in candidates if c.get("duration_sec", 3) <= 3]
+                    if short_candidates:
+                        short_candidates_with_score = [
+                            (c, _calculate_material_score(c, sentence_text, True))
+                            for c in short_candidates
+                        ]
+                        short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                        selected = short_candidates_with_score[0][0]
+                    else:
+                        candidates_with_score = [
+                            (c, _calculate_material_score(c, sentence_text, True))
+                            for c in candidates
+                        ] if candidates else [(all_materials[0], 0.0)]
+                        candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                        selected = candidates_with_score[0][0]
                 else:
                     candidates_with_score = [
-                        (c, _calculate_material_score(c, sentence_text, True))
+                        (c, _calculate_material_score(c, sentence_text, False))
                         for c in candidates
                     ] if candidates else [(all_materials[0], 0.0)]
                     candidates_with_score.sort(key=lambda x: x[1], reverse=True)
                     selected = candidates_with_score[0][0]
-            else:
-                candidates_with_score = [
-                    (c, _calculate_material_score(c, sentence_text, False))
-                    for c in candidates
-                ] if candidates else [(all_materials[0], 0.0)]
-                candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                selected = candidates_with_score[0][0]
-            repeated_reason = f"素材已用完，复用{selected['asset_id']}"
+                repeated_reason = f"素材已用完，复用{selected['asset_id']}"
 
         used_material_ids.add(selected["asset_id"])
 
