@@ -147,7 +147,21 @@ def final_composition_node(
         #    固定参数：白色字体，黑色描边，font_size=38, y=0.82
         #    禁止：crop, pad, drawbox, 等画面修改
         subbed_path = os.path.join(temp_dir, "subbed.mp4")
-        font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
+        
+        # 字体加载逻辑：优先使用项目 assets/Fonts 下的字体
+        # 常规字幕优先使用：assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF
+        # 如果不存在或加载失败，回退到系统字体
+        workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
+        preferred_font = os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF")
+        fallback_font = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
+        
+        if os.path.exists(preferred_font):
+            font_path = preferred_font
+            logger.info("[Node7] 使用项目字体: %s", font_path)
+        else:
+            font_path = fallback_font
+            logger.warning("[Node7] 项目字体不存在，回退到系统字体: %s", font_path)
+        
         margin_v = int(1920 * (1 - 0.82))  # ≈ 346, >= 180 ✓
 
         try:
@@ -236,6 +250,29 @@ def final_composition_node(
         bgm_trimmed_path = os.path.join(run_dir, "bgm_trimmed.wav")
         tts_normalized_path = os.path.join(run_dir, "tts_normalized.wav")
         mixed_audio_path = os.path.join(run_dir, "mixed_audio.wav")
+        
+        # BGM 默认选择逻辑：如果没有传 bgm_url，从 assets/bgm/ 下的 bgm_01.mp3 到 bgm_12.mp3 中选择一个
+        if not bgm_url:
+            bgm_dir = os.path.join(workspace_path, "assets/bgm")
+            if os.path.exists(bgm_dir):
+                bgm_files = [f for f in os.listdir(bgm_dir) if f.endswith('.mp3')]
+                if bgm_files:
+                    # 按 script_id 稳定选择（如果有的话），否则随机选择
+                    import hashlib
+                    script_id = state.script_id if hasattr(state, 'script_id') else ""
+                    if script_id:
+                        # 使用 script_id 的 hash 来选择 BGM
+                        hash_val = int(hashlib.md5(script_id.encode()).hexdigest(), 16)
+                        bgm_index = hash_val % len(bgm_files)
+                    else:
+                        import random
+                        bgm_index = random.randint(0, len(bgm_files) - 1)
+                    bgm_url = os.path.join(bgm_dir, sorted(bgm_files)[bgm_index])
+                    logger.info("[Node7] 未指定 bgm_url，自动选择: %s", bgm_url)
+                else:
+                    logger.warning("[Node7] assets/bgm/ 目录下没有 mp3 文件")
+            else:
+                logger.warning("[Node7] assets/bgm/ 目录不存在")
         
         if bgm_url:
             try:
