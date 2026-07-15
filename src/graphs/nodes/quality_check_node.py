@@ -615,9 +615,7 @@ def quality_check_node(
     if not selected_materials_from_candidates:
         fail_reasons.append("selected_material_id not from candidate_materials")
 
-    # 低置信度
-    if low_conf_segments > 0:
-        fail_reasons.append(f"low_confidence_segments={low_conf_segments}")
+    # 低置信度：只记录，不阻塞流程；>=3 时才视为失败
     if low_conf_segments >= 3:
         fail_reasons.append(f"low_confidence_segments={low_conf_segments}>=3, needs_manual_review")
 

@@ -141,30 +141,42 @@ def _generate_sentence_tag_mapping(
                     if tag in available_tags and tag not in matched_tags:
                         matched_tags.append(tag)
         
-        # 如果没有匹配到任何标签，使用默认标签（从 available_tags 中选择）
+        # 如果没有匹配到任何标签，标记为 low_confidence
+        # 不允许把"手持展示"作为默认兜底标签
+        # "手持展示"只能用于明确出现：手持、拿着、握持、单手、手里展示、拿在手里 等语义
+        is_low_confidence = False
+        fallback_reason = ""
+        candidate_tags = []
+        
         if not matched_tags:
-            # 根据句子特征选择默认标签
-            if duration < 1.5:
-                # 短句：优先选择手持展示或折叠动作
-                default_tags = ["手持展示", "折叠动作", "放进包包"]
-            else:
-                # 长句：优先选择旅行场景或痛点共鸣
-                default_tags = ["旅行场景", "痛点共鸣", "手持展示"]
+            is_low_confidence = True
+            # 兜底标签优先级：产品展示 > 手持大小对比 > 折叠动作 > 放进包包
+            # 注意：不包含"手持展示"，避免滥用
+            fallback_tags = ["产品展示", "手持大小对比", "折叠动作", "放进包包"]
             
-            for tag in default_tags:
+            for tag in fallback_tags:
                 if tag in available_tags:
                     matched_tags = [tag]
                     break
             
-            # 如果还是没有，选择 available_tags 中的第一个
+            # 如果还是没有，选择 available_tags 中的第一个（排除手持展示）
             if not matched_tags and available_tags:
-                matched_tags = [list(available_tags)[0]]
+                safe_tags = [t for t in available_tags if t != "手持展示"]
+                if safe_tags:
+                    matched_tags = [safe_tags[0]]
+                elif available_tags:
+                    matched_tags = [list(available_tags)[0]]
+            
+            fallback_reason = f"无关键词匹配，使用兜底标签: {matched_tags[0] if matched_tags else '无'}"
+            candidate_tags = [t for t in fallback_tags if t in available_tags]
         
         # 选择第一个匹配的标签作为 primary_scene_tag
         primary_tag = matched_tags[0] if matched_tags else ""
         
         # 构建匹配理由
-        if primary_tag:
+        if is_low_confidence:
+            reason = f"[LOW_CONFIDENCE] {fallback_reason}"
+        elif primary_tag:
             reason = f"关键词匹配: '{sentence_text[:20]}...' → {primary_tag}"
         else:
             reason = f"默认标签: '{sentence_text[:20]}...' → {primary_tag}"
@@ -175,7 +187,10 @@ def _generate_sentence_tag_mapping(
             "primary_scene_tag": primary_tag,
             "required_tags": matched_tags,  # 保留多个标签用于匹配
             "duration": duration,
-            "reason": reason
+            "reason": reason,
+            "low_confidence": is_low_confidence,
+            "fallback_reason": fallback_reason,
+            "candidate_tags": candidate_tags
         }
         mappings.append(mapping)
     
@@ -520,8 +535,18 @@ def material_matching_node(
 
         used_material_ids.add(selected["asset_id"])
 
+        # 获取 mapping 中的 low_confidence 标记
+        mapping_low_confidence = mapping.get("low_confidence", False)
+        mapping_fallback_reason = mapping.get("fallback_reason", "")
+        mapping_candidate_tags = mapping.get("candidate_tags", [])
+
         # 计算置信度
-        if tag_match_type == "exact":
+        # 如果 mapping 标记为 low_confidence（无关键词匹配触发兜底），则最终置信度为 low
+        if mapping_low_confidence:
+            match_confidence = "low"
+            match_score = 0.3
+            low_conf += 1
+        elif tag_match_type == "exact":
             match_confidence = "high"
             match_score = 1.0
             high_conf += 1
@@ -540,7 +565,9 @@ def material_matching_node(
                 low_conf += 1
 
         # 构建匹配理由
-        if tag_match_type == "exact":
+        if mapping_low_confidence:
+            match_reason = f"[LOW_CONFIDENCE] {mapping_fallback_reason}; 素材: {required_tags} → {selected['primary_scene_tag']}"
+        elif tag_match_type == "exact":
             match_reason = f"精确标签匹配: {required_tags} → {selected['primary_scene_tag']}"
         elif tag_match_type == "synonym":
             match_reason = f"同义标签匹配: {required_tags} → {selected['primary_scene_tag']}"
@@ -582,6 +609,9 @@ def material_matching_node(
             "match_reason": match_reason,
             "alternative_candidates": alt_candidates,
             "repeated_material_reason": repeated_reason,
+            "low_confidence": mapping_low_confidence,
+            "fallback_reason": mapping_fallback_reason,
+            "candidate_tags": mapping_candidate_tags,
         }
         selected_assets.append(entry)
 

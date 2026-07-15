@@ -8,7 +8,7 @@ Node0a: 文案来源路由
 """
 import os
 import glob
-import random
+import hashlib
 import logging
 from typing import List
 
@@ -26,19 +26,25 @@ RUNS_BASE = os.path.join(WORKSPACE, "runs")
 BGM_DIR = os.path.join(WORKSPACE, "assets", "bgm")
 
 
-def _select_random_bgm() -> str:
-    """从BGM目录中随机选择一个BGM文件"""
+def _select_bgm_stable(script_id: str) -> str:
+    """
+    从BGM目录中稳定选择一个BGM文件。
+    使用 script_id 的 MD5 hash 确保同一 script_id 总是选择相同的 BGM。
+    """
     if not os.path.exists(BGM_DIR):
         logger.warning(f"BGM目录不存在: {BGM_DIR}")
         return ""
     
-    bgm_files = glob.glob(os.path.join(BGM_DIR, "*.mp3"))
+    bgm_files = sorted(glob.glob(os.path.join(BGM_DIR, "*.mp3")))
     if not bgm_files:
         logger.warning(f"BGM目录中没有MP3文件: {BGM_DIR}")
         return ""
     
-    selected = random.choice(bgm_files)
-    logger.info(f"随机选择BGM: {os.path.basename(selected)}")
+    # 使用 script_id 的 MD5 hash 稳定选择
+    hash_digest = hashlib.md5(script_id.encode()).hexdigest()
+    index = int(hash_digest, 16) % len(bgm_files)
+    selected = bgm_files[index]
+    logger.info(f"稳定选择BGM (script_id={script_id}): {os.path.basename(selected)}")
     return selected
 
 
@@ -70,12 +76,12 @@ def script_source_router_node(
     if isinstance(csp, str):
         csp = [s.strip() for s in csp.split(",") if s.strip()]
 
-    # 处理BGM：如果没有指定，随机选择一个
+    # 处理BGM：如果没有指定，稳定选择一个
     bgm_url = state.bgm_url or ""
     if not bgm_url:
-        bgm_url = _select_random_bgm()
+        bgm_url = _select_bgm_stable(script_id)
         if bgm_url:
-            logger.info(f"未指定BGM，自动选择: {bgm_url}")
+            logger.info(f"未指定BGM，稳定选择: {bgm_url}")
 
     return ScriptSourceRouterOutput(
         script_source=script_source,
