@@ -56,7 +56,8 @@ _TAG_SEMANTIC_FALLBACK: Dict[str, List[str]] = {
     "风嘴配件": ["包装展示"],
 }
 
-# 关键词到标签的映射（用于自动标签生成）
+# 关键词到标签的映射（用于句子标签映射生成）
+# 注意：所有标签必须来自 asset_manifest_v2_clean.csv 中已存在的 primary_scene_tag
 _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     # 旅行场景
     "出差": ["旅行场景"], "旅行": ["旅行场景"], "出行": ["旅行场景"],
@@ -98,31 +99,78 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
 }
 
 
-def _generate_tags_from_text(text: str) -> List[str]:
+def _generate_sentence_tag_mapping(
+    timing: List[Dict[str, Any]], 
+    available_tags: Set[str]
+) -> List[Dict[str, Any]]:
     """
-    基于句子文本中的关键词自动生成语义标签。
-    返回匹配的标签列表（可能为空）。
+    为每条新文案生成句子标签映射。
+    只能从 available_tags（CSV中已存在的 primary_scene_tag 集合）中选择标签。
+    
+    Args:
+        timing: 分句结果，包含每句的text、duration等信息
+        available_tags: CSV中已存在的 primary_scene_tag 集合
+    
+    Returns:
+        句子标签映射列表，每条记录包含 sentence_id, sentence_text, primary_scene_tag, reason
     """
-    tags = []
-    text_lower = text.lower()
+    mappings = []
     
-    for keyword, keyword_tags in _KEYWORD_TO_TAG.items():
-        if keyword in text_lower:
-            for tag in keyword_tags:
-                if tag not in tags:
-                    tags.append(tag)
-    
-    # 如果没有匹配到任何标签，返回默认标签
-    if not tags:
-        # 根据句子长度和位置给出默认标签
-        if len(text) <= 3:
-            # 短句可能是强调或过渡，使用手持展示或折叠动作
-            tags = ["手持展示"]
+    for idx, shot in enumerate(timing):
+        sentence_id = shot.get("sentence_id", idx + 1)
+        sentence_text = shot.get("text", "")
+        duration = shot.get("duration", 3.0)
+        
+        # 基于关键词匹配标签
+        matched_tags = []
+        text_lower = sentence_text.lower()
+        
+        for keyword, keyword_tags in _KEYWORD_TO_TAG.items():
+            if keyword in text_lower:
+                for tag in keyword_tags:
+                    # 只保留 available_tags 中存在的标签
+                    if tag in available_tags and tag not in matched_tags:
+                        matched_tags.append(tag)
+        
+        # 如果没有匹配到任何标签，使用默认标签（从 available_tags 中选择）
+        if not matched_tags:
+            # 根据句子特征选择默认标签
+            if duration < 1.5:
+                # 短句：优先选择手持展示或折叠动作
+                default_tags = ["手持展示", "折叠动作", "放进包包"]
+            else:
+                # 长句：优先选择旅行场景或痛点共鸣
+                default_tags = ["旅行场景", "痛点共鸣", "手持展示"]
+            
+            for tag in default_tags:
+                if tag in available_tags:
+                    matched_tags = [tag]
+                    break
+            
+            # 如果还是没有，选择 available_tags 中的第一个
+            if not matched_tags and available_tags:
+                matched_tags = [list(available_tags)[0]]
+        
+        # 选择第一个匹配的标签作为 primary_scene_tag
+        primary_tag = matched_tags[0] if matched_tags else ""
+        
+        # 构建匹配理由
+        if primary_tag:
+            reason = f"关键词匹配: '{sentence_text[:20]}...' → {primary_tag}"
         else:
-            # 长句使用旅行场景或痛点共鸣作为默认
-            tags = ["旅行场景"]
+            reason = f"默认标签: '{sentence_text[:20]}...' → {primary_tag}"
+        
+        mapping = {
+            "sentence_id": sentence_id,
+            "sentence_text": sentence_text,
+            "primary_scene_tag": primary_tag,
+            "required_tags": matched_tags,  # 保留多个标签用于匹配
+            "duration": duration,
+            "reason": reason
+        }
+        mappings.append(mapping)
     
-    return tags
+    return mappings
 
 
 def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
@@ -154,6 +202,7 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
                 "s3_url": url,
                 "source_url": url,
                 "duration_sec": duration_sec,
+                "description": row.get("description", "").strip(),
                 "needs_clip": row.get("needs_clip", "").strip().lower() == 'true',
                 "notes": row.get("notes", "").strip(),
                 "batch": row.get("batch", "").strip(),
@@ -246,18 +295,26 @@ def material_matching_node(
     available_tags = set(tag_to_materials.keys())
     logger.info(f"可用标签: {sorted(available_tags)}")
 
-    # 4. 加载句子标签映射
+    # 4. 加载或生成句子标签映射
     mapping_path = os.path.join(run_dir, "sentence_tag_mapping.json")
-    if not os.path.exists(mapping_path):
-        # 尝试从项目根目录读取
-        mapping_path = os.path.join(
-            os.getenv("COZE_WORKSPACE_PATH", ""),
-            "assets",
-            "sentence_tag_mapping_script_02.json"
-        )
-
-    sentence_mappings = _load_sentence_tag_mapping(mapping_path)
-    mapping_file_used = os.path.basename(mapping_path) if os.path.exists(mapping_path) else ""
+    
+    if os.path.exists(mapping_path):
+        # 如果已存在，直接加载
+        sentence_mappings = _load_sentence_tag_mapping(mapping_path)
+        mapping_file_used = os.path.basename(mapping_path)
+        logger.info(f"句子标签映射: {len(sentence_mappings)} 条 (已存在)")
+    else:
+        # 如果不存在，基于 timing 自动生成
+        # 禁止回退到 assets/sentence_tag_mapping_script_02.json
+        logger.info("句子标签映射不存在，基于 timing 自动生成")
+        sentence_mappings = _generate_sentence_tag_mapping(state.timing, available_tags)
+        mapping_file_used = "auto_generated"
+        
+        # 保存生成的映射到 run_dir
+        with open(mapping_path, 'w', encoding='utf-8') as f:
+            json.dump(sentence_mappings, f, ensure_ascii=False, indent=2)
+        logger.info(f"已生成并保存句子标签映射: {mapping_path} ({len(sentence_mappings)} 条)")
+    
     logger.info(f"句子标签映射: {len(sentence_mappings)} 条")
 
     # 5. 执行匹配
@@ -334,16 +391,12 @@ def material_matching_node(
                     fallback_count += 1
                     semantic_fallback_used = True
                 else:
-                    # 阶段4: 完全无匹配，使用任何可用素材
-                    for mat in all_materials:
-                        mid = mat["asset_id"]
-                        if mid not in seen_material_ids:
-                            candidates.append(mat)
-                            seen_material_ids.add(mid)
-                    tag_match_type = "fallback"
-                    fallback_count += 1
-                    semantic_fallback_used = True
-                    mismatch_ids.append(sentence_id)
+                    # 阶段4: 完全无匹配，报告缺素材，不随便选择
+                    # 禁止"无匹配就随便选择未使用素材"
+                    logger.warning(f"句子 {sentence_id} '{sentence_text[:20]}...' 无匹配素材")
+                    unmatched_ids.append(sentence_id)
+                    # 不添加任何候选素材，跳过此句子
+                    continue
 
         # 计算匹配分数
         tag_overlap = 0
@@ -366,19 +419,67 @@ def material_matching_node(
         # 当句子时长较短（< 1.5秒）时，优先选择duration_sec较短的素材
         is_short_sentence = target_duration < 1.5
         
+        # 辅助函数：计算素材与句子的匹配分数
+        def _calculate_material_score(mat: Dict, sentence_text: str, is_short: bool) -> float:
+            """
+            计算素材与句子的匹配分数
+            - description 辅助匹配：description 中包含句子关键词则加分
+            - duration_sec 辅助匹配：短句优先短素材，长句优先长素材
+            """
+            score = 0.0
+            mat_desc = mat.get("description", "").lower()
+            mat_duration = mat.get("duration_sec", 3.0)
+            
+            # description 辅助匹配
+            # 检查 description 中是否包含句子中的关键词
+            for keyword in _KEYWORD_TO_TAG.keys():
+                if keyword in sentence_text.lower() and keyword in mat_desc:
+                    score += 0.3
+            
+            # duration_sec 辅助匹配
+            if is_short:
+                # 短句：优先选择时长较短的素材（1-3秒）
+                if mat_duration <= 3.0:
+                    score += 0.2
+                elif mat_duration <= 5.0:
+                    score += 0.1
+            else:
+                # 长句：优先选择时长较长的素材（5秒以上）
+                if mat_duration >= 5.0:
+                    score += 0.2
+                elif mat_duration >= 3.0:
+                    score += 0.1
+            
+            return score
+        
         if unused_candidates:
             if is_short_sentence:
                 # 短句：优先选择时长较短的素材（1-3秒）
                 short_candidates = [c for c in unused_candidates if c.get("duration_sec", 3) <= 3]
                 if short_candidates:
-                    # 从短素材中随机选择
-                    selected = random.choice(short_candidates)
+                    # 从短素材中选择分数最高的
+                    short_candidates_with_score = [
+                        (c, _calculate_material_score(c, sentence_text, True))
+                        for c in short_candidates
+                    ]
+                    short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                    selected = short_candidates_with_score[0][0]
                 else:
-                    # 没有短素材，从未使用的候选中随机选择
-                    selected = random.choice(unused_candidates)
+                    # 没有短素材，从未使用的候选中选择分数最高的
+                    unused_with_score = [
+                        (c, _calculate_material_score(c, sentence_text, True))
+                        for c in unused_candidates
+                    ]
+                    unused_with_score.sort(key=lambda x: x[1], reverse=True)
+                    selected = unused_with_score[0][0]
             else:
-                # 长句：从所有未使用的候选中随机选择
-                selected = random.choice(unused_candidates)
+                # 长句：从所有未使用的候选中选择分数最高的
+                unused_with_score = [
+                    (c, _calculate_material_score(c, sentence_text, False))
+                    for c in unused_candidates
+                ]
+                unused_with_score.sort(key=lambda x: x[1], reverse=True)
+                selected = unused_with_score[0][0]
             repeated_reason = ""
         else:
             # 素材已用完，需要复用
@@ -386,11 +487,26 @@ def material_matching_node(
                 # 短句：优先复用时长较短的素材
                 short_candidates = [c for c in candidates if c.get("duration_sec", 3) <= 3]
                 if short_candidates:
-                    selected = random.choice(short_candidates)
+                    short_candidates_with_score = [
+                        (c, _calculate_material_score(c, sentence_text, True))
+                        for c in short_candidates
+                    ]
+                    short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                    selected = short_candidates_with_score[0][0]
                 else:
-                    selected = random.choice(candidates) if candidates else all_materials[0]
+                    candidates_with_score = [
+                        (c, _calculate_material_score(c, sentence_text, True))
+                        for c in candidates
+                    ] if candidates else [(all_materials[0], 0.0)]
+                    candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                    selected = candidates_with_score[0][0]
             else:
-                selected = random.choice(candidates) if candidates else all_materials[0]
+                candidates_with_score = [
+                    (c, _calculate_material_score(c, sentence_text, False))
+                    for c in candidates
+                ] if candidates else [(all_materials[0], 0.0)]
+                candidates_with_score.sort(key=lambda x: x[1], reverse=True)
+                selected = candidates_with_score[0][0]
             repeated_reason = f"素材已用完，复用{selected['asset_id']}"
 
         used_material_ids.add(selected["asset_id"])
@@ -459,129 +575,6 @@ def material_matching_node(
             "repeated_material_reason": repeated_reason,
         }
         selected_assets.append(entry)
-
-    if not sentence_mappings:
-        # 如果没有映射文件，使用状态中的timing，并自动生成语义标签
-        logger.info("未找到句子标签映射，基于timing自动生成语义标签")
-        for idx, shot in enumerate(state.timing):
-            sentence_id = shot.get("sentence_id", idx + 1)
-            sentence_text = shot.get("text", "")
-            target_duration = shot.get("duration", 3.0)
-            
-            # 自动生成语义标签
-            required_tags = _generate_tags_from_text(sentence_text)
-            logger.debug(f"句子'{sentence_text[:20]}...'自动生成标签: {required_tags}")
-
-            # 构建候选素材列表
-            candidates = []
-            seen_material_ids_local = set()
-            tag_match_type = "fallback"
-            
-            # 阶段1: 精确标签匹配
-            for req_tag in required_tags:
-                if req_tag in tag_to_materials:
-                    for mat in tag_to_materials[req_tag]:
-                        mid = mat["asset_id"]
-                        if mid not in seen_material_ids_local:
-                            candidates.append(mat)
-                            seen_material_ids_local.add(mid)
-            
-            if candidates:
-                tag_match_type = "exact"
-                exact_count += 1
-                high_conf += 1
-            else:
-                # 阶段2: 同义标签匹配
-                for req_tag in required_tags:
-                    synonyms = _TAG_SYNONYMS.get(req_tag, [])
-                    for syn in synonyms:
-                        for tag, mats in tag_to_materials.items():
-                            if syn in tag or tag in syn:
-                                for mat in mats:
-                                    mid = mat["asset_id"]
-                                    if mid not in seen_material_ids_local:
-                                        candidates.append(mat)
-                                        seen_material_ids_local.add(mid)
-                
-                if candidates:
-                    tag_match_type = "synonym"
-                    synonym_count += 1
-                    medium_conf += 1
-                else:
-                    # 阶段3: 使用所有素材
-                    for mat in all_materials:
-                        mid = mat["asset_id"]
-                        if mid not in seen_material_ids_local:
-                            candidates.append(mat)
-                            seen_material_ids_local.add(mid)
-                    tag_match_type = "fallback"
-                    fallback_count += 1
-                    low_conf += 1
-
-            # 选择素材（使用相同的逻辑）
-            unused_candidates = [c for c in candidates if c["asset_id"] not in used_material_ids]
-            is_short_sentence = target_duration < 1.5
-            
-            if unused_candidates:
-                if is_short_sentence:
-                    short_candidates = [c for c in unused_candidates if c.get("duration_sec", 3) <= 3]
-                    if short_candidates:
-                        selected = random.choice(short_candidates)
-                    else:
-                        selected = random.choice(unused_candidates)
-                else:
-                    selected = random.choice(unused_candidates)
-                repeated_reason = ""
-            else:
-                if is_short_sentence:
-                    short_candidates = [c for c in candidates if c.get("duration_sec", 3) <= 3]
-                    if short_candidates:
-                        selected = random.choice(short_candidates)
-                    else:
-                        selected = random.choice(candidates) if candidates else all_materials[0]
-                else:
-                    selected = random.choice(candidates) if candidates else all_materials[0]
-                repeated_reason = f"素材已用完，复用{selected['asset_id']}"
-
-            used_material_ids.add(selected["asset_id"])
-
-            # 计算置信度
-            if tag_match_type == "exact":
-                match_confidence = "high"
-                match_score = 1.0
-            elif tag_match_type == "synonym":
-                match_confidence = "medium"
-                match_score = 0.7
-            else:
-                match_confidence = "low"
-                match_score = 0.3
-
-            match_reason = f"自动标签生成: '{sentence_text[:15]}...' → {required_tags} → {selected['primary_scene_tag']}"
-
-            entry = {
-                "sentence_id": sentence_id,
-                "sentence_text": sentence_text,
-                "required_tags": required_tags,
-                "candidate_materials": [
-                    {"material_id": c["asset_id"], "file_name": c["file_name"],
-                     "primary_scene_tag": c["primary_scene_tag"]}
-                    for c in candidates[:10]
-                ],
-                "selected_material_id": selected["asset_id"],
-                "selected_file_name": selected["file_name"],
-                "selected_primary_scene_tag": selected["primary_scene_tag"],
-                "selected_url": selected["s3_url"],
-                "tag_match_type": tag_match_type,
-                "tag_overlap": 0,
-                "synonym_overlap": 0,
-                "semantic_fallback_used": tag_match_type != "exact",
-                "match_score": match_score,
-                "match_confidence": match_confidence,
-                "match_reason": match_reason,
-                "alternative_candidates": [],
-                "repeated_material_reason": repeated_reason,
-            }
-            selected_assets.append(entry)
 
     # 6. 构建mapping_coverage
     covered_ids = set(e["sentence_id"] for e in selected_assets if e["tag_match_type"] in ("exact", "synonym"))
