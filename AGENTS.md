@@ -65,6 +65,8 @@ GraphInput → script_source_router
 - **BGM选择逻辑**: 使用MD5(script_id)稳定选择，同一script_id始终选择相同BGM（非随机）
 - **兜底素材策略**: 按句子类型选择安全标签（CTA促单/价格促销/痛点共鸣/旅行场景/放进包包/产品展示），禁止使用"手持展示"作为兜底标签
 - **兜底素材轮换**: 使用used_material_ids跟踪已使用素材，避免重复选择
+- **跨句视觉延续安全**: full_play_required素材跨句延续时，若clip时长不足以覆盖所有相邻句，回退只覆盖clip能实际覆盖的句子，确保视觉总时长=TTS总时长
+- **关键词字典**: ~160个关键词映射到标签，覆盖旅行/便携/痛点/小巧/手持/折叠/风力/护发/屏显/吹发/CTA/促销/赠品/风嘴/口语化种草表达
 - **资源文件**: `assets/asset_manifest_new_no_chuifa.csv`（73个无字幕原始素材，primary_scene_tag标签体系）
 - **标签映射文件**: `assets/sentence_tag_mapping_script_02.json`（19句文案到required_tags的精确映射）
 

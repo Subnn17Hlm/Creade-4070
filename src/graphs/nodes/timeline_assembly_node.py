@@ -151,6 +151,25 @@ def _apply_cross_sentence_continuation(
         # 计算实际需要覆盖的总TTS时长（当前句 + 被覆盖句）
         total_covered_tts = current_tts_duration + covered_duration
         
+        # 关键修复：如果clip实际时长 < 总覆盖TTS时长，说明clip不够长
+        # 需要回退，只覆盖clip能实际覆盖的句子
+        if clip_actual_duration < total_covered_tts - 0.05:
+            # 从后往前移除被覆盖的句子，直到clip能覆盖剩余的句子
+            while covered_sentence_indices and clip_actual_duration < total_covered_tts - 0.05:
+                removed_idx = covered_sentence_indices.pop()
+                removed_duration = timeline[removed_idx].get("duration", 0.0)
+                covered_duration -= removed_duration
+                total_covered_tts = current_tts_duration + covered_duration
+                logger.info(
+                    "[Node6] 素材 %s (句%d) clip时长不足，回退句%d (TTS=%.2fs)，剩余覆盖TTS=%.2fs",
+                    current_material, sid, timeline[removed_idx].get("sentence_id", removed_idx + 1),
+                    removed_duration, total_covered_tts
+                )
+            
+            if not covered_sentence_indices:
+                # 如果回退后没有可覆盖的句子，跳过
+                continue
+        
         # 如果clip实际时长 > 总覆盖TTS时长，裁剪clip到总覆盖TTS时长
         if clip_actual_duration > total_covered_tts + 0.05:
             trimmed_path = os.path.join(temp_dir, f"clip_trimmed_{sid}.mp4")
