@@ -1,10 +1,10 @@
 [
   {
     "sentence_id": 1,
-    "text": "Creade终于把高性能的风",
+    "text": "这款折叠吹风机",
     "start_time": 0.0,
-    "end_time": 2.301,
-    "duration": 2.486,
+    "end_time": 1.771,
+    "duration": 1.771,
     "selected_material_id": "产品展示_001",
     "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_001.mp4",
     "match_confidence": "low",
@@ -13,24 +13,14 @@
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 1,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 1,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 2,
-    "text": "装进超minni的机身里",
-    "start_time": 2.301,
-    "end_time": 4.29,
-    "duration": 2.142,
+    "text": "十一万转",
+    "start_time": 1.771,
+    "end_time": 2.836,
+    "duration": 1.065,
     "selected_material_id": "手持大小对比_001",
     "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_002.mp4",
     "match_confidence": "high",
@@ -39,394 +29,166 @@
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 2,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 2,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 3,
-    "text": "就是这款 随行折叠高速吹风机",
-    "start_time": 4.29,
-    "end_time": 5.19,
-    "duration": 2.528,
-    "selected_material_id": "折叠动作_001",
+    "text": "巴掌大",
+    "start_time": 2.836,
+    "end_time": 3.736,
+    "duration": 0.9,
+    "selected_material_id": "旅行场景_001",
     "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_003.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['旅行场景', '折叠动作', '风力展示', '吹发动作'] → 折叠动作",
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['旅行场景'] → 旅行场景",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 3,
-    "visual_group_merged": true,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 3,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      },
-      {
-        "sentence_id": 4,
-        "start": 1.0,
-        "end": 2.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
+  },
+  {
+    "sentence_id": 4,
+    "text": "放包里就走",
+    "start_time": 3.736,
+    "end_time": 5.037,
+    "duration": 1.3,
+    "selected_material_id": "旅行场景_001",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_004.mp4",
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['旅行场景'] → 旅行场景",
+    "semantic_tags": [],
+    "visual_intent": "",
+    "cross_sentence_continuation": false,
+    "visual_continuation_from": null,
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 5,
-    "text": "现在上新福利",
-    "start_time": 5.19,
-    "end_time": 6.712,
-    "duration": 1.113,
-    "selected_material_id": "价格促销_001",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_004.mp4",
+    "text": "0.3秒出风",
+    "start_time": 5.037,
+    "end_time": 6.573,
+    "duration": 1.536,
+    "selected_material_id": "价格促销_003",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_005.mp4",
     "match_confidence": "high",
     "match_reason": "精确标签匹配: ['价格促销'] → 价格促销",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 4,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 5,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 6,
-    "text": "买就送牛皮收纳包",
-    "start_time": 6.712,
-    "end_time": 7.766,
-    "duration": 1.456,
-    "selected_material_id": "放进包包_006",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_005.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['折叠动作', '放进包包', '价格促销', 'CTA促单', '赠品展示'] → 放进包包",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 5,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 6,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 7,
-    "text": "巴掌大小",
-    "start_time": 7.766,
-    "end_time": 9.132,
-    "duration": 0.9,
-    "selected_material_id": "手持大小对比_002",
+    "text": "三档风速",
+    "start_time": 6.573,
+    "end_time": 7.638,
+    "duration": 1.065,
+    "selected_material_id": "折叠动作_001",
     "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_006.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 6,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 7,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 8,
-    "text": "还能折叠",
-    "start_time": 9.132,
-    "end_time": 10.032,
-    "duration": 0.9,
-    "selected_material_id": "折叠动作_002",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_007.mp4",
     "match_confidence": "high",
     "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 7,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 8,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
   },
   {
-    "sentence_id": 9,
-    "text": "出差旅行 随身携带也没负担",
-    "start_time": 10.032,
-    "end_time": 10.932,
-    "duration": 2.356,
-    "selected_material_id": "旅行场景_001",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_008.mp4",
+    "sentence_id": 7,
+    "text": "双风道",
+    "start_time": 7.638,
+    "end_time": 8.538,
+    "duration": 0.9,
+    "selected_material_id": "手持大小对比_002",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_007.mp4",
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['旅行场景', '放进包包'] → 旅行场景",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 8,
-    "visual_group_merged": true,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 9,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      },
-      {
-        "sentence_id": 10,
-        "start": 1.0,
-        "end": 2.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
+  },
+  {
+    "sentence_id": 8,
+    "text": "干发快",
+    "start_time": 8.538,
+    "end_time": 9.438,
+    "duration": 0.9,
+    "selected_material_id": "折叠动作_002",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_008.mp4",
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作",
+    "semantic_tags": [],
+    "visual_intent": "",
+    "cross_sentence_continuation": false,
+    "visual_continuation_from": null,
+    "visual_continuation_asset_id": ""
+  },
+  {
+    "sentence_id": 9,
+    "text": "负离子",
+    "start_time": 9.438,
+    "end_time": 10.338,
+    "duration": 0.9,
+    "selected_material_id": "旅行场景_002",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_009.mp4",
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "semantic_tags": [],
+    "visual_intent": "",
+    "cross_sentence_continuation": false,
+    "visual_continuation_from": null,
+    "visual_continuation_asset_id": ""
+  },
+  {
+    "sentence_id": 10,
+    "text": "护发顺",
+    "start_time": 10.338,
+    "end_time": 11.238,
+    "duration": 0.9,
+    "selected_material_id": "旅行场景_003",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_010.mp4",
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "semantic_tags": [],
+    "visual_intent": "",
+    "cross_sentence_continuation": false,
+    "visual_continuation_from": null,
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 11,
-    "text": "超高速强劲马达",
-    "start_time": 10.932,
-    "end_time": 11.832,
-    "duration": 1.284,
+    "text": "折叠设计",
+    "start_time": 11.238,
+    "end_time": 12.303,
+    "duration": 1.065,
     "selected_material_id": "风力展示_001",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_009.mp4",
+    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_011.mp4",
     "match_confidence": "high",
     "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 9,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 11,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
+    "visual_continuation_asset_id": ""
   },
   {
     "sentence_id": 12,
-    "text": "快速干发不伤发",
-    "start_time": 11.832,
-    "end_time": 13.198,
-    "duration": 1.284,
+    "text": "真的方便",
+    "start_time": 12.303,
+    "end_time": 13.368,
+    "duration": 1.065,
     "selected_material_id": "风力展示_005",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_010.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['风力展示', '护发效果', '吹发动作'] → 风力展示",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 10,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 12,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 13,
-    "text": "升级屏显",
-    "start_time": 13.198,
-    "end_time": 14.408,
-    "duration": 0.9,
-    "selected_material_id": "屏显调温_008",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_011.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 11,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 13,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 14,
-    "text": "温度看的见",
-    "start_time": 14.408,
-    "end_time": 15.619,
-    "duration": 0.941,
-    "selected_material_id": "屏显调温_003",
     "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_012.mp4",
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
     "semantic_tags": [],
     "visual_intent": "",
     "cross_sentence_continuation": false,
     "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 12,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 14,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 15,
-    "text": "智能温控技术",
-    "start_time": 15.619,
-    "end_time": 16.519,
-    "duration": 1.113,
-    "selected_material_id": "屏显调温_001",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_013.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 13,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 15,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 16,
-    "text": "保护头发强韧水润",
-    "start_time": 16.519,
-    "end_time": 17.419,
-    "duration": 1.456,
-    "selected_material_id": "护发效果_006",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_014.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['护发效果', '吹发动作'] → 护发效果",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 14,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 16,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 17,
-    "text": "趁着现在活动",
-    "start_time": 17.419,
-    "end_time": 18.473,
-    "duration": 1.113,
-    "selected_material_id": "价格促销_002",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_015.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['价格促销'] → 价格促销",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 15,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 17,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ]
-  },
-  {
-    "sentence_id": 18,
-    "text": "想要的赶紧来吧",
-    "start_time": 18.473,
-    "end_time": 19.839,
-    "duration": 1.284,
-    "selected_material_id": "CTA促单_001",
-    "clip_path": "/workspace/projects/runs/visual_opt_01/temp/clip_016.mp4",
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['CTA促单'] → CTA促单",
-    "semantic_tags": [],
-    "visual_intent": "",
-    "cross_sentence_continuation": false,
-    "visual_continuation_from": null,
-    "visual_continuation_asset_id": "",
-    "visual_group_id": 16,
-    "visual_group_merged": false,
-    "subtitle_start_end_list": [
-      {
-        "sentence_id": 18,
-        "start": 0,
-        "end": 1.0,
-        "duration": 1.0
-      }
-    ],
-    "end_hold_sec": 1.0,
-    "end_hold_eligible": true
+    "visual_continuation_asset_id": ""
   }
 ]

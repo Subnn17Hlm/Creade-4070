@@ -66,6 +66,8 @@ GraphInput → script_source_router
 - **兜底素材策略**: 按句子类型选择安全标签（CTA促单/价格促销/痛点共鸣/旅行场景/放进包包/产品展示），禁止使用"手持展示"作为兜底标签
 - **兜底素材轮换**: 使用used_material_ids跟踪已使用素材，避免重复选择
 - **跨句视觉延续安全**: full_play_required素材跨句延续时，若clip时长不足以覆盖所有相邻句，回退只覆盖clip能实际覆盖的句子，确保视觉总时长=TTS总时长
+- **Visual Grouping (短句视觉合并)**: 字数<=5或TTS<0.9秒的短句，若语义不完整且无明确独立卖点标签，且单独时长<1.2秒，则与下一句合并为一个视觉组。强语义短句（如"巴掌大"、"十一万转"等）禁止合并。输出visual_grouping_report.json
+- **End Hold (结尾画面停留)**: 视频结尾画面延长1秒(end_hold_sec)，TTS不延长。最终视频时长 = TTS时长 + end_hold_sec。使用FFmpeg tpad滤镜实现
 - **关键词字典**: ~160个关键词映射到标签，覆盖旅行/便携/痛点/小巧/手持/折叠/风力/护发/屏显/吹发/CTA/促销/赠品/风嘴/口语化种草表达
 - **资源文件**: `assets/asset_manifest_new_no_chuifa.csv`（73个无字幕原始素材，primary_scene_tag标签体系）
 - **标签映射文件**: `assets/sentence_tag_mapping_script_02.json`（19句文案到required_tags的精确映射）
@@ -104,6 +106,10 @@ GraphInput → script_source_router
     - `medium_confidence_segments`: 中置信度段落数
     - `low_confidence_segments`: 低置信度段落数
     - `semantic_mismatch_segments`: 语义不匹配段落ID
+14. **视觉优化验收**：
+    - `body_sync_diff`: 主体同步差异 = |video_duration - audio_duration - end_hold_sec|，应 < 0.5s
+    - `end_hold_sec`: 结尾停留时长，应为0.5~2.0s（默认1.0s）
+    - `visual_grouping_report.json`: 视觉分组报告，记录短句合并情况
 
 ### 运行目录结构 (runs/script_{id}/)
 ```
@@ -119,6 +125,7 @@ timing_debug.json
 subtitles.srt
 selected_assets.json
 semantic_match_report.json
+visual_grouping_report.json  (视觉分组报告)
 clipped_assets.json
 clip_extract_report.json
 timeline.json
@@ -126,5 +133,6 @@ final.mp4
 contact_sheet.jpg
 quality_report.json
 material_source_audit.json
+end_hold_meta.json  (结尾停留元数据)
 temp/  (中间临时文件)
 ```

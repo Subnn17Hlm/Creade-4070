@@ -2,6 +2,19 @@
   {
     "sentence_id": 1,
     "sentence_text": "Creade终于把高性能的风",
+    "visual_group_id": 1,
+    "visual_group_sentence_ids": [
+      1
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.771
+    ],
+    "visual_group_total_duration": 1.771,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "产品展示"
     ],
@@ -89,22 +102,30 @@
     "low_confidence": true,
     "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
     "candidate_tags": [
-      "产品展示"
-    ],
-    "visual_group_id": 1,
-    "visual_group_sentence_ids": [
-      1
-    ],
-    "visual_group_sentence_texts": [
-      "Creade终于把高性能的风"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 2.486
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包",
+      "价格促销",
+      "CTA促单"
+    ]
   },
   {
     "sentence_id": 2,
     "sentence_text": "装进超minni的机身里",
+    "visual_group_id": 2,
+    "visual_group_sentence_ids": [
+      2
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.065
+    ],
+    "visual_group_total_duration": 1.065,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "手持大小对比"
     ],
@@ -196,28 +217,29 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "手持大小对比"
-    ],
-    "visual_group_id": 2,
-    "visual_group_sentence_ids": [
-      2
-    ],
-    "visual_group_sentence_texts": [
-      "装进超minni的机身里"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 2.142
+    "candidate_tags": []
   },
   {
-    "sentence_id": 3,
-    "sentence_text": "就是这款 随行折叠高速吹风机",
+    "sentence_id": 4,
+    "sentence_text": "就是这款",
+    "visual_group_id": 3,
+    "visual_group_sentence_ids": [
+      3,
+      4
+    ],
+    "visual_group_texts": [
+      "",
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.9,
+      1.3
+    ],
+    "visual_group_total_duration": 2.2,
+    "visual_group_merged": true,
+    "visual_group_merge_reason": "短句'就是这款...'(4字/0.90s)合并到下一句",
     "required_tags": [
-      "旅行场景",
-      "折叠动作",
-      "风力展示",
-      "吹发动作"
+      "旅行场景"
     ],
     "candidate_materials": [
       {
@@ -271,17 +293,17 @@
         "primary_scene_tag": "旅行场景"
       }
     ],
-    "selected_material_id": "折叠动作_001",
-    "selected_file_name": "折叠动作_001_折叠收起_3s.mp4",
-    "selected_primary_scene_tag": "折叠动作",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_001_%E6%8A%98%E5%8F%A0%E6%94%B6%E8%B5%B7_3s.mp4",
+    "selected_material_id": "旅行场景_001",
+    "selected_file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_001_%E6%8E%A8%E9%97%A8%E8%BF%9B%E9%85%92%E5%BA%97%E5%AE%A2%E6%88%BF_4s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
-    "synonym_overlap": 4,
+    "synonym_overlap": 1,
     "semantic_fallback_used": false,
-    "match_score": 1.0,
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['旅行场景', '折叠动作', '风力展示', '吹发动作'] → 折叠动作",
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['旅行场景'] → 旅行场景",
     "alternative_candidates": [
       {
         "material_id": "旅行场景_001",
@@ -310,30 +332,33 @@
       }
     ],
     "repeated_material_reason": "",
-    "low_confidence": false,
+    "low_confidence": true,
     "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
     "candidate_tags": [
-      "旅行场景",
+      "产品展示",
+      "手持大小对比",
       "折叠动作",
-      "风力展示",
-      "吹发动作"
-    ],
-    "visual_group_id": 3,
-    "visual_group_sentence_ids": [
-      3,
-      4
-    ],
-    "visual_group_sentence_texts": [
-      "就是这款",
-      "随行折叠高速吹风机"
-    ],
-    "visual_group_merged": true,
-    "visual_group_merge_reason": "短句'就是这款'(时长0.90s)合并到下一句'随行折叠高速吹风机...'",
-    "visual_group_total_duration": 2.528
+      "放进包包",
+      "价格促销",
+      "CTA促单"
+    ]
   },
   {
     "sentence_id": 5,
     "sentence_text": "现在上新福利",
+    "visual_group_id": 4,
+    "visual_group_sentence_ids": [
+      5
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.536
+    ],
+    "visual_group_total_duration": 1.536,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "价格促销"
     ],
@@ -359,10 +384,10 @@
         "primary_scene_tag": "价格促销"
       }
     ],
-    "selected_material_id": "价格促销_001",
-    "selected_file_name": "价格促销_001_搭配促销权益_2s.mp4",
+    "selected_material_id": "价格促销_003",
+    "selected_file_name": "价格促销_003_包装展示特效_3s.mp4",
     "selected_primary_scene_tag": "价格促销",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_001_%E6%90%AD%E9%85%8D%E4%BF%83%E9%94%80%E6%9D%83%E7%9B%8A_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_003_%E5%8C%85%E8%A3%85%E5%B1%95%E7%A4%BA%E7%89%B9%E6%95%88_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -395,29 +420,26 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "价格促销"
-    ],
-    "visual_group_id": 4,
-    "visual_group_sentence_ids": [
-      5
-    ],
-    "visual_group_sentence_texts": [
-      "现在上新福利"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.113
+    "candidate_tags": []
   },
   {
     "sentence_id": 6,
     "sentence_text": "买就送牛皮收纳包",
+    "visual_group_id": 5,
+    "visual_group_sentence_ids": [
+      6
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.065
+    ],
+    "visual_group_total_duration": 1.065,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
-      "折叠动作",
-      "放进包包",
-      "价格促销",
-      "CTA促单",
-      "赠品展示"
+      "折叠动作"
     ],
     "candidate_materials": [
       {
@@ -444,44 +466,19 @@
         "material_id": "折叠动作_005",
         "file_name": "折叠动作_005_单手折叠_2s.mp4",
         "primary_scene_tag": "折叠动作"
-      },
-      {
-        "material_id": "放进包包_001",
-        "file_name": "放进包包_001_放入特写_2s.mp4",
-        "primary_scene_tag": "放进包包"
-      },
-      {
-        "material_id": "放进包包_002",
-        "file_name": "放进包包_002_放入特写_2s.mp4",
-        "primary_scene_tag": "放进包包"
-      },
-      {
-        "material_id": "放进包包_003",
-        "file_name": "放进包包_003_过肩俯拍放入动作_2s.mp4",
-        "primary_scene_tag": "放进包包"
-      },
-      {
-        "material_id": "放进包包_004",
-        "file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
-        "primary_scene_tag": "放进包包"
-      },
-      {
-        "material_id": "放进包包_005",
-        "file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
-        "primary_scene_tag": "放进包包"
       }
     ],
-    "selected_material_id": "放进包包_006",
-    "selected_file_name": "放进包包_006_特写打开收纳袋切拿出吹风机_3s.mp4",
-    "selected_primary_scene_tag": "放进包包",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_006_%E7%89%B9%E5%86%99%E6%89%93%E5%BC%80%E6%94%B6%E7%BA%B3%E8%A2%8B%E5%88%87%E6%8B%BF%E5%87%BA%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "selected_material_id": "折叠动作_001",
+    "selected_file_name": "折叠动作_001_折叠收起_3s.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_001_%E6%8A%98%E5%8F%A0%E6%94%B6%E8%B5%B7_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
-    "synonym_overlap": 5,
+    "synonym_overlap": 1,
     "semantic_fallback_used": false,
     "match_score": 1.0,
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['折叠动作', '放进包包', '价格促销', 'CTA促单', '赠品展示'] → 放进包包",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作",
     "alternative_candidates": [
       {
         "material_id": "折叠动作_001",
@@ -512,27 +509,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "折叠动作",
-      "放进包包",
-      "价格促销",
-      "CTA促单",
-      "赠品展示"
-    ],
-    "visual_group_id": 5,
-    "visual_group_sentence_ids": [
-      6
-    ],
-    "visual_group_sentence_texts": [
-      "买就送牛皮收纳包"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.456
+    "candidate_tags": []
   },
   {
     "sentence_id": 7,
     "sentence_text": "巴掌大小",
+    "visual_group_id": 6,
+    "visual_group_sentence_ids": [
+      7
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.9
+    ],
+    "visual_group_total_duration": 0.9,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "手持大小对比"
     ],
@@ -624,23 +618,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "手持大小对比"
-    ],
-    "visual_group_id": 6,
-    "visual_group_sentence_ids": [
-      7
-    ],
-    "visual_group_sentence_texts": [
-      "巴掌大小"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 0.9
+    "candidate_tags": []
   },
   {
     "sentence_id": 8,
     "sentence_text": "还能折叠",
+    "visual_group_id": 7,
+    "visual_group_sentence_ids": [
+      8
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.9
+    ],
+    "visual_group_total_duration": 0.9,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "折叠动作"
     ],
@@ -712,26 +707,26 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "折叠动作"
-    ],
-    "visual_group_id": 7,
-    "visual_group_sentence_ids": [
-      8
-    ],
-    "visual_group_sentence_texts": [
-      "还能折叠"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 0.9
+    "candidate_tags": []
   },
   {
     "sentence_id": 9,
-    "sentence_text": "出差旅行 随身携带也没负担",
+    "sentence_text": "出差旅行",
+    "visual_group_id": 8,
+    "visual_group_sentence_ids": [
+      9
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.9
+    ],
+    "visual_group_total_duration": 0.9,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
-      "旅行场景",
-      "放进包包"
+      "旅行场景"
     ],
     "candidate_materials": [
       {
@@ -785,17 +780,17 @@
         "primary_scene_tag": "旅行场景"
       }
     ],
-    "selected_material_id": "旅行场景_001",
-    "selected_file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+    "selected_material_id": "旅行场景_002",
+    "selected_file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
     "selected_primary_scene_tag": "旅行场景",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_001_%E6%8E%A8%E9%97%A8%E8%BF%9B%E9%85%92%E5%BA%97%E5%AE%A2%E6%88%BF_4s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_002_%E6%8E%A8%E7%AE%B1%E5%AD%90%E8%BF%87%E9%85%92%E5%BA%97%E5%A4%A7%E5%A0%82_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
-    "synonym_overlap": 2,
+    "synonym_overlap": 1,
     "semantic_fallback_used": false,
     "match_score": 1.0,
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['旅行场景', '放进包包'] → 旅行场景",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
     "alternative_candidates": [
       {
         "material_id": "旅行场景_001",
@@ -826,26 +821,138 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "旅行场景",
-      "放进包包"
-    ],
-    "visual_group_id": 8,
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "随身携带也没负担",
+    "visual_group_id": 9,
     "visual_group_sentence_ids": [
-      9,
       10
     ],
-    "visual_group_sentence_texts": [
-      "出差旅行",
-      "随身携带也没负担"
+    "visual_group_texts": [
+      ""
     ],
-    "visual_group_merged": true,
-    "visual_group_merge_reason": "短句'出差旅行'(时长0.90s)合并到下一句'随身携带也没负担...'",
-    "visual_group_total_duration": 2.356
+    "visual_group_sentence_durations": [
+      0.9
+    ],
+    "visual_group_total_duration": 0.9,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_006",
+        "file_name": "旅行场景_006_客房环绕到门口_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_007",
+        "file_name": "旅行场景_007_进酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_008",
+        "file_name": "旅行场景_008_酒店大堂看书_2s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_009",
+        "file_name": "旅行场景_009_机场行人_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_010",
+        "file_name": "旅行场景_010_健身房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "旅行场景_003",
+    "selected_file_name": "旅行场景_003_酒店走廊_3s.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_003_%E9%85%92%E5%BA%97%E8%B5%B0%E5%BB%8A_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "alternative_candidates": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
   },
   {
     "sentence_id": 11,
     "sentence_text": "超高速强劲马达",
+    "visual_group_id": 10,
+    "visual_group_sentence_ids": [
+      11
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.065
+    ],
+    "visual_group_total_duration": 1.065,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "风力展示"
     ],
@@ -922,27 +1029,26 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "风力展示"
-    ],
-    "visual_group_id": 9,
-    "visual_group_sentence_ids": [
-      11
-    ],
-    "visual_group_sentence_texts": [
-      "超高速强劲马达"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.284
+    "candidate_tags": []
   },
   {
     "sentence_id": 12,
     "sentence_text": "快速干发不伤发",
+    "visual_group_id": 11,
+    "visual_group_sentence_ids": [
+      12
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.065
+    ],
+    "visual_group_total_duration": 1.065,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
-      "风力展示",
-      "护发效果",
-      "吹发动作"
+      "风力展示"
     ],
     "candidate_materials": [
       {
@@ -974,26 +1080,6 @@
         "material_id": "风力展示_006",
         "file_name": "风力展示_006_远景切特写_2s.mp4",
         "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "护发效果_001",
-        "file_name": "护发效果_001_半身中景_4s.mp4",
-        "primary_scene_tag": "护发效果"
-      },
-      {
-        "material_id": "护发效果_002",
-        "file_name": "护发效果_002_坐着摸发尾_4s.mp4",
-        "primary_scene_tag": "护发效果"
-      },
-      {
-        "material_id": "护发效果_003",
-        "file_name": "护发效果_003_对镜背面展示柔顺_3s.mp4",
-        "primary_scene_tag": "护发效果"
-      },
-      {
-        "material_id": "护发效果_004",
-        "file_name": "护发效果_004_对镜美好展示_2s.mp4",
-        "primary_scene_tag": "护发效果"
       }
     ],
     "selected_material_id": "风力展示_005",
@@ -1002,11 +1088,11 @@
     "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_005_%E5%90%B9%E4%B8%9D%E5%B8%A6_2s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
-    "synonym_overlap": 3,
+    "synonym_overlap": 1,
     "semantic_fallback_used": false,
     "match_score": 1.0,
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['风力展示', '护发效果', '吹发动作'] → 风力展示",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
     "alternative_candidates": [
       {
         "material_id": "风力展示_001",
@@ -1037,25 +1123,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "风力展示",
-      "护发效果",
-      "吹发动作"
-    ],
-    "visual_group_id": 10,
-    "visual_group_sentence_ids": [
-      12
-    ],
-    "visual_group_sentence_texts": [
-      "快速干发不伤发"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.284
+    "candidate_tags": []
   },
   {
     "sentence_id": 13,
     "sentence_text": "升级屏显",
+    "visual_group_id": 12,
+    "visual_group_sentence_ids": [
+      13
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.9
+    ],
+    "visual_group_total_duration": 0.9,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "屏显调温"
     ],
@@ -1147,23 +1232,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "屏显调温"
-    ],
-    "visual_group_id": 11,
-    "visual_group_sentence_ids": [
-      13
-    ],
-    "visual_group_sentence_texts": [
-      "升级屏显"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 0.9
+    "candidate_tags": []
   },
   {
     "sentence_id": 14,
     "sentence_text": "温度看的见",
+    "visual_group_id": 13,
+    "visual_group_sentence_ids": [
+      14
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      0.941
+    ],
+    "visual_group_total_duration": 0.941,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "屏显调温"
     ],
@@ -1255,23 +1341,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "屏显调温"
-    ],
-    "visual_group_id": 12,
-    "visual_group_sentence_ids": [
-      14
-    ],
-    "visual_group_sentence_texts": [
-      "温度看的见"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 0.941
+    "candidate_tags": []
   },
   {
     "sentence_id": 15,
     "sentence_text": "智能温控技术",
+    "visual_group_id": 14,
+    "visual_group_sentence_ids": [
+      15
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.113
+    ],
+    "visual_group_total_duration": 1.113,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "屏显调温"
     ],
@@ -1363,26 +1450,26 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "屏显调温"
-    ],
-    "visual_group_id": 13,
-    "visual_group_sentence_ids": [
-      15
-    ],
-    "visual_group_sentence_texts": [
-      "智能温控技术"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.113
+    "candidate_tags": []
   },
   {
     "sentence_id": 16,
     "sentence_text": "保护头发强韧水润",
+    "visual_group_id": 15,
+    "visual_group_sentence_ids": [
+      16
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.456
+    ],
+    "visual_group_total_duration": 1.456,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
-      "护发效果",
-      "吹发动作"
+      "护发效果"
     ],
     "candidate_materials": [
       {
@@ -1442,11 +1529,11 @@
     "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_006_%E5%9D%90%E5%BA%8A%E8%BE%B9%E8%83%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E5%A4%B4%E5%8F%91%E6%9F%94%E9%A1%BA_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
-    "synonym_overlap": 2,
+    "synonym_overlap": 1,
     "semantic_fallback_used": false,
     "match_score": 1.0,
     "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['护发效果', '吹发动作'] → 护发效果",
+    "match_reason": "精确标签匹配: ['护发效果'] → 护发效果",
     "alternative_candidates": [
       {
         "material_id": "护发效果_001",
@@ -1477,24 +1564,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "护发效果",
-      "吹发动作"
-    ],
-    "visual_group_id": 14,
-    "visual_group_sentence_ids": [
-      16
-    ],
-    "visual_group_sentence_texts": [
-      "保护头发强韧水润"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.456
+    "candidate_tags": []
   },
   {
     "sentence_id": 17,
     "sentence_text": "趁着现在活动",
+    "visual_group_id": 16,
+    "visual_group_sentence_ids": [
+      17
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.113
+    ],
+    "visual_group_total_duration": 1.113,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "价格促销"
     ],
@@ -1520,10 +1607,10 @@
         "primary_scene_tag": "价格促销"
       }
     ],
-    "selected_material_id": "价格促销_002",
-    "selected_file_name": "价格促销_002_全物品展示_2s.mp4",
+    "selected_material_id": "价格促销_001",
+    "selected_file_name": "价格促销_001_搭配促销权益_2s.mp4",
     "selected_primary_scene_tag": "价格促销",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_002_%E5%85%A8%E7%89%A9%E5%93%81%E5%B1%95%E7%A4%BA_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_001_%E6%90%AD%E9%85%8D%E4%BF%83%E9%94%80%E6%9D%83%E7%9B%8A_2s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -1556,23 +1643,24 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "价格促销"
-    ],
-    "visual_group_id": 15,
-    "visual_group_sentence_ids": [
-      17
-    ],
-    "visual_group_sentence_texts": [
-      "趁着现在活动"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.113
+    "candidate_tags": []
   },
   {
     "sentence_id": 18,
     "sentence_text": "想要的赶紧来吧",
+    "visual_group_id": 17,
+    "visual_group_sentence_ids": [
+      18
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.284
+    ],
+    "visual_group_total_duration": 1.284,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "CTA促单"
     ],
@@ -1634,18 +1722,6 @@
     "repeated_material_reason": "",
     "low_confidence": false,
     "fallback_reason": "",
-    "candidate_tags": [
-      "CTA促单"
-    ],
-    "visual_group_id": 16,
-    "visual_group_sentence_ids": [
-      18
-    ],
-    "visual_group_sentence_texts": [
-      "想要的赶紧来吧"
-    ],
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "visual_group_total_duration": 1.284
+    "candidate_tags": []
   }
 ]

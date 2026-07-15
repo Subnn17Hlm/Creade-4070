@@ -8,18 +8,17 @@
       "Creade终于把高性能的风"
     ],
     "original_sentence_durations": [
-      2.486
+      1.771
     ],
-    "total_duration": 2.486,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "产品展示",
-    "required_tags": [
-      "产品展示"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "产品展示",
+    "selected_asset_id": "产品展示_001",
+    "selected_asset_file": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+    "total_duration": 1.771,
     "low_confidence": true,
-    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示"
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示"
   },
   {
     "group_id": 2,
@@ -30,18 +29,17 @@
       "装进超minni的机身里"
     ],
     "original_sentence_durations": [
-      2.142
+      1.065
     ],
-    "total_duration": 2.142,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "手持大小对比",
-    "required_tags": [
-      "手持大小对比"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_001",
+    "selected_asset_file": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "total_duration": 1.065,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
   },
   {
     "group_id": 3,
@@ -50,26 +48,21 @@
       4
     ],
     "sentence_texts": [
-      "就是这款",
-      "随行折叠高速吹风机"
+      "就是这款"
     ],
     "original_sentence_durations": [
       0.9,
-      1.628
+      1.3
     ],
-    "total_duration": 2.528,
-    "merged": true,
-    "merge_reason": "短句'就是这款'(时长0.90s)合并到下一句'随行折叠高速吹风机...'",
-    "primary_tag": "旅行场景",
-    "required_tags": [
-      "旅行场景",
-      "折叠动作",
-      "风力展示",
-      "吹发动作"
-    ],
-    "is_strong_semantic": false,
-    "low_confidence": false,
-    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示"
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_001",
+    "selected_asset_file": "旅行场景_001_推门进酒店客房_4s.mp4",
+    "total_duration": 2.2,
+    "low_confidence": true,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['旅行场景'] → 旅行场景"
   },
   {
     "group_id": 4,
@@ -80,18 +73,17 @@
       "现在上新福利"
     ],
     "original_sentence_durations": [
-      1.113
+      1.536
     ],
-    "total_duration": 1.113,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "价格促销",
-    "required_tags": [
-      "价格促销"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "价格促销",
+    "selected_asset_id": "价格促销_003",
+    "selected_asset_file": "价格促销_003_包装展示特效_3s.mp4",
+    "total_duration": 1.536,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['价格促销'] → 价格促销"
   },
   {
     "group_id": 5,
@@ -102,22 +94,17 @@
       "买就送牛皮收纳包"
     ],
     "original_sentence_durations": [
-      1.456
+      1.065
     ],
-    "total_duration": 1.456,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "折叠动作",
-    "required_tags": [
-      "折叠动作",
-      "放进包包",
-      "价格促销",
-      "CTA促单",
-      "赠品展示"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "折叠动作",
+    "selected_asset_id": "折叠动作_001",
+    "selected_asset_file": "折叠动作_001_折叠收起_3s.mp4",
+    "total_duration": 1.065,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作"
   },
   {
     "group_id": 6,
@@ -130,16 +117,15 @@
     "original_sentence_durations": [
       0.9
     ],
-    "total_duration": 0.9,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "手持大小对比",
-    "required_tags": [
-      "手持大小对比"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_002",
+    "selected_asset_file": "手持大小对比_002_手拿手机对比_3s.mp4",
+    "total_duration": 0.9,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
   },
   {
     "group_id": 7,
@@ -152,45 +138,60 @@
     "original_sentence_durations": [
       0.9
     ],
-    "total_duration": 0.9,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "折叠动作",
-    "required_tags": [
-      "折叠动作"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "折叠动作",
+    "selected_asset_id": "折叠动作_002",
+    "selected_asset_file": "折叠动作_002_折叠到打开_3s.mp4",
+    "total_duration": 0.9,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作"
   },
   {
     "group_id": 8,
     "sentence_ids": [
-      9,
-      10
+      9
     ],
     "sentence_texts": [
-      "出差旅行",
-      "随身携带也没负担"
+      "出差旅行"
     ],
     "original_sentence_durations": [
-      0.9,
-      1.456
+      0.9
     ],
-    "total_duration": 2.356,
-    "merged": true,
-    "merge_reason": "短句'出差旅行'(时长0.90s)合并到下一句'随身携带也没负担...'",
-    "primary_tag": "旅行场景",
-    "required_tags": [
-      "旅行场景",
-      "放进包包"
-    ],
-    "is_strong_semantic": false,
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_002",
+    "selected_asset_file": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+    "total_duration": 0.9,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
   },
   {
     "group_id": 9,
+    "sentence_ids": [
+      10
+    ],
+    "sentence_texts": [
+      "随身携带也没负担"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_003",
+    "selected_asset_file": "旅行场景_003_酒店走廊_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 10,
     "sentence_ids": [
       11
     ],
@@ -198,21 +199,20 @@
       "超高速强劲马达"
     ],
     "original_sentence_durations": [
-      1.284
+      1.065
     ],
-    "total_duration": 1.284,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "风力展示",
-    "required_tags": [
-      "风力展示"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "风力展示",
+    "selected_asset_id": "风力展示_001",
+    "selected_asset_file": "风力展示_001_花朵风力_2s.mp4",
+    "total_duration": 1.065,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示"
   },
   {
-    "group_id": 10,
+    "group_id": 11,
     "sentence_ids": [
       12
     ],
@@ -220,23 +220,20 @@
       "快速干发不伤发"
     ],
     "original_sentence_durations": [
-      1.284
+      1.065
     ],
-    "total_duration": 1.284,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "风力展示",
-    "required_tags": [
-      "风力展示",
-      "护发效果",
-      "吹发动作"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "风力展示",
+    "selected_asset_id": "风力展示_005",
+    "selected_asset_file": "风力展示_005_吹丝带_2s.mp4",
+    "total_duration": 1.065,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示"
   },
   {
-    "group_id": 11,
+    "group_id": 12,
     "sentence_ids": [
       13
     ],
@@ -246,19 +243,18 @@
     "original_sentence_durations": [
       0.9
     ],
-    "total_duration": 0.9,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "屏显调温",
-    "required_tags": [
-      "屏显调温"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_008",
+    "selected_asset_file": "屏显调温_008_屏显冷热循环_3s.mp4",
+    "total_duration": 0.9,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
   },
   {
-    "group_id": 12,
+    "group_id": 13,
     "sentence_ids": [
       14
     ],
@@ -268,19 +264,18 @@
     "original_sentence_durations": [
       0.941
     ],
-    "total_duration": 0.941,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "屏显调温",
-    "required_tags": [
-      "屏显调温"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_003",
+    "selected_asset_file": "屏显调温_003_温度模式_3s.mp4",
+    "total_duration": 0.941,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
   },
   {
-    "group_id": 13,
+    "group_id": 14,
     "sentence_ids": [
       15
     ],
@@ -290,19 +285,18 @@
     "original_sentence_durations": [
       1.113
     ],
-    "total_duration": 1.113,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "屏显调温",
-    "required_tags": [
-      "屏显调温"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_001",
+    "selected_asset_file": "屏显调温_001_屏幕亮起_5s.mp4",
+    "total_duration": 1.113,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
   },
   {
-    "group_id": 14,
+    "group_id": 15,
     "sentence_ids": [
       16
     ],
@@ -312,20 +306,18 @@
     "original_sentence_durations": [
       1.456
     ],
-    "total_duration": 1.456,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "护发效果",
-    "required_tags": [
-      "护发效果",
-      "吹发动作"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "护发效果",
+    "selected_asset_id": "护发效果_006",
+    "selected_asset_file": "护发效果_006_坐床边背面展示头发柔顺_3s.mp4",
+    "total_duration": 1.456,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['护发效果'] → 护发效果"
   },
   {
-    "group_id": 15,
+    "group_id": 16,
     "sentence_ids": [
       17
     ],
@@ -335,19 +327,18 @@
     "original_sentence_durations": [
       1.113
     ],
-    "total_duration": 1.113,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "价格促销",
-    "required_tags": [
-      "价格促销"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "价格促销",
+    "selected_asset_id": "价格促销_001",
+    "selected_asset_file": "价格促销_001_搭配促销权益_2s.mp4",
+    "total_duration": 1.113,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['价格促销'] → 价格促销"
   },
   {
-    "group_id": 16,
+    "group_id": 17,
     "sentence_ids": [
       18
     ],
@@ -357,15 +348,14 @@
     "original_sentence_durations": [
       1.284
     ],
-    "total_duration": 1.284,
     "merged": false,
     "merge_reason": "",
-    "primary_tag": "CTA促单",
-    "required_tags": [
-      "CTA促单"
-    ],
-    "is_strong_semantic": true,
+    "selected_scene_tag": "CTA促单",
+    "selected_asset_id": "CTA促单_001",
+    "selected_asset_file": "CTA促单_001_产品定格收尾_2s.mp4",
+    "total_duration": 1.284,
     "low_confidence": false,
-    "fallback_reason": ""
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['CTA促单'] → CTA促单"
   }
 ]

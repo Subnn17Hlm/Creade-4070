@@ -1,7 +1,5 @@
 {
-  "end_hold_applied": true,
   "end_hold_sec": 1.0,
-  "end_hold_tag": "",
-  "total_tts_duration": 23.256,
-  "expected_final_duration": 24.256
+  "original_video_duration": 13.52,
+  "extended_video_duration": 14.52
 }

@@ -85,6 +85,7 @@ class GlobalState(BaseModel):
     contact_sheet_path: str = Field(default="", description="联系图路径")
     video_duration: float = Field(default=0.0, description="视频时长(秒)")
     video_duration_before_pad: float = Field(default=0.0, description="填充前视频时长")
+    end_hold_sec: float = Field(default=0.0, description="结尾停留时长(秒)")
 
     # Node8 - 质量验收
     quality_report: Dict[str, Any] = Field(default={}, description="质量报告")
@@ -385,6 +386,7 @@ class FinalCompositionOutput(BaseModel):
     final_video_path: str = Field(..., description="最终视频路径")
     contact_sheet_path: str = Field(..., description="联系图路径")
     video_duration: float = Field(..., description="视频时长(秒)")
+    end_hold_sec: float = Field(default=0.0, description="结尾停留时长(秒)")
 
 
 # ============================================================

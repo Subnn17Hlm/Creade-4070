@@ -1,0 +1,31 @@
+{
+  "script_source": "manual",
+  "product_name": "",
+  "raw_script_chars": 123,
+  "cleaned_script_chars": 123,
+  "script_changed": true,
+  "change_reason": "whitespace_and_punctuation_normalization",
+  "material_csv": "assets/asset_manifest_v2_clean.csv",
+  "sentences": [
+    "Creade终于把高性能的风",
+    "装进超minni的机身里",
+    "就是这款",
+    "随行折叠高速吹风机",
+    "现在上新福利",
+    "买就送牛皮收纳包",
+    "巴掌大小",
+    "还能折叠",
+    "出差旅行",
+    "随身携带也没负担",
+    "超高速强劲马达",
+    "快速干发不伤发",
+    "升级屏显",
+    "温度看的见",
+    "智能温控技术",
+    "保护头发强韧水润",
+    "趁着现在活动",
+    "想要的赶紧来吧"
+  ],
+  "sentence_count": 18,
+  "run_dir": "/workspace/projects/runs/baseline_test"
+}
