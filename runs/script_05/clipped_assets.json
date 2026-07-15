@@ -1,0 +1,92 @@
+[
+  {
+    "sentence_id": 1,
+    "material_id": "手持大小对比_003",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_001.mp4"
+  },
+  {
+    "sentence_id": 2,
+    "material_id": "手持展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_002.mp4"
+  },
+  {
+    "sentence_id": 3,
+    "material_id": "风力展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_003.mp4"
+  },
+  {
+    "sentence_id": 4,
+    "material_id": "风力展示_005",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_004.mp4"
+  },
+  {
+    "sentence_id": 5,
+    "material_id": "手持展示_002",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_005.mp4"
+  },
+  {
+    "sentence_id": 6,
+    "material_id": "手持展示_003",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_006.mp4"
+  },
+  {
+    "sentence_id": 7,
+    "material_id": "手持展示_004",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_007.mp4"
+  },
+  {
+    "sentence_id": 8,
+    "material_id": "赠品展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_008.mp4"
+  },
+  {
+    "sentence_id": 9,
+    "material_id": "吹发动作_008",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_009.mp4"
+  },
+  {
+    "sentence_id": 10,
+    "material_id": "手持展示_005",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_010.mp4"
+  },
+  {
+    "sentence_id": 11,
+    "material_id": "手持展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_011.mp4"
+  },
+  {
+    "sentence_id": 12,
+    "material_id": "屏显调温_003",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_012.mp4"
+  },
+  {
+    "sentence_id": 13,
+    "material_id": "手持展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_013.mp4"
+  },
+  {
+    "sentence_id": 14,
+    "material_id": "折叠动作_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_014.mp4"
+  },
+  {
+    "sentence_id": 15,
+    "material_id": "旅行场景_002",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_015.mp4"
+  },
+  {
+    "sentence_id": 16,
+    "material_id": "放进包包_006",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_016.mp4"
+  },
+  {
+    "sentence_id": 17,
+    "material_id": "手持展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_017.mp4"
+  },
+  {
+    "sentence_id": 18,
+    "material_id": "手持展示_001",
+    "clip_path": "/workspace/projects/runs/script_05/temp/clip_018.mp4"
+  }
+]

@@ -1,0 +1,1487 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "吹风机圈的小钢炮",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "手持大小对比_003",
+    "selected_file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%A4%A7%E5%B0%8F%E5%AF%B9%E6%AF%94_003_%E6%89%8B%E6%8B%BF%E7%93%B6%E8%A3%85%E6%B0%B4%E5%8F%98%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '吹发动作'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "巴掌大",
+    "required_tags": [
+      "手持展示",
+      "手持大小对比"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "selected_material_id": "手持展示_001",
+    "selected_file_name": "手持展示_001_单手旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_001_%E5%8D%95%E6%89%8B%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示', '手持大小对比'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "十一万转",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_001",
+    "selected_file_name": "风力展示_001_花朵风力_2s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_001_%E8%8A%B1%E6%9C%B5%E9%A3%8E%E5%8A%9B_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "风力给你拉满",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_005",
+    "selected_file_name": "风力展示_005_吹丝带_2s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_005_%E5%90%B9%E4%B8%9D%E5%B8%A6_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "长头发三五分钟",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_002",
+    "selected_file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_002_%E6%89%93%E5%BC%80%E7%8A%B6%E6%80%81%E6%8B%BF%E5%85%A5%E7%94%BB%E9%9D%A2%E8%BD%BB%E5%BE%AE%E6%91%87%E6%99%83_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "短头发1分钟不到",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_003",
+    "selected_file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_003_%E6%8A%98%E5%8F%A0%E7%8A%B6%E6%80%81%E6%8B%BF%E5%85%A5%E7%94%BB%E9%9D%A2%E8%BD%BB%E5%BE%AE%E6%91%87%E6%99%83_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "主打一个快",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_004",
+    "selected_file_name": "手持展示_004_手持来回旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_004_%E6%89%8B%E6%8C%81%E6%9D%A5%E5%9B%9E%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "赠送造型风嘴",
+    "required_tags": [
+      "赠品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "赠品展示_001",
+        "file_name": "赠品展示_001_收纳袋展示_2s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_002",
+        "file_name": "赠品展示_002_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_003",
+        "file_name": "赠品展示_003_拿入收纳袋晃晃_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_004",
+        "file_name": "赠品展示_004_吹风机放入收纳袋合上定格展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_005",
+        "file_name": "赠品展示_005_赠品收纳袋展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_006",
+        "file_name": "赠品展示_006_收纳袋扔到沙发上_1s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_007",
+        "file_name": "赠品展示_007_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      }
+    ],
+    "selected_material_id": "赠品展示_001",
+    "selected_file_name": "赠品展示_001_收纳袋展示_2s.mp4",
+    "selected_primary_scene_tag": "赠品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E8%B5%A0%E5%93%81%E5%B1%95%E7%A4%BA_001_%E6%94%B6%E7%BA%B3%E8%A2%8B%E5%B1%95%E7%A4%BA_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['赠品展示'] → 赠品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "赠品展示_001",
+        "file_name": "赠品展示_001_收纳袋展示_2s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_002",
+        "file_name": "赠品展示_002_收纳袋打开展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_003",
+        "file_name": "赠品展示_003_拿入收纳袋晃晃_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_004",
+        "file_name": "赠品展示_004_吹风机放入收纳袋合上定格展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      },
+      {
+        "material_id": "赠品展示_005",
+        "file_name": "赠品展示_005_赠品收纳袋展示_3s.mp4",
+        "primary_scene_tag": "赠品展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "吹完直接出门",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_006",
+        "file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_007",
+        "file_name": "吹发动作_007_半身背面吹发_4s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_008",
+        "file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_009",
+        "file_name": "吹发动作_009_坐着半身侧面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_010",
+        "file_name": "吹发动作_010_床上半身背面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_008",
+    "selected_file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_008_%E5%8D%8A%E8%BA%AB%E8%83%8C%E9%9D%A2%E5%90%B9%E5%8F%91_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "智能控温每秒一百次",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_005",
+    "selected_file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_005_%E6%89%8B%E6%8C%81%E5%85%B3%E6%9C%BA%E5%B9%B6%E6%8A%98%E5%8F%A0%E6%94%BE%E5%9C%A8%E6%A1%8C%E4%B8%8A_6s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "不伤头发",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_001",
+    "selected_file_name": "手持展示_001_单手旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_001_%E5%8D%95%E6%89%8B%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": "素材已用完，复用手持展示_001"
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "独立温度屏显",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_006",
+        "file_name": "屏显调温_006_开机亮起全景_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_007",
+        "file_name": "屏显调温_007_屏显热风降到冷风_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_008",
+        "file_name": "屏显调温_008_屏显冷热循环_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_009",
+        "file_name": "屏显调温_009_分屏温度模式_4s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "selected_material_id": "屏显调温_003",
+    "selected_file_name": "屏显调温_003_温度模式_3s.mp4",
+    "selected_primary_scene_tag": "屏显调温",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_003_%E6%B8%A9%E5%BA%A6%E6%A8%A1%E5%BC%8F_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温",
+    "alternative_candidates": [
+      {
+        "material_id": "屏显调温_001",
+        "file_name": "屏显调温_001_屏幕亮起_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_002",
+        "file_name": "屏显调温_002_调节温度_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_003",
+        "file_name": "屏显调温_003_温度模式_3s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_004",
+        "file_name": "屏显调温_004_开机亮起变温_5s.mp4",
+        "primary_scene_tag": "屏显调温"
+      },
+      {
+        "material_id": "屏显调温_005",
+        "file_name": "屏显调温_005_开机亮起特写_6s.mp4",
+        "primary_scene_tag": "屏显调温"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "实时显温",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_001",
+    "selected_file_name": "手持展示_001_单手旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_001_%E5%8D%95%E6%89%8B%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": "素材已用完，复用手持展示_001"
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "折叠带走",
+    "required_tags": [
+      "折叠动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      }
+    ],
+    "selected_material_id": "折叠动作_001",
+    "selected_file_name": "折叠动作_001_折叠收起_3s.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_001_%E6%8A%98%E5%8F%A0%E6%94%B6%E8%B5%B7_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作",
+    "alternative_candidates": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "健身出差旅游必备",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_006",
+        "file_name": "旅行场景_006_客房环绕到门口_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_007",
+        "file_name": "旅行场景_007_进酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_008",
+        "file_name": "旅行场景_008_酒店大堂看书_2s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_009",
+        "file_name": "旅行场景_009_机场行人_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_010",
+        "file_name": "旅行场景_010_健身房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "旅行场景_002",
+    "selected_file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+    "selected_primary_scene_tag": "旅行场景",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%97%85%E8%A1%8C%E5%9C%BA%E6%99%AF_002_%E6%8E%A8%E7%AE%B1%E5%AD%90%E8%BF%87%E9%85%92%E5%BA%97%E5%A4%A7%E5%A0%82_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景",
+    "alternative_candidates": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "现在买送旅行收纳袋",
+    "required_tags": [
+      "旅行场景",
+      "折叠动作",
+      "放进包包",
+      "CTA促单",
+      "赠品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_006",
+        "file_name": "旅行场景_006_客房环绕到门口_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_007",
+        "file_name": "旅行场景_007_进酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_008",
+        "file_name": "旅行场景_008_酒店大堂看书_2s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_009",
+        "file_name": "旅行场景_009_机场行人_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_010",
+        "file_name": "旅行场景_010_健身房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "selected_material_id": "放进包包_006",
+    "selected_file_name": "放进包包_006_特写打开收纳袋切拿出吹风机_3s.mp4",
+    "selected_primary_scene_tag": "放进包包",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_006_%E7%89%B9%E5%86%99%E6%89%93%E5%BC%80%E6%94%B6%E7%BA%B3%E8%A2%8B%E5%88%87%E6%8B%BF%E5%87%BA%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 5,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景', '折叠动作', '放进包包', 'CTA促单', '赠品展示'] → 放进包包",
+    "alternative_candidates": [
+      {
+        "material_id": "旅行场景_001",
+        "file_name": "旅行场景_001_推门进酒店客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_002",
+        "file_name": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_003",
+        "file_name": "旅行场景_003_酒店走廊_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_004",
+        "file_name": "旅行场景_004_进门环绕客房_4s.mp4",
+        "primary_scene_tag": "旅行场景"
+      },
+      {
+        "material_id": "旅行场景_005",
+        "file_name": "旅行场景_005_刷卡进客房_3s.mp4",
+        "primary_scene_tag": "旅行场景"
+      }
+    ],
+    "repeated_material_reason": ""
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "就这一波",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_001",
+    "selected_file_name": "手持展示_001_单手旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_001_%E5%8D%95%E6%89%8B%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": "素材已用完，复用手持展示_001"
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "闭眼冲就完了",
+    "required_tags": [
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持展示_001",
+    "selected_file_name": "手持展示_001_单手旋转_2s.mp4",
+    "selected_primary_scene_tag": "手持展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%B1%95%E7%A4%BA_001_%E5%8D%95%E6%89%8B%E6%97%8B%E8%BD%AC_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持展示'] → 手持展示",
+    "alternative_candidates": [
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_002",
+        "file_name": "手持展示_002_打开状态拿入画面轻微摇晃_3s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_003",
+        "file_name": "手持展示_003_折叠状态拿入画面轻微摇晃_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_004",
+        "file_name": "手持展示_004_手持来回旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      },
+      {
+        "material_id": "手持展示_005",
+        "file_name": "手持展示_005_手持关机并折叠放在桌上_6s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "repeated_material_reason": "素材已用完，复用手持展示_001"
+  }
+]

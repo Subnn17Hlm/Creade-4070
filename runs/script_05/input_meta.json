@@ -1,0 +1,31 @@
+{
+  "script_source": "manual",
+  "product_name": "",
+  "raw_script_chars": 110,
+  "cleaned_script_chars": 110,
+  "script_changed": true,
+  "change_reason": "whitespace_and_punctuation_normalization",
+  "material_csv": "assets/asset_manifest_v2_clean.csv",
+  "sentences": [
+    "吹风机圈的小钢炮",
+    "巴掌大",
+    "十一万转",
+    "风力给你拉满",
+    "长头发三五分钟",
+    "短头发1分钟不到",
+    "主打一个快",
+    "赠送造型风嘴",
+    "吹完直接出门",
+    "智能控温每秒一百次",
+    "不伤头发",
+    "独立温度屏显",
+    "实时显温",
+    "折叠带走",
+    "健身出差旅游必备",
+    "现在买送旅行收纳袋",
+    "就这一波",
+    "闭眼冲就完了"
+  ],
+  "sentence_count": 18,
+  "run_dir": "/workspace/projects/runs/script_05"
+}
