@@ -1,0 +1,1758 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "这么小的吹风机",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "手持大小对比_003",
+    "selected_file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%A4%A7%E5%B0%8F%E5%AF%B9%E6%AF%94_003_%E6%89%8B%E6%8B%BF%E7%93%B6%E8%A3%85%E6%B0%B4%E5%8F%98%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '吹发动作'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "还能号称吹风机里的小钢炮",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_001",
+    "selected_file_name": "吹发动作_001_全景吹发_5s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_001_%E5%85%A8%E6%99%AF%E5%90%B9%E5%8F%91_5s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '吹发动作'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "这款Creade折叠吹风机",
+    "required_tags": [
+      "折叠动作",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "折叠动作_001",
+    "selected_file_name": "折叠动作_001_折叠收起_3s.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_001_%E6%8A%98%E5%8F%A0%E6%94%B6%E8%B5%B7_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作', '吹发动作'] → 折叠动作",
+    "alternative_candidates": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "只有巴掌大小",
+    "required_tags": [
+      "手持大小对比",
+      "手持展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持展示_001",
+        "file_name": "手持展示_001_单手旋转_2s.mp4",
+        "primary_scene_tag": "手持展示"
+      }
+    ],
+    "selected_material_id": "手持大小对比_001",
+    "selected_file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "selected_primary_scene_tag": "手持大小对比",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%89%8B%E6%8C%81%E5%A4%A7%E5%B0%8F%E5%AF%B9%E6%AF%94_001_%E6%A1%8C%E9%9D%A2%E6%89%8B%E6%9C%BA%E5%AF%B9%E6%AF%94_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '手持展示'] → 手持大小对比",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "颜值高还轻巧",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_001",
+    "selected_file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_001_%E5%93%8D%E6%8C%87%E5%87%BA%E7%8E%B0%E6%A1%8C%E9%9D%A2%E9%9D%99%E7%89%A9%E5%B1%95%E7%A4%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "11万转每分钟的转速",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_004",
+    "selected_file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_004_%E5%90%B9%E4%BF%9D%E9%B2%9C%E8%86%9C%E4%B8%8D%E7%A0%B4%E5%B1%95%E7%A4%BA%E6%99%BA%E8%83%BD%E6%81%92%E6%B8%A9_5s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "风速能高达29米每秒",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_002",
+    "selected_file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_002_%E6%8A%BD%E5%B1%89%E9%87%8C%E7%9A%84%E6%8A%98%E5%8F%A0%E5%90%B9%E9%A3%8E%E6%9C%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "还配备磁吸风嘴",
+    "required_tags": [
+      "风嘴配件"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风嘴配件_001",
+        "file_name": "风嘴配件_001_安装风嘴_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_002",
+        "file_name": "风嘴配件_002_搭配风嘴吹发尾_3s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_003",
+        "file_name": "风嘴配件_003_安装风嘴_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_004",
+        "file_name": "风嘴配件_004_风嘴特写_3s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_005",
+        "file_name": "风嘴配件_005_搭配风嘴吹发尾_4s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_006",
+        "file_name": "风嘴配件_006_包装盒里的风嘴展示_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_007",
+        "file_name": "风嘴配件_007_俯拍磁吸风嘴安装特写_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      }
+    ],
+    "selected_material_id": "风嘴配件_001",
+    "selected_file_name": "风嘴配件_001_安装风嘴_2s.mp4",
+    "selected_primary_scene_tag": "风嘴配件",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%98%B4%E9%85%8D%E4%BB%B6_001_%E5%AE%89%E8%A3%85%E9%A3%8E%E5%98%B4_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风嘴配件'] → 风嘴配件",
+    "alternative_candidates": [
+      {
+        "material_id": "风嘴配件_001",
+        "file_name": "风嘴配件_001_安装风嘴_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_002",
+        "file_name": "风嘴配件_002_搭配风嘴吹发尾_3s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_003",
+        "file_name": "风嘴配件_003_安装风嘴_2s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_004",
+        "file_name": "风嘴配件_004_风嘴特写_3s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      },
+      {
+        "material_id": "风嘴配件_005",
+        "file_name": "风嘴配件_005_搭配风嘴吹发尾_4s.mp4",
+        "primary_scene_tag": "风嘴配件"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "吹头发吹得又快又顺滑",
+    "required_tags": [
+      "风力展示",
+      "吹发动作",
+      "护发效果"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_002",
+    "selected_file_name": "吹发动作_002_对镜吹发_7s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_002_%E5%AF%B9%E9%95%9C%E5%90%B9%E5%8F%91_7s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 3,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示', '吹发动作', '护发效果'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "2挡风速",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_003",
+    "selected_file_name": "产品展示_003_手指品牌logo_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_003_%E6%89%8B%E6%8C%87%E5%93%81%E7%89%8Clogo_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "5种风温",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_004",
+    "selected_file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_004_%E6%89%8B%E7%8E%AF%E7%BB%95%E5%90%B9%E9%A3%8E%E6%9C%BA%E8%BD%BB%E5%BE%AE%E8%BF%90%E9%95%9C_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "10种选择",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_005",
+    "selected_file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_005_%E5%92%8C%E5%8C%85%E8%A3%85%E8%B5%A0%E5%93%81%E5%90%8C%E6%A1%86%E5%B1%95%E7%A4%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "怎么吹也不用担心烫伤",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_006",
+        "file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_007",
+        "file_name": "吹发动作_007_半身背面吹发_4s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_008",
+        "file_name": "吹发动作_008_半身背面吹发_3s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_009",
+        "file_name": "吹发动作_009_坐着半身侧面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_010",
+        "file_name": "吹发动作_010_床上半身背面吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_005",
+    "selected_file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_005_%E5%9D%90%E5%BA%8A%E4%B8%8A%E5%90%B9%E5%8F%91_6s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_002",
+        "file_name": "吹发动作_002_对镜吹发_7s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_003",
+        "file_name": "吹发动作_003_长发飘动_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_004",
+        "file_name": "吹发动作_004_背面丝滑_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      },
+      {
+        "material_id": "吹发动作_005",
+        "file_name": "吹发动作_005_坐床上吹发_6s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "折叠随身携带",
+    "required_tags": [
+      "折叠动作",
+      "放进包包"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "放进包包_001",
+        "file_name": "放进包包_001_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_002",
+        "file_name": "放进包包_002_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_003",
+        "file_name": "放进包包_003_过肩俯拍放入动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_004",
+        "file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_005",
+        "file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "selected_material_id": "折叠动作_002",
+    "selected_file_name": "折叠动作_002_折叠到打开_3s.mp4",
+    "selected_primary_scene_tag": "折叠动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%98%E5%8F%A0%E5%8A%A8%E4%BD%9C_002_%E6%8A%98%E5%8F%A0%E5%88%B0%E6%89%93%E5%BC%80_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作', '放进包包'] → 折叠动作",
+    "alternative_candidates": [
+      {
+        "material_id": "折叠动作_001",
+        "file_name": "折叠动作_001_折叠收起_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_002",
+        "file_name": "折叠动作_002_折叠到打开_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_003",
+        "file_name": "折叠动作_003_单手折叠_3s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_004",
+        "file_name": "折叠动作_004_双手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      },
+      {
+        "material_id": "折叠动作_005",
+        "file_name": "折叠动作_005_单手折叠_2s.mp4",
+        "primary_scene_tag": "折叠动作"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "包包能放",
+    "required_tags": [
+      "放进包包"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "放进包包_001",
+        "file_name": "放进包包_001_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_002",
+        "file_name": "放进包包_002_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_003",
+        "file_name": "放进包包_003_过肩俯拍放入动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_004",
+        "file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_005",
+        "file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_006",
+        "file_name": "放进包包_006_特写打开收纳袋切拿出吹风机_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_007",
+        "file_name": "放进包包_007_包内视角切放入包动作_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_008",
+        "file_name": "放进包包_008_收纳袋放入女士包_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_009",
+        "file_name": "放进包包_009_放入女士包_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_010",
+        "file_name": "放进包包_010_女士包拿出远景切特写_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "selected_material_id": "放进包包_004",
+    "selected_file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
+    "selected_primary_scene_tag": "放进包包",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_004_%E4%BF%AF%E6%8B%8D%E4%BB%8E%E5%8C%85%E6%8B%BF%E5%87%BA%E5%8A%A8%E4%BD%9C_2s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进包包'] → 放进包包",
+    "alternative_candidates": [
+      {
+        "material_id": "放进包包_001",
+        "file_name": "放进包包_001_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_002",
+        "file_name": "放进包包_002_放入特写_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_003",
+        "file_name": "放进包包_003_过肩俯拍放入动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_004",
+        "file_name": "放进包包_004_俯拍从包拿出动作_2s.mp4",
+        "primary_scene_tag": "放进包包"
+      },
+      {
+        "material_id": "放进包包_005",
+        "file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+        "primary_scene_tag": "放进包包"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "箱子不占地",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_006",
+    "selected_file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_006_%E6%91%87%E6%99%83%E7%89%B9%E5%86%99%E5%B1%95%E7%A4%BA_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "这么精致小巧的高速吹风机",
+    "required_tags": [
+      "手持大小对比",
+      "吹发动作"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_006",
+        "file_name": "手持大小对比_006_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_007",
+        "file_name": "手持大小对比_007_拿开手机出现吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_008",
+        "file_name": "手持大小对比_008_一手手机一手吹风机_2s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_009",
+        "file_name": "手持大小对比_009_先放手机后放吹风机对比_4s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "吹发动作_001",
+        "file_name": "吹发动作_001_全景吹发_5s.mp4",
+        "primary_scene_tag": "吹发动作"
+      }
+    ],
+    "selected_material_id": "吹发动作_006",
+    "selected_file_name": "吹发动作_006_坐床边吹发背面_6s.mp4",
+    "selected_primary_scene_tag": "吹发动作",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_006_%E5%9D%90%E5%BA%8A%E8%BE%B9%E5%90%B9%E5%8F%91%E8%83%8C%E9%9D%A2_6s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 2,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比', '吹发动作'] → 吹发动作",
+    "alternative_candidates": [
+      {
+        "material_id": "手持大小对比_001",
+        "file_name": "手持大小对比_001_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_002",
+        "file_name": "手持大小对比_002_手拿手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_003",
+        "file_name": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_004",
+        "file_name": "手持大小对比_004_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      },
+      {
+        "material_id": "手持大小对比_005",
+        "file_name": "手持大小对比_005_桌面手机对比_3s.mp4",
+        "primary_scene_tag": "手持大小对比"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "一定要试一试",
+    "required_tags": [
+      "产品展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_006",
+        "file_name": "产品展示_006_摇晃特写展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_007",
+        "file_name": "产品展示_007_按键特写_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_008",
+        "file_name": "产品展示_008_屏显2种循环模式_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "selected_material_id": "产品展示_007",
+    "selected_file_name": "产品展示_007_按键特写_3s.mp4",
+    "selected_primary_scene_tag": "产品展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BA%A7%E5%93%81%E5%B1%95%E7%A4%BA_007_%E6%8C%89%E9%94%AE%E7%89%B9%E5%86%99_3s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 0,
+    "semantic_fallback_used": false,
+    "match_score": 0.3,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示",
+    "alternative_candidates": [
+      {
+        "material_id": "产品展示_001",
+        "file_name": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_002",
+        "file_name": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_003",
+        "file_name": "产品展示_003_手指品牌logo_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_004",
+        "file_name": "产品展示_004_手环绕吹风机轻微运镜_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      },
+      {
+        "material_id": "产品展示_005",
+        "file_name": "产品展示_005_和包装赠品同框展示_3s.mp4",
+        "primary_scene_tag": "产品展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包"
+    ]
+  }
+]

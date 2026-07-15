@@ -1,0 +1,130 @@
+{
+  "original_script_chars": 107,
+  "final_script_chars": 107,
+  "script_coverage": 100.0,
+  "script_ok": true,
+  "audio_duration": 21.048,
+  "video_duration": 21.048,
+  "video_audio_diff": 0.0,
+  "padding_seconds": 0.0,
+  "tts_wav_exists": true,
+  "bgm_exists": true,
+  "tts_duration": 21.048,
+  "bgm_duration": 53.107,
+  "final_audio_duration": 21.048,
+  "final_video_duration": 21.048,
+  "final_audio_bitrate": 133546,
+  "final_audio_mean_volume": -23.2,
+  "tts_mean_volume": -21.7,
+  "bgm_mean_volume": -17.4,
+  "audio_mix_used": true,
+  "tts_in_final": true,
+  "bgm_in_final": true,
+  "bgm_trimmed_exists": true,
+  "mixed_audio_exists": true,
+  "mixed_audio_mean_volume": -23.1,
+  "bgm_audible_manual_check_required": true,
+  "bgm_audible_manual_result": "pending",
+  "subtitle_render_source": "subtitles_srt",
+  "subtitle_render_passes": 1,
+  "subtitles_no_overlap": true,
+  "subtitle_font_size": 38,
+  "subtitle_y_position_ratio": 0.82,
+  "subtitle_max_lines": 2,
+  "subtitle_area_ratio": 0.05,
+  "subtitle_style_pass": true,
+  "subtitle_cue_count": 15,
+  "subtitle_burned_into_final": true,
+  "subtitle_visible_in_final_video": true,
+  "sampled_subtitle_frame_paths": [
+    "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_2.0s.jpg",
+    "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_7.0s.jpg",
+    "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_13.0s.jpg",
+    "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_18.0s.jpg"
+  ],
+  "expected_srt_text_per_frame": [
+    "旅行出差",
+    "出门旅游最怕带洗护大件",
+    "行李箱随便一塞就带走",
+    "自带屏显"
+  ],
+  "manual_visual_check_required": false,
+  "sampled_subtitle_frames": [
+    {
+      "time_point": 2,
+      "frame_path": "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_2.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "旅行出差",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        31
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 7,
+      "frame_path": "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_7.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "出门旅游最怕带洗护大件",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        33
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 13,
+      "frame_path": "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_13.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "行李箱随便一塞就带走",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        33
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 18,
+      "frame_path": "/workspace/projects/runs/batch_03/subtitle_check_frames/frame_18.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "自带屏显",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        346
+      ],
+      "text_visible": true
+    }
+  ],
+  "material_frame_modified": false,
+  "material_resize_applied": false,
+  "material_crop_applied": false,
+  "crop_or_mask_method": "none",
+  "has_black_padding": false,
+  "bottom_black_area_ratio": 0.0,
+  "dark_frame_ratio": 0.0,
+  "dim_overlay_detected": false,
+  "black_padding_detected": false,
+  "final_visual_text_only_from_srt": true,
+  "unexpected_visual_text_detected": [],
+  "material_label_text_burned_in": false,
+  "debug_text_burned_in": false,
+  "selected_materials_from_candidates": true,
+  "semantic_match_summary": {
+    "total_segments": 15,
+    "high_confidence": 12,
+    "medium_confidence": 0,
+    "low_confidence": 3
+  },
+  "low_confidence_segments": 3,
+  "timeline_split_method": "character_weighted_punctuation",
+  "timeline_average_split": false,
+  "used_manifest_file": "asset_manifest_v2_clean.csv",
+  "unique_material_count": 15,
+  "failure_category": "needs_review",
+  "status": "failed",
+  "fail_reason": "low_confidence_segments=3>=3, needs_manual_review"
+}
