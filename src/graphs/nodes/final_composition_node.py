@@ -255,7 +255,7 @@ def final_composition_node(
         if not bgm_url:
             bgm_dir = os.path.join(workspace_path, "assets/bgm")
             if os.path.exists(bgm_dir):
-                bgm_files = [f for f in os.listdir(bgm_dir) if f.endswith('.mp3')]
+                bgm_files = sorted([f for f in os.listdir(bgm_dir) if f.endswith(".mp3")])
                 if bgm_files:
                     # 按 script_id 稳定选择（如果有的话），否则随机选择
                     import hashlib
@@ -267,7 +267,7 @@ def final_composition_node(
                     else:
                         import random
                         bgm_index = random.randint(0, len(bgm_files) - 1)
-                    bgm_url = os.path.join(bgm_dir, sorted(bgm_files)[bgm_index])
+                    bgm_url = os.path.join(bgm_dir, bgm_files[bgm_index])
                     logger.info("[Node7] 未指定 bgm_url，自动选择: %s", bgm_url)
                 else:
                     logger.warning("[Node7] assets/bgm/ 目录下没有 mp3 文件")
