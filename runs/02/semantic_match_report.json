@@ -1,7 +1,7 @@
 {
-  "manifest_file_used": "asset_manifest_new_no_chuifa.csv",
-  "total_manifest_assets": 73,
-  "available_assets_after_filter": 73,
+  "manifest_file_used": "asset_manifest_v2_clean.csv",
+  "total_manifest_assets": 126,
+  "available_assets_after_filter": 126,
   "sentence_mapping_file": "sentence_tag_mapping_script_02.json",
   "exact_tag_match_count": 19,
   "synonym_match_count": 0,
@@ -10,7 +10,7 @@
   "high_confidence": 19,
   "medium_confidence": 0,
   "low_confidence": 0,
-  "repeated_material_count": 1,
+  "repeated_material_count": 0,
   "tag_distribution_used": {
     "旅行场景": 2,
     "痛点共鸣": 4,

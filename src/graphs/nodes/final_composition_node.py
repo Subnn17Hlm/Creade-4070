@@ -77,18 +77,43 @@ def final_composition_node(
         if not clip_files:
             raise RuntimeError("无可用clip文件")
 
-        # 1. 拼接素材片段（concat filter）- 不做任何画面处理
+        # 1. 拼接素材片段（concat filter）- 统一缩放到1080x1920
+        #    新版素材分辨率不一致（1080p/4K/非标准），需要先统一分辨率
         concat_path = os.path.join(temp_dir, "concat.mp4")
+        target_width = 1080
+        target_height = 1920
+        
         if len(clip_files) == 1:
-            shutil.copy2(clip_files[0], concat_path)
+            # 单个clip也需要统一分辨率
+            cmd = [
+                "ffmpeg", "-y", "-i", clip_files[0],
+                "-vf", f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "128k",
+                "-movflags", "+faststart",
+                concat_path
+            ]
+            run_ffmpeg(cmd, timeout=120)
         else:
-            f_inputs = "".join(f"[{i}:v][{i}:a]" for i in range(len(clip_files)))
-            f_concat = f"{f_inputs}concat=n={len(clip_files)}:v=1:a=1[outv][outa]"
+            # 多个clip：先scale每个视频，再concat
+            # 构建filter_complex：每个输入先scale，再concat
+            scale_filters = []
+            for i in range(len(clip_files)):
+                scale_filters.append(f"[{i}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}]")
+                scale_filters.append(f"[{i}:a]aresample=44100[a{i}]")
+            
+            # concat所有缩放后的视频
+            concat_inputs = "".join(f"[v{i}][a{i}]" for i in range(len(clip_files)))
+            concat_filter = f"{concat_inputs}concat=n={len(clip_files)}:v=1:a=1[outv][outa]"
+            
+            filter_complex = ";".join(scale_filters) + ";" + concat_filter
+            
             cmd = ["ffmpeg", "-y"]
             for cf in clip_files:
                 cmd.extend(["-i", cf])
             cmd.extend([
-                "-filter_complex", f_concat,
+                "-filter_complex", filter_complex,
                 "-map", "[outv]", "-map", "[outa]",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                 "-pix_fmt", "yuv420p",
