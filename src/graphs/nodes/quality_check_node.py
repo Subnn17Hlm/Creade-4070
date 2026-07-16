@@ -687,6 +687,122 @@ def quality_check_node(
             failure_category = "validation_failed"
             status = "failed"
 
+    # === 7. 新增质量检查：视觉组合并、素材复用、相邻重播 ===
+    # 读取 selected_assets.json 和 timeline.json 进行详细检查
+    adjacent_same_asset_restart = False
+    visual_group_continuity_fail = False
+    high_freq_reuse_fail = False
+    source_range_overlap_fail = False
+    asset_usage_counts: Dict[str, int] = {}
+    visual_group_report: List[Dict[str, Any]] = []
+    
+    selected_assets_path = os.path.join(run_dir, "selected_assets.json")
+    timeline_json_path = os.path.join(run_dir, "timeline.json")
+    
+    if os.path.exists(selected_assets_path) and os.path.exists(timeline_json_path):
+        try:
+            with open(selected_assets_path, "r", encoding="utf-8") as f:
+                selected_assets_data = json.load(f)
+            with open(timeline_json_path, "r", encoding="utf-8") as f:
+                timeline_data = json.load(f)
+            
+            # 构建 visual_group_id -> entries 映射
+            vg_entries: Dict[int, List[Dict[str, Any]]] = {}
+            for entry in selected_assets_data:
+                vg_id = entry.get("visual_group_id", 0)
+                if vg_id not in vg_entries:
+                    vg_entries[vg_id] = []
+                vg_entries[vg_id].append(entry)
+            
+            # 检查每个 visual_group 的连续性
+            for vg_id, entries in vg_entries.items():
+                active_clips = [e for e in entries if not e.get("visual_continuation", False) and e.get("clip_path")]
+                if len(active_clips) > 1:
+                    visual_group_continuity_fail = True
+                    fail_reasons.append(f"visual_group_{vg_id}_has_multiple_active_clips")
+                    logger.warning("[Node8] Visual Group %d 有多个active clip: %d", vg_id, len(active_clips))
+                
+                # 记录 visual_group_report
+                for entry in entries:
+                    visual_group_report.append({
+                        "group_id": vg_id,
+                        "sentence_id": entry.get("sentence_id"),
+                        "is_active_clip": not entry.get("visual_continuation", False),
+                        "asset_id": entry.get("selected_material_id"),
+                        "source_start": entry.get("source_start", 0),
+                        "source_end": entry.get("source_end", 0),
+                    })
+            
+            # 检查相邻同素材重播和素材使用次数
+            prev_asset_id = None
+            prev_source_end = 0.0
+            for shot in timeline_data:
+                asset_id = shot.get("selected_material_id", "")
+                source_start = shot.get("source_start", 0.0)
+                source_end = shot.get("source_end", 0.0)
+                is_continuation = shot.get("visual_continuation", False)
+                
+                if is_continuation or not asset_id:
+                    continue
+                
+                # 统计素材使用次数
+                if asset_id not in asset_usage_counts:
+                    asset_usage_counts[asset_id] = 0
+                asset_usage_counts[asset_id] += 1
+                
+                # 检查相邻同素材重播
+                if prev_asset_id == asset_id:
+                    # 同一素材相邻使用，检查是否从相同起点重播
+                    if abs(source_start - prev_source_end) < 0.05:
+                        adjacent_same_asset_restart = True
+                        fail_reasons.append(f"adjacent_same_asset_restart:{asset_id}")
+                        logger.warning("[Node8] 相邻同素材从相同起点重播: %s, start=%.2f, prev_end=%.2f", 
+                                      asset_id, source_start, prev_source_end)
+                
+                prev_asset_id = asset_id
+                prev_source_end = source_end
+            
+            # 检查高频复用（普通素材使用次数 > 2）
+            for asset_id, count in asset_usage_counts.items():
+                if count > 2:
+                    high_freq_reuse_fail = True
+                    fail_reasons.append(f"high_freq_reuse:{asset_id}:{count}")
+                    logger.warning("[Node8] 素材高频复用: %s 使用 %d 次", asset_id, count)
+            
+            # 检查源区间重叠
+            asset_ranges: Dict[str, List[tuple]] = {}
+            for shot in timeline_data:
+                asset_id = shot.get("selected_material_id", "")
+                source_start = shot.get("source_start", 0.0)
+                source_end = shot.get("source_end", 0.0)
+                is_continuation = shot.get("visual_continuation", False)
+                
+                if is_continuation or not asset_id:
+                    continue
+                
+                if asset_id not in asset_ranges:
+                    asset_ranges[asset_id] = []
+                
+                # 检查与之前区间的重叠
+                for prev_start, prev_end in asset_ranges[asset_id]:
+                    # 计算重叠比例
+                    overlap_start = max(source_start, prev_start)
+                    overlap_end = min(source_end, prev_end)
+                    if overlap_end > overlap_start:
+                        overlap_duration = overlap_end - overlap_start
+                        current_duration = source_end - source_start
+                        if current_duration > 0:
+                            overlap_ratio = overlap_duration / current_duration
+                            if overlap_ratio > 0.2:
+                                source_range_overlap_fail = True
+                                fail_reasons.append(f"source_range_overlap:{asset_id}:{overlap_ratio:.2f}")
+                                logger.warning("[Node8] 源区间重叠: %s, overlap_ratio=%.2f", asset_id, overlap_ratio)
+                
+                asset_ranges[asset_id].append((source_start, source_end))
+                
+        except Exception as e:
+            logger.warning("[Node8] 读取 selected_assets.json 或 timeline.json 失败: %s", e)
+
     # 构建quality_report
     quality_report = {
         "original_script_chars": orig_chars,
@@ -763,6 +879,13 @@ def quality_check_node(
         "timeline_average_split": False,
         "used_manifest_file": state.used_manifest_file,
         "unique_material_count": unique_material_count,
+        # 新增质量检查
+        "adjacent_same_asset_restart": adjacent_same_asset_restart,
+        "visual_group_continuity_fail": visual_group_continuity_fail,
+        "high_freq_reuse_fail": high_freq_reuse_fail,
+        "source_range_overlap_fail": source_range_overlap_fail,
+        "asset_usage_counts": asset_usage_counts,
+        "visual_group_report": visual_group_report,
         # 最终判定
         "failure_category": failure_category,
         "status": status,

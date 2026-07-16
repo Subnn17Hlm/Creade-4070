@@ -94,7 +94,7 @@ def clip_extraction_node(
 ) -> ClipExtractOutput:
     """
     title: 素材片段截取
-    desc: 根据timeline从素材URL截取对应时长片段，保持原竖屏画幅和原始画面内容
+    desc: 根据timeline从素材URL截取对应时长片段，保持原竖屏画幅和原始画面内容。支持视觉组合并和相邻同素材连续播放。
     """
     ctx = runtime.context
     timeline_shots = state.timeline_shots
@@ -107,59 +107,144 @@ def clip_extraction_node(
     clip_records = []
     has_issues = False
 
+    # 跟踪每个素材的当前使用位置（用于相邻同素材连续播放）
+    asset_current_position: Dict[str, float] = {}
+    # 跟踪每个素材的使用次数
+    asset_usage_count: Dict[str, int] = {}
+    # 跟踪每个visual_group的主clip（用于视觉组合并）
+    visual_group_main_clip: Dict[int, str] = {}  # visual_group_id -> clip_path
+    visual_group_main_sentence: Dict[int, int] = {}  # visual_group_id -> sentence_id
+
     for i, shot in enumerate(timeline_shots):
-        material_url = shot.get("selected_url", "")  # 修复：使用正确的字段名 selected_url
+        material_url = shot.get("selected_url", "")
         material_id = shot.get("selected_material_id", "")
         duration = shot.get("duration", 2.0)
+        sentence_id = shot.get("sentence_id", i + 1)
+        visual_group_id = shot.get("visual_group_id", 0)
+        visual_group_sentence_ids = shot.get("visual_group_sentence_ids", [sentence_id])
 
         # 检测素材烧录文字
-        file_name = shot.get("selected_file_name", material_id)  # 修复：使用正确的字段名 selected_file_name
+        file_name = shot.get("selected_file_name", material_id)
         burned_info = _detect_burned_in_text(material_id, file_name)
 
         if not material_url:
             logger.warning("[Node5] 片段%d: 无素材URL (material_id=%s)", i + 1, material_id)
             clip_records.append({
-                "sentence_id": i + 1,
+                "sentence_id": sentence_id,
                 "material_id": material_id,
                 "status": "skipped_no_url",
                 "clip_path": "",
+                "visual_continuation": False,
                 "burned_in_text": burned_info,
             })
             continue
+
+        # 检查是否是视觉组合并中的非主句
+        is_visual_continuation = False
+        visual_continuation_from = 0
+        if visual_group_id > 0 and len(visual_group_sentence_ids) > 1:
+            if visual_group_id in visual_group_main_sentence:
+                # 这个visual_group已经有主句了，当前句是延续
+                is_visual_continuation = True
+                visual_continuation_from = visual_group_main_sentence[visual_group_id]
+            else:
+                # 这是visual_group的主句
+                visual_group_main_sentence[visual_group_id] = sentence_id
+
+        # 如果是视觉延续，不生成独立clip
+        if is_visual_continuation:
+            logger.info("[Node5] 片段%d (sid=%d): 视觉延续自sid=%d, 不生成独立clip", 
+                       i + 1, sentence_id, visual_continuation_from)
+            clip_records.append({
+                "sentence_id": sentence_id,
+                "material_id": material_id,
+                "status": "visual_continuation",
+                "clip_path": "",
+                "visual_continuation": True,
+                "visual_continuation_from": visual_continuation_from,
+                "visual_group_id": visual_group_id,
+                "burned_in_text": burned_info,
+            })
+            continue
+
+        # 记录这是visual_group的主句
+        if visual_group_id > 0:
+            visual_group_main_clip[visual_group_id] = f"clip_{i+1:03d}.mp4"
 
         clip_path = os.path.join(temp_dir, f"clip_{i+1:03d}.mp4")
 
         # 获取素材有效段落配置
         material_config = MATERIAL_EFFECTIVE_SEGMENT_RULES.get(material_id, {})
-        effective_start = material_config.get("effective_start", 0.0)
-        effective_end = material_config.get("effective_end", None)  # None 表示到素材结尾
+        effective_start = float(material_config.get("effective_start", 0.0))
+        effective_end_raw = material_config.get("effective_end", None)
+        effective_end = float(effective_end_raw) if effective_end_raw is not None else None
         full_play_required = material_config.get("full_play_required", False)
-        preferred_min_duration = material_config.get("preferred_min_duration", 0.0)
         
         # 获取素材总时长
-        source_duration = get_media_duration(material_url)
+        source_duration = float(get_media_duration(material_url))
         
         # 计算实际截取参数
+        # 检查是否是相邻同素材连续播放
+        prev_position = float(asset_current_position.get(material_id, effective_start))
+        replay_allowed = shot.get("replay_allowed", False)
+        
+        # 初始化clip_start为float类型
+        clip_start = effective_start
+        clip_end = 0.0
+        clip_duration = 0.0
+        used_duration = 0.0
+        
         if full_play_required:
             # 必须完整播放：使用整个有效段落
             clip_start = effective_start
             clip_end = effective_end if effective_end is not None else source_duration
-            clip_duration = clip_end - clip_start
-            # 如果句子时长小于素材有效时长，仍然使用完整有效段落
+            clip_duration = float(clip_end - clip_start)
             used_duration = clip_duration
+        elif material_id in asset_current_position and not replay_allowed:
+            # 相邻同素材连续播放：从上次结束位置继续
+            clip_start = prev_position
+            # 计算visual_group的总时长（如果是visual_group主句）
+            if visual_group_id > 0:
+                # 计算组内所有句子的时长之和
+                group_duration = 0.0
+                for sid in visual_group_sentence_ids:
+                    for s in timeline_shots:
+                        if s.get("sentence_id") == sid:
+                            group_duration += float(s.get("duration", 1.0))
+                            break
+                clip_duration = group_duration
+            else:
+                clip_duration = min(duration, 5.0)
+            used_duration = clip_duration
+            clip_end = clip_start + clip_duration
+            logger.info("[Node5] 片段%d (sid=%d): 相邻同素材连续播放, 从%.2fs继续", 
+                       i + 1, sentence_id, clip_start)
         else:
-            # 普通裁剪：从 effective_start 开始，严格截取句子时长
-            # 关键：clip_duration 绝不超过句子TTS时长，确保总视觉时长 = TTS总时长
+            # 普通裁剪：从 effective_start 开始
             clip_start = effective_start
-            clip_duration = min(duration, 5.0)
+            # 计算visual_group的总时长（如果是visual_group主句）
+            if visual_group_id > 0:
+                group_duration = 0.0
+                for sid in visual_group_sentence_ids:
+                    for s in timeline_shots:
+                        if s.get("sentence_id") == sid:
+                            group_duration += float(s.get("duration", 1.0))
+                            break
+                clip_duration = group_duration
+            else:
+                clip_duration = min(duration, 5.0)
             used_duration = clip_duration
             clip_end = clip_start + clip_duration
         
         # 确保不超过素材总时长
         if clip_end > source_duration:
             clip_end = source_duration
-            clip_duration = clip_end - clip_start
+            clip_duration = max(0.0, float(clip_end - clip_start))
             used_duration = clip_duration
+        
+        # 更新素材当前使用位置
+        asset_current_position[material_id] = clip_end
+        asset_usage_count[material_id] = asset_usage_count.get(material_id, 0) + 1
         
         try:
             # 构建 ffmpeg 命令
@@ -187,7 +272,7 @@ def clip_extraction_node(
             
             # 记录裁剪详情
             clip_record = {
-                "sentence_id": i + 1,
+                "sentence_id": sentence_id,
                 "material_id": material_id,
                 "url": material_url,
                 "clip_path": clip_path,
@@ -199,7 +284,14 @@ def clip_extraction_node(
                 "actual_duration": round(actual_dur, 2),
                 "effective_start_used": clip_start > 0,
                 "full_play_required": full_play_required,
-                "cross_sentence_continuation": False,  # 跨句延续标记，后续可扩展
+                "visual_continuation": False,
+                "visual_group_id": visual_group_id,
+                "visual_group_is_main": True,
+                "asset_usage_count": asset_usage_count.get(material_id, 1),
+                "source_start": round(clip_start, 2),
+                "source_end": round(clip_end, 2),
+                "continuation_mode": "continue" if material_id in asset_current_position and asset_current_position[material_id] != effective_start else "fresh",
+                "replay_allowed": replay_allowed,
                 "status": "ok",
                 "frame_modified": False,
                 "crop_applied": False,
@@ -207,13 +299,13 @@ def clip_extraction_node(
                 "burned_in_text": burned_info,
             }
             clip_records.append(clip_record)
-            logger.info("[Node5] 片段%d: %s -> %.2fs (从%.2fs开始, full_play=%s)", 
-                       i + 1, material_id, actual_dur, clip_start, full_play_required)
+            logger.info("[Node5] 片段%d (sid=%d): %s -> %.2fs (从%.2fs开始, vg=%d, usage=%d)", 
+                       i + 1, sentence_id, material_id, actual_dur, clip_start, visual_group_id, asset_usage_count.get(material_id, 1))
 
         except Exception as e:
             logger.error("[Node5] 片段%d截取失败: %s", i + 1, e)
             clip_records.append({
-                "sentence_id": i + 1,
+                "sentence_id": sentence_id,
                 "material_id": material_id,
                 "status": "failed",
                 "error": str(e),
@@ -252,6 +344,11 @@ def clip_extraction_node(
     clip_report_path = os.path.join(run_dir, "clip_extract_report.json")
     with open(clip_report_path, "w", encoding="utf-8") as f:
         json.dump(clip_report, f, ensure_ascii=False, indent=2)
+
+    # 同时保存clip_records.json供timeline_assembly_node使用
+    clip_records_path = os.path.join(run_dir, "clip_records.json")
+    with open(clip_records_path, "w", encoding="utf-8") as f:
+        json.dump(clip_records, f, ensure_ascii=False, indent=2)
 
     # 保存截取素材映射（包含完整裁剪详情）
     clipped_assets = []

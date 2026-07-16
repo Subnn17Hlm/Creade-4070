@@ -1121,9 +1121,39 @@ def material_matching_node(
                     matched = entry
                     break
         
-        # 如果仍然没有匹配，使用第一个条目
-        if not matched and selected_assets:
-            matched = selected_assets[0]
+        # 如果仍然没有匹配，标记为unmatched，不使用selected_assets[0]作为兜底
+        resolution_source = "visual_group" if matched else ("text_match" if shot_sid in sentence_to_group_entry else "unmatched")
+        if not matched:
+            # 尝试使用句子的primary_scene_tag重新执行安全匹配
+            primary_tag = shot.get("primary_scene_tag", "")
+            if primary_tag:
+                # 在selected_assets中查找相同tag的条目
+                for entry in selected_assets:
+                    if entry.get("selected_primary_scene_tag") == primary_tag:
+                        matched = entry
+                        resolution_source = "safe_fallback"
+                        break
+            
+            # 如果仍然没有匹配，使用产品展示fallback并标记low_confidence
+            if not matched:
+                resolution_source = "unmatched_failed"
+                # 不静默使用selected_assets[0]，而是标记为unmatched
+                matched = {
+                    "visual_group_id": 0,
+                    "visual_group_sentence_ids": [shot_sid],
+                    "visual_group_total_duration": shot.get("duration", 1.0),
+                    "selected_material_id": "",
+                    "selected_file_name": "",
+                    "selected_primary_scene_tag": "产品展示",
+                    "selected_url": "",
+                    "tag_match_type": "fallback",
+                    "match_confidence": "low",
+                    "match_score": 0.0,
+                    "match_reason": f"unmatched: no asset found for sentence_id={shot_sid}, text='{shot_text[:20]}...'",
+                    "semantic_fallback_used": False,
+                    "repeated_material_reason": "",
+                    "low_confidence": True,
+                }
         
         matched = matched or {}
         shot["sentence_id"] = shot_sid
@@ -1140,6 +1170,9 @@ def material_matching_node(
         shot["match_reason"] = matched.get("match_reason", "")
         shot["semantic_fallback_used"] = matched.get("semantic_fallback_used", False)
         shot["repeated_material_reason"] = matched.get("repeated_material_reason", "")
+        shot["resolution_source"] = resolution_source
+        shot["unmatched"] = resolution_source == "unmatched_failed"
+        shot["unmatched_reason"] = matched.get("match_reason", "") if resolution_source == "unmatched_failed" else ""
         shot["selected_in_candidates"] = True
         timeline_shots.append(shot)
 

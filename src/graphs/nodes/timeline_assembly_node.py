@@ -213,7 +213,7 @@ def timeline_assembly_node(
 ) -> TimelineAssemblyOutput:
     """
     title: 画面timeline组装
-    desc: 将时间轴、素材片段和截取结果合并为最终视频timeline JSON，处理跨句视觉延续
+    desc: 将时间轴、素材片段和截取结果合并为最终视频timeline JSON，处理跨句视觉延续和视觉组合并
     """
     ctx = runtime.context
     timeline_shots = state.timeline_shots
@@ -223,14 +223,52 @@ def timeline_assembly_node(
 
     logger.info("[Node6] 画面timeline组装...")
 
+    # 读取 clip_records.json 获取每个clip的详细信息（包括visual_continuation状态）
+    clip_records_path = os.path.join(run_dir, "clip_records.json")
+    clip_records: List[Dict[str, Any]] = []
+    if os.path.exists(clip_records_path):
+        try:
+            with open(clip_records_path, "r", encoding="utf-8") as f:
+                clip_records = json.load(f)
+            logger.info("[Node6] 读取clip_records.json: %d条记录", len(clip_records))
+        except Exception as e:
+            logger.warning("[Node6] 读取clip_records.json失败: %s", e)
+
+    # 构建 sentence_id -> clip_record 映射
+    clip_record_by_sid: Dict[int, Dict[str, Any]] = {}
+    for rec in clip_records:
+        sid = rec.get("sentence_id", 0)
+        if sid > 0:
+            clip_record_by_sid[sid] = rec
+
     # 构建初始timeline
     final_timeline: List[Dict[str, Any]] = []
     for i, shot in enumerate(timeline_shots):
-        clip_path = clip_paths[i] if i < len(clip_paths) else ""
+        sentence_id = shot.get("sentence_id", i + 1)
+        clip_record = clip_record_by_sid.get(sentence_id, {})
+        
+        # 检查是否是视觉延续
+        is_visual_continuation = clip_record.get("visual_continuation", False)
+        visual_continuation_from = clip_record.get("visual_continuation_from", 0)
+        
+        # 获取clip_path：如果是视觉延续，则clip_path为空
+        if is_visual_continuation:
+            clip_path = ""
+        else:
+            # 从clip_paths列表中获取，但需要找到对应的active clip索引
+            # 因为clip_paths只包含active clips，需要计算当前是第几个active clip
+            active_clip_index = 0
+            for j in range(i):
+                prev_sid = timeline_shots[j].get("sentence_id", j + 1)
+                prev_rec = clip_record_by_sid.get(prev_sid, {})
+                if not prev_rec.get("visual_continuation", False):
+                    active_clip_index += 1
+            clip_path = clip_paths[active_clip_index] if active_clip_index < len(clip_paths) else ""
+
         time_info = timing[i] if i < len(timing) else {}
 
         entry: Dict[str, Any] = {
-            "sentence_id": shot.get("sentence_id", i + 1),
+            "sentence_id": sentence_id,
             "text": shot.get("text", ""),
             "start_time": time_info.get("start_time", 0.0),
             "end_time": time_info.get("end_time", 0.0),
@@ -241,9 +279,12 @@ def timeline_assembly_node(
             "match_reason": shot.get("match_reason", ""),
             "semantic_tags": shot.get("semantic_tags", []),
             "visual_intent": shot.get("visual_intent", ""),
-            "cross_sentence_continuation": False,
-            "visual_continuation_from": None,
-            "visual_continuation_asset_id": "",
+            "visual_continuation": is_visual_continuation,
+            "visual_continuation_from": visual_continuation_from,
+            "visual_group_id": shot.get("visual_group_id", 0),
+            "source_start": clip_record.get("source_start", 0.0),
+            "source_end": clip_record.get("source_end", 0.0),
+            "asset_usage_count": clip_record.get("asset_usage_count", 1),
         }
         final_timeline.append(entry)
 
@@ -258,7 +299,7 @@ def timeline_assembly_node(
         except Exception as e:
             logger.warning("[Node6] 读取clipped_assets.json失败: %s", e)
 
-    # 应用跨句视觉延续
+    # 应用跨句视觉延续（保留原有逻辑）
     if clipped_assets:
         final_timeline = _apply_cross_sentence_continuation(
             final_timeline, clipped_assets, run_dir

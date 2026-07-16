@@ -86,13 +86,28 @@ def final_composition_node(
     temp_dir = ensure_dir(os.path.join(run_dir, "temp"))
     final_mp4 = os.path.join(run_dir, "final.mp4")
     end_hold_sec = 0.0  # 初始化 end_hold_sec
+    
+    # 获取TTS时长
+    tts_duration = get_media_duration(tts_wav_path) if os.path.exists(tts_wav_path) else 0.0
+    if tts_duration <= 0:
+        raise RuntimeError(f"TTS时长无效: {tts_duration}")
 
     try:
-        # 获取clip文件列表
-        clip_files = [s["clip_path"] for s in timeline if s.get("clip_path")]
+        # 获取clip文件列表 - 只包含active clips（跳过visual continuation）
+        clip_files = []
+        for s in timeline:
+            clip_path = s.get("clip_path", "")
+            is_visual_continuation = s.get("visual_continuation", False)
+            # 只包含有clip_path且不是visual continuation的条目
+            if clip_path and not is_visual_continuation and os.path.exists(clip_path):
+                clip_files.append(clip_path)
+            elif clip_path and not is_visual_continuation:
+                logger.warning("[Node7] clip文件不存在: %s", clip_path)
 
         if not clip_files:
             raise RuntimeError("无可用clip文件")
+        
+        logger.info("[Node7] 活跃clip数: %d/%d", len(clip_files), len(timeline))
 
         # 1. 拼接素材片段（concat filter）- 统一缩放到1080x1920
         #    新版素材分辨率不一致（1080p/4K/非标准），需要先统一分辨率
@@ -141,7 +156,29 @@ def final_composition_node(
             run_ffmpeg(cmd, timeout=300)
 
         concat_duration = get_media_duration(concat_path)
-        logger.info("[Node7] 拼接完成: %.2fs", concat_duration)
+        logger.info("[Node7] 拼接完成: %.2fs, TTS时长: %.2fs", concat_duration, tts_duration)
+
+        # 1.4 精确Trim: 确保主体视频时长与TTS时长一致
+        # 如果concat视频比TTS长，裁剪到TTS时长
+        # 如果concat视频比TTS短，保持原样（不允许拉伸）
+        trim_tolerance = 0.05  # 允许50ms误差
+        if concat_duration > tts_duration + trim_tolerance:
+            trimmed_path = os.path.join(temp_dir, "trimmed.mp4")
+            logger.info("[Node7] 精确Trim: %.2fs -> %.2fs", concat_duration, tts_duration)
+            run_ffmpeg([
+                "ffmpeg", "-y", "-i", concat_path,
+                "-t", str(tts_duration),
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "copy",
+                "-movflags", "+faststart",
+                trimmed_path
+            ], timeout=120)
+            concat_path = trimmed_path
+            concat_duration = get_media_duration(concat_path)
+            logger.info("[Node7] Trim完成: %.2fs", concat_duration)
+        elif concat_duration < tts_duration - trim_tolerance:
+            logger.warning("[Node7] 主体视频时长不足: %.2fs < TTS %.2fs", concat_duration, tts_duration)
 
         # 1.5 End Hold: 延长最后一帧，让结尾画面多停留1秒
         # 使用 tpad filter 延长视频最后一帧

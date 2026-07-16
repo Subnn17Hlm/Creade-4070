@@ -1,0 +1,261 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "Creade终于把高性能的风",
+    "primary_scene_tag": "产品展示",
+    "required_tags": [
+      "产品展示"
+    ],
+    "duration": 2.394,
+    "reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包",
+      "价格促销",
+      "CTA促单"
+    ]
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "装进超minni的机身里",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 2.066,
+    "reason": "关键词匹配: '装进超minni的机身里...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "就是这款",
+    "primary_scene_tag": "产品展示",
+    "required_tags": [
+      "产品展示"
+    ],
+    "duration": 0.9,
+    "reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示",
+    "low_confidence": true,
+    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
+    "candidate_tags": [
+      "产品展示",
+      "手持大小对比",
+      "折叠动作",
+      "放进包包",
+      "价格促销",
+      "CTA促单"
+    ]
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "随行折叠高速吹风机",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "折叠动作",
+      "风力展示",
+      "吹发动作"
+    ],
+    "duration": 1.575,
+    "reason": "关键词匹配: '随行折叠高速吹风机...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "现在上新福利",
+    "primary_scene_tag": "价格促销",
+    "required_tags": [
+      "价格促销"
+    ],
+    "duration": 1.083,
+    "reason": "关键词匹配: '现在上新福利...' → 价格促销",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "买就送牛皮收纳包",
+    "primary_scene_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作",
+      "放进包包",
+      "价格促销",
+      "CTA促单",
+      "赠品展示"
+    ],
+    "duration": 1.411,
+    "reason": "关键词匹配: '买就送牛皮收纳包...' → 折叠动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "巴掌大小",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '巴掌大小...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "还能折叠",
+    "primary_scene_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '还能折叠...' → 折叠动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "出差旅行",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '出差旅行...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "随身携带也没负担",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "放进包包"
+    ],
+    "duration": 1.411,
+    "reason": "关键词匹配: '随身携带也没负担...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "超高速强劲马达",
+    "primary_scene_tag": "风力展示",
+    "required_tags": [
+      "风力展示"
+    ],
+    "duration": 1.247,
+    "reason": "关键词匹配: '超高速强劲马达...' → 风力展示",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "快速干发不伤发",
+    "primary_scene_tag": "风力展示",
+    "required_tags": [
+      "风力展示",
+      "护发效果",
+      "吹发动作"
+    ],
+    "duration": 1.247,
+    "reason": "关键词匹配: '快速干发不伤发...' → 风力展示",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "升级屏显",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '升级屏显...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "温度看的见",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 0.92,
+    "reason": "关键词匹配: '温度看的见...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "智能温控技术",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 1.083,
+    "reason": "关键词匹配: '智能温控技术...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 16,
+    "sentence_text": "保护头发强韧水润",
+    "primary_scene_tag": "护发效果",
+    "required_tags": [
+      "护发效果",
+      "吹发动作"
+    ],
+    "duration": 1.411,
+    "reason": "关键词匹配: '保护头发强韧水润...' → 护发效果",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 17,
+    "sentence_text": "趁着现在活动",
+    "primary_scene_tag": "价格促销",
+    "required_tags": [
+      "价格促销"
+    ],
+    "duration": 1.083,
+    "reason": "关键词匹配: '趁着现在活动...' → 价格促销",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 18,
+    "sentence_text": "想要的赶紧来吧",
+    "primary_scene_tag": "CTA促单",
+    "required_tags": [
+      "CTA促单"
+    ],
+    "duration": 1.247,
+    "reason": "关键词匹配: '想要的赶紧来吧...' → CTA促单",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  }
+]
