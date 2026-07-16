@@ -1,23 +1,23 @@
 {
-  "original_script_chars": 49,
-  "final_script_chars": 49,
+  "original_script_chars": 137,
+  "final_script_chars": 137,
   "script_coverage": 100.0,
   "script_ok": true,
-  "audio_duration": 13.32,
-  "video_duration": 14.48,
-  "video_audio_diff": 1.16,
-  "padding_seconds": 1.16,
-  "body_sync_diff": 0.16,
+  "audio_duration": 24.864,
+  "video_duration": 26.12,
+  "video_audio_diff": 1.256,
+  "padding_seconds": 1.256,
+  "body_sync_diff": 0.256,
   "end_hold_sec": 1.0,
   "tts_wav_exists": true,
   "bgm_exists": true,
-  "tts_duration": 13.32,
+  "tts_duration": 24.864,
   "bgm_duration": 53.107,
-  "final_audio_duration": 13.32,
-  "final_video_duration": 14.48,
-  "final_audio_bitrate": 133098,
+  "final_audio_duration": 24.864,
+  "final_video_duration": 26.12,
+  "final_audio_bitrate": 133184,
   "final_audio_mean_volume": -22.3,
-  "tts_mean_volume": -21.9,
+  "tts_mean_volume": -21.4,
   "bgm_mean_volume": -17.4,
   "audio_mix_used": true,
   "tts_in_final": true,
@@ -35,18 +35,22 @@
   "subtitle_max_lines": 2,
   "subtitle_area_ratio": 0.05,
   "subtitle_style_pass": true,
-  "subtitle_cue_count": 12,
+  "subtitle_cue_count": 18,
   "subtitle_burned_into_final": true,
   "subtitle_visible_in_final_video": true,
   "sampled_subtitle_frame_paths": [
     "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_2.0s.jpg",
     "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_7.0s.jpg",
-    "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_13.0s.jpg"
+    "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_13.0s.jpg",
+    "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_18.0s.jpg",
+    "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_23.0s.jpg"
   ],
   "expected_srt_text_per_frame": [
-    "十一万转",
-    "三档风速",
-    "真的方便"
+    "还能号称吹风机里的小钢炮",
+    "颜值高还轻巧",
+    "吹头发吹得又快又顺滑",
+    "怎么吹也不用担心烫伤",
+    "这么精致小巧的高速吹风机"
   ],
   "manual_visual_check_required": false,
   "sampled_subtitle_frames": [
@@ -54,15 +58,11 @@
       "time_point": 2,
       "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_2.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "十一万转",
+      "srt_text": "还能号称吹风机里的小钢炮",
       "has_text_in_frame": true,
-      "text_blocks": 5,
+      "text_blocks": 1,
       "text_block_rows": [
-        6,
-        11,
-        6,
-        11,
-        10
+        33
       ],
       "text_visible": true
     },
@@ -70,7 +70,21 @@
       "time_point": 7,
       "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_7.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "三档风速",
+      "srt_text": "颜值高还轻巧",
+      "has_text_in_frame": true,
+      "text_blocks": 3,
+      "text_block_rows": [
+        21,
+        31,
+        157
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 13,
+      "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_13.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "吹头发吹得又快又顺滑",
       "has_text_in_frame": true,
       "text_blocks": 1,
       "text_block_rows": [
@@ -79,15 +93,26 @@
       "text_visible": true
     },
     {
-      "time_point": 13,
-      "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_13.0s.jpg",
+      "time_point": 18,
+      "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_18.0s.jpg",
       "has_srt_at_time": true,
-      "srt_text": "真的方便",
+      "srt_text": "怎么吹也不用担心烫伤",
       "has_text_in_frame": true,
-      "text_blocks": 2,
+      "text_blocks": 1,
       "text_block_rows": [
-        32,
-        66
+        137
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 23,
+      "frame_path": "/workspace/projects/runs/visual_opt_05/subtitle_check_frames/frame_23.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "这么精致小巧的高速吹风机",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        139
       ],
       "text_visible": true
     }
@@ -107,12 +132,12 @@
   "debug_text_burned_in": false,
   "selected_materials_from_candidates": true,
   "semantic_match_summary": {
-    "total_segments": 12,
-    "high_confidence": 9,
+    "total_segments": 18,
+    "high_confidence": 17,
     "medium_confidence": 0,
-    "low_confidence": 3
+    "low_confidence": 1
   },
-  "low_confidence_segments": 2,
+  "low_confidence_segments": 1,
   "timeline_split_method": "character_weighted_punctuation",
   "timeline_average_split": false,
   "used_manifest_file": "asset_manifest_v2_clean.csv",

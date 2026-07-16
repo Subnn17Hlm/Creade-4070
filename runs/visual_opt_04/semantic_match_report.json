@@ -2,7 +2,7 @@
   "manifest_file_used": "asset_manifest_v2_clean.csv",
   "total_manifest_assets": 126,
   "available_assets_after_filter": 126,
-  "sentence_mapping_file": "auto_generated",
+  "sentence_mapping_file": "sentence_tag_mapping.json",
   "exact_tag_match_count": 9,
   "synonym_match_count": 0,
   "semantic_fallback_count": 0,

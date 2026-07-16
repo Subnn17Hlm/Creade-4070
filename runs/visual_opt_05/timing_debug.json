@@ -1,74 +1,110 @@
 [
   {
-    "text": "这款折叠吹风机",
+    "text": "这么小的吹风机",
     "start_time": 0.0,
-    "end_time": 1.759,
-    "duration": 1.759
+    "end_time": 1.249,
+    "duration": 1.249
   },
   {
-    "text": "十一万转",
-    "start_time": 1.759,
-    "end_time": 2.819,
-    "duration": 1.06
+    "text": "还能号称吹风机里的小钢炮",
+    "start_time": 1.249,
+    "end_time": 3.355,
+    "duration": 2.105
   },
   {
-    "text": "巴掌大",
-    "start_time": 2.819,
-    "end_time": 3.719,
+    "text": "这款Creade折叠吹风机",
+    "start_time": 3.355,
+    "end_time": 5.631,
+    "duration": 2.276
+  },
+  {
+    "text": "只有巴掌大小",
+    "start_time": 5.631,
+    "end_time": 6.709,
+    "duration": 1.078
+  },
+  {
+    "text": "颜值高还轻巧",
+    "start_time": 6.709,
+    "end_time": 7.787,
+    "duration": 1.078
+  },
+  {
+    "text": "11万转每分钟的转速",
+    "start_time": 7.787,
+    "end_time": 9.55,
+    "duration": 1.763
+  },
+  {
+    "text": "风速能高达29米每秒",
+    "start_time": 9.55,
+    "end_time": 11.313,
+    "duration": 1.763
+  },
+  {
+    "text": "还配备磁吸风嘴",
+    "start_time": 11.313,
+    "end_time": 12.563,
+    "duration": 1.249
+  },
+  {
+    "text": "吹头发吹得又快又顺滑",
+    "start_time": 12.563,
+    "end_time": 14.325,
+    "duration": 1.763
+  },
+  {
+    "text": "2挡风速",
+    "start_time": 14.325,
+    "end_time": 15.225,
     "duration": 0.9
   },
   {
-    "text": "放包里就走",
-    "start_time": 3.719,
-    "end_time": 5.013,
-    "duration": 1.293
-  },
-  {
-    "text": "0.3秒出风",
-    "start_time": 5.013,
-    "end_time": 6.539,
-    "duration": 1.526
-  },
-  {
-    "text": "三档风速",
-    "start_time": 6.539,
-    "end_time": 7.599,
-    "duration": 1.06
-  },
-  {
-    "text": "双风道",
-    "start_time": 7.599,
-    "end_time": 8.499,
+    "text": "5种风温",
+    "start_time": 15.225,
+    "end_time": 16.125,
     "duration": 0.9
   },
   {
-    "text": "干发快",
-    "start_time": 8.499,
-    "end_time": 9.399,
+    "text": "10种选择",
+    "start_time": 16.125,
+    "end_time": 17.032,
+    "duration": 0.907
+  },
+  {
+    "text": "怎么吹也不用担心烫伤",
+    "start_time": 17.032,
+    "end_time": 18.795,
+    "duration": 1.763
+  },
+  {
+    "text": "折叠随身携带",
+    "start_time": 18.795,
+    "end_time": 19.874,
+    "duration": 1.078
+  },
+  {
+    "text": "包包能放",
+    "start_time": 19.874,
+    "end_time": 20.774,
     "duration": 0.9
   },
   {
-    "text": "负离子",
-    "start_time": 9.399,
-    "end_time": 10.299,
-    "duration": 0.9
+    "text": "箱子不占地",
+    "start_time": 20.774,
+    "end_time": 21.681,
+    "duration": 0.907
   },
   {
-    "text": "护发顺",
-    "start_time": 10.299,
-    "end_time": 11.199,
-    "duration": 0.9
+    "text": "这么精致小巧的高速吹风机",
+    "start_time": 21.681,
+    "end_time": 23.786,
+    "duration": 2.105
   },
   {
-    "text": "折叠设计",
-    "start_time": 11.199,
-    "end_time": 12.26,
-    "duration": 1.06
-  },
-  {
-    "text": "真的方便",
-    "start_time": 12.26,
-    "end_time": 13.32,
-    "duration": 1.06
+    "text": "一定要试一试",
+    "start_time": 23.786,
+    "end_time": 24.864,
+    "duration": 1.078
   }
 ]

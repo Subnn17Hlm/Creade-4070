@@ -10,9 +10,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.759
+      1.249
     ],
-    "visual_group_total_duration": 1.759,
+    "visual_group_total_duration": 1.249,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -99,9 +99,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.06
+      2.105
     ],
-    "visual_group_total_duration": 1.06,
+    "visual_group_total_duration": 2.105,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -139,10 +139,10 @@
         "primary_scene_tag": "风力展示"
       }
     ],
-    "selected_material_id": "风力展示_001",
-    "selected_file_name": "风力展示_001_花朵风力_2s.mp4",
+    "selected_material_id": "风力展示_004",
+    "selected_file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
     "selected_primary_scene_tag": "风力展示",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_001_%E8%8A%B1%E6%9C%B5%E9%A3%8E%E5%8A%9B_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_004_%E5%90%B9%E4%BF%9D%E9%B2%9C%E8%86%9C%E4%B8%8D%E7%A0%B4%E5%B1%95%E7%A4%BA%E6%99%BA%E8%83%BD%E6%81%92%E6%B8%A9_5s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -193,9 +193,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      0.9
+      2.276
     ],
-    "visual_group_total_duration": 0.9,
+    "visual_group_total_duration": 2.276,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -292,21 +292,24 @@
     "candidate_tags": []
   },
   {
-    "sentence_id": 4,
+    "sentence_id": 5,
     "sentence_text": "放包里就走",
     "visual_group_id": 4,
     "visual_group_sentence_ids": [
-      4
+      4,
+      5
     ],
     "visual_group_texts": [
+      "",
       ""
     ],
     "visual_group_sentence_durations": [
-      1.293
+      1.078,
+      1.078
     ],
-    "visual_group_total_duration": 1.293,
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
+    "visual_group_total_duration": 2.156,
+    "visual_group_merged": true,
+    "visual_group_merge_reason": "短句'放包里就走...'(5字/1.08s)合并到下一句",
     "required_tags": [
       "放进包包"
     ],
@@ -362,10 +365,10 @@
         "primary_scene_tag": "放进包包"
       }
     ],
-    "selected_material_id": "放进包包_001",
-    "selected_file_name": "放进包包_001_放入特写_2s.mp4",
+    "selected_material_id": "放进包包_005",
+    "selected_file_name": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
     "selected_primary_scene_tag": "放进包包",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_001_%E6%94%BE%E5%85%A5%E7%89%B9%E5%86%99_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%94%BE%E8%BF%9B%E5%8C%85%E5%8C%85_005_%E7%89%B9%E5%86%99%E5%88%87%E8%BF%9C%E6%99%AF%E4%BB%8E%E5%8C%85%E6%8B%BF%E5%87%BA%E5%8A%A8%E4%BD%9C_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -406,19 +409,113 @@
     "candidate_tags": []
   },
   {
-    "sentence_id": 5,
-    "sentence_text": "0.3秒出风",
+    "sentence_id": 6,
+    "sentence_text": "三档风速",
     "visual_group_id": 5,
     "visual_group_sentence_ids": [
-      5
+      6
     ],
     "visual_group_texts": [
       ""
     ],
     "visual_group_sentence_durations": [
-      1.526
+      1.763
     ],
-    "visual_group_total_duration": 1.526,
+    "visual_group_total_duration": 1.763,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
+    "required_tags": [
+      "风力展示"
+    ],
+    "candidate_materials": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_006",
+        "file_name": "风力展示_006_远景切特写_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "selected_material_id": "风力展示_002",
+    "selected_file_name": "风力展示_002_吹水风力_4s.mp4",
+    "selected_primary_scene_tag": "风力展示",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_002_%E5%90%B9%E6%B0%B4%E9%A3%8E%E5%8A%9B_4s.mp4",
+    "tag_match_type": "exact",
+    "tag_overlap": 0,
+    "synonym_overlap": 1,
+    "semantic_fallback_used": false,
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
+    "alternative_candidates": [
+      {
+        "material_id": "风力展示_001",
+        "file_name": "风力展示_001_花朵风力_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_002",
+        "file_name": "风力展示_002_吹水风力_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_003",
+        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_004",
+        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+        "primary_scene_tag": "风力展示"
+      },
+      {
+        "material_id": "风力展示_005",
+        "file_name": "风力展示_005_吹丝带_2s.mp4",
+        "primary_scene_tag": "风力展示"
+      }
+    ],
+    "repeated_material_reason": "",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "双风道",
+    "visual_group_id": 6,
+    "visual_group_sentence_ids": [
+      7
+    ],
+    "visual_group_texts": [
+      ""
+    ],
+    "visual_group_sentence_durations": [
+      1.763
+    ],
+    "visual_group_total_duration": 1.763,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -517,118 +614,21 @@
     ]
   },
   {
-    "sentence_id": 6,
-    "sentence_text": "三档风速",
-    "visual_group_id": 6,
-    "visual_group_sentence_ids": [
-      6
-    ],
-    "visual_group_texts": [
-      ""
-    ],
-    "visual_group_sentence_durations": [
-      1.06
-    ],
-    "visual_group_total_duration": 1.06,
-    "visual_group_merged": false,
-    "visual_group_merge_reason": "",
-    "required_tags": [
-      "风力展示"
-    ],
-    "candidate_materials": [
-      {
-        "material_id": "风力展示_001",
-        "file_name": "风力展示_001_花朵风力_2s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_002",
-        "file_name": "风力展示_002_吹水风力_4s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_003",
-        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_004",
-        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_005",
-        "file_name": "风力展示_005_吹丝带_2s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_006",
-        "file_name": "风力展示_006_远景切特写_2s.mp4",
-        "primary_scene_tag": "风力展示"
-      }
-    ],
-    "selected_material_id": "风力展示_005",
-    "selected_file_name": "风力展示_005_吹丝带_2s.mp4",
-    "selected_primary_scene_tag": "风力展示",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E9%A3%8E%E5%8A%9B%E5%B1%95%E7%A4%BA_005_%E5%90%B9%E4%B8%9D%E5%B8%A6_2s.mp4",
-    "tag_match_type": "exact",
-    "tag_overlap": 0,
-    "synonym_overlap": 1,
-    "semantic_fallback_used": false,
-    "match_score": 1.0,
-    "match_confidence": "high",
-    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示",
-    "alternative_candidates": [
-      {
-        "material_id": "风力展示_001",
-        "file_name": "风力展示_001_花朵风力_2s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_002",
-        "file_name": "风力展示_002_吹水风力_4s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_003",
-        "file_name": "风力展示_003_吹乒乓球_4s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_004",
-        "file_name": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
-        "primary_scene_tag": "风力展示"
-      },
-      {
-        "material_id": "风力展示_005",
-        "file_name": "风力展示_005_吹丝带_2s.mp4",
-        "primary_scene_tag": "风力展示"
-      }
-    ],
-    "repeated_material_reason": "",
-    "low_confidence": false,
-    "fallback_reason": "",
-    "candidate_tags": []
-  },
-  {
     "sentence_id": 8,
-    "sentence_text": "双风道",
+    "sentence_text": "干发快",
     "visual_group_id": 7,
     "visual_group_sentence_ids": [
-      7,
       8
     ],
     "visual_group_texts": [
-      "",
       ""
     ],
     "visual_group_sentence_durations": [
-      0.9,
-      0.9
+      1.249
     ],
-    "visual_group_total_duration": 1.8,
-    "visual_group_merged": true,
-    "visual_group_merge_reason": "短句'双风道...'(3字/0.90s)合并到下一句",
+    "visual_group_total_duration": 1.249,
+    "visual_group_merged": false,
+    "visual_group_merge_reason": "",
     "required_tags": [
       "吹发动作"
     ],
@@ -684,17 +684,17 @@
         "primary_scene_tag": "吹发动作"
       }
     ],
-    "selected_material_id": "吹发动作_001",
-    "selected_file_name": "吹发动作_001_全景吹发_5s.mp4",
+    "selected_material_id": "吹发动作_008",
+    "selected_file_name": "吹发动作_008_半身背面吹发_3s.mp4",
     "selected_primary_scene_tag": "吹发动作",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_001_%E5%85%A8%E6%99%AF%E5%90%B9%E5%8F%91_5s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%90%B9%E5%8F%91%E5%8A%A8%E4%BD%9C_008_%E5%8D%8A%E8%BA%AB%E8%83%8C%E9%9D%A2%E5%90%B9%E5%8F%91_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
     "semantic_fallback_used": false,
-    "match_score": 0.3,
-    "match_confidence": "low",
-    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['吹发动作'] → 吹发动作",
+    "match_score": 1.0,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作",
     "alternative_candidates": [
       {
         "material_id": "吹发动作_001",
@@ -723,16 +723,9 @@
       }
     ],
     "repeated_material_reason": "",
-    "low_confidence": true,
-    "fallback_reason": "无关键词匹配，使用兜底标签: 产品展示",
-    "candidate_tags": [
-      "产品展示",
-      "手持大小对比",
-      "折叠动作",
-      "放进包包",
-      "价格促销",
-      "CTA促单"
-    ]
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
   },
   {
     "sentence_id": 9,
@@ -745,9 +738,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      0.9
+      1.763
     ],
-    "visual_group_total_duration": 0.9,
+    "visual_group_total_duration": 1.763,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -805,10 +798,10 @@
         "primary_scene_tag": "护发效果"
       }
     ],
-    "selected_material_id": "护发效果_003",
-    "selected_file_name": "护发效果_003_对镜背面展示柔顺_3s.mp4",
+    "selected_material_id": "护发效果_001",
+    "selected_file_name": "护发效果_001_半身中景_4s.mp4",
     "selected_primary_scene_tag": "护发效果",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_003_%E5%AF%B9%E9%95%9C%E8%83%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%9F%94%E9%A1%BA_3s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_001_%E5%8D%8A%E8%BA%AB%E4%B8%AD%E6%99%AF_4s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -919,10 +912,10 @@
         "primary_scene_tag": "护发效果"
       }
     ],
-    "selected_material_id": "护发效果_004",
-    "selected_file_name": "护发效果_004_对镜美好展示_2s.mp4",
+    "selected_material_id": "护发效果_003",
+    "selected_file_name": "护发效果_003_对镜背面展示柔顺_3s.mp4",
     "selected_primary_scene_tag": "护发效果",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_004_%E5%AF%B9%E9%95%9C%E7%BE%8E%E5%A5%BD%E5%B1%95%E7%A4%BA_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E6%8A%A4%E5%8F%91%E6%95%88%E6%9E%9C_003_%E5%AF%B9%E9%95%9C%E8%83%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%9F%94%E9%A1%BA_3s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -975,10 +968,10 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.06,
-      1.06
+      0.9,
+      0.907
     ],
-    "visual_group_total_duration": 2.12,
+    "visual_group_total_duration": 1.807,
     "visual_group_merged": true,
     "visual_group_merge_reason": "结尾短句合并到上一句",
     "required_tags": [

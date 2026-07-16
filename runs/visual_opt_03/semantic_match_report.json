@@ -2,22 +2,22 @@
   "manifest_file_used": "asset_manifest_v2_clean.csv",
   "total_manifest_assets": 126,
   "available_assets_after_filter": 126,
-  "sentence_mapping_file": "auto_generated",
-  "exact_tag_match_count": 10,
+  "sentence_mapping_file": "sentence_tag_mapping.json",
+  "exact_tag_match_count": 11,
   "synonym_match_count": 0,
   "semantic_fallback_count": 0,
   "unmatched_sentence_ids": [],
   "high_confidence": 8,
   "medium_confidence": 0,
-  "low_confidence": 2,
+  "low_confidence": 3,
   "repeated_material_count": 0,
   "tag_distribution_used": {
     "折叠动作": 2,
     "风力展示": 2,
     "手持大小对比": 1,
     "放进包包": 1,
-    "产品展示": 1,
+    "产品展示": 3,
     "吹发动作": 1,
-    "护发效果": 2
+    "护发效果": 1
   }
 }

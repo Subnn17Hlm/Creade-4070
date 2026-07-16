@@ -10,9 +10,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.771
+      2.292
     ],
-    "visual_group_total_duration": 1.771,
+    "visual_group_total_duration": 2.292,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -121,9 +121,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.065
+      1.982
     ],
-    "visual_group_total_duration": 1.065,
+    "visual_group_total_duration": 1.982,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -233,9 +233,9 @@
     ],
     "visual_group_sentence_durations": [
       0.9,
-      1.3
+      1.517
     ],
-    "visual_group_total_duration": 2.2,
+    "visual_group_total_duration": 2.417,
     "visual_group_merged": true,
     "visual_group_merge_reason": "短句'就是这款...'(4字/0.90s)合并到下一句",
     "required_tags": [
@@ -354,9 +354,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.536
+      1.052
     ],
-    "visual_group_total_duration": 1.536,
+    "visual_group_total_duration": 1.052,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -384,10 +384,10 @@
         "primary_scene_tag": "价格促销"
       }
     ],
-    "selected_material_id": "价格促销_003",
-    "selected_file_name": "价格促销_003_包装展示特效_3s.mp4",
+    "selected_material_id": "价格促销_001",
+    "selected_file_name": "价格促销_001_搭配促销权益_2s.mp4",
     "selected_primary_scene_tag": "价格促销",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_003_%E5%8C%85%E8%A3%85%E5%B1%95%E7%A4%BA%E7%89%B9%E6%95%88_3s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_001_%E6%90%AD%E9%85%8D%E4%BF%83%E9%94%80%E6%9D%83%E7%9B%8A_2s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -433,9 +433,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.065
+      1.362
     ],
-    "visual_group_total_duration": 1.065,
+    "visual_group_total_duration": 1.362,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -834,9 +834,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      0.9
+      1.362
     ],
-    "visual_group_total_duration": 0.9,
+    "visual_group_total_duration": 1.362,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -948,9 +948,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.065
+      1.207
     ],
-    "visual_group_total_duration": 1.065,
+    "visual_group_total_duration": 1.207,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1042,9 +1042,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.065
+      1.207
     ],
-    "visual_group_total_duration": 1.065,
+    "visual_group_total_duration": 1.207,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1245,9 +1245,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      0.941
+      0.9
     ],
-    "visual_group_total_duration": 0.941,
+    "visual_group_total_duration": 0.9,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1354,9 +1354,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.113
+      1.052
     ],
-    "visual_group_total_duration": 1.113,
+    "visual_group_total_duration": 1.052,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1463,9 +1463,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.456
+      1.362
     ],
-    "visual_group_total_duration": 1.456,
+    "visual_group_total_duration": 1.362,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1577,9 +1577,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.113
+      1.052
     ],
-    "visual_group_total_duration": 1.113,
+    "visual_group_total_duration": 1.052,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
@@ -1607,10 +1607,10 @@
         "primary_scene_tag": "价格促销"
       }
     ],
-    "selected_material_id": "价格促销_001",
-    "selected_file_name": "价格促销_001_搭配促销权益_2s.mp4",
+    "selected_material_id": "价格促销_002",
+    "selected_file_name": "价格促销_002_全物品展示_2s.mp4",
     "selected_primary_scene_tag": "价格促销",
-    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_001_%E6%90%AD%E9%85%8D%E4%BF%83%E9%94%80%E6%9D%83%E7%9B%8A_2s.mp4",
+    "selected_url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E4%BB%B7%E6%A0%BC%E4%BF%83%E9%94%80_002_%E5%85%A8%E7%89%A9%E5%93%81%E5%B1%95%E7%A4%BA_2s.mp4",
     "tag_match_type": "exact",
     "tag_overlap": 0,
     "synonym_overlap": 1,
@@ -1656,9 +1656,9 @@
       ""
     ],
     "visual_group_sentence_durations": [
-      1.284
+      1.207
     ],
-    "visual_group_total_duration": 1.284,
+    "visual_group_total_duration": 1.207,
     "visual_group_merged": false,
     "visual_group_merge_reason": "",
     "required_tags": [
