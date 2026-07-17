@@ -1,0 +1,21 @@
+[
+  {"sentence_id": 1, "sentence_text": "每次出差旅行", "required_tags": ["旅行场景"]},
+  {"sentence_id": 2, "sentence_text": "是不是都在为带哪个吹风机发愁", "required_tags": ["痛点共鸣", "旅行场景"]},
+  {"sentence_id": 3, "sentence_text": "酒店的吹风机", "required_tags": ["痛点共鸣", "旅行场景"]},
+  {"sentence_id": 4, "sentence_text": "风小还伤发", "required_tags": ["痛点共鸣", "风力展示"]},
+  {"sentence_id": 5, "sentence_text": "我真的会谢", "required_tags": ["痛点共鸣"]},
+  {"sentence_id": 6, "sentence_text": "还好被我挖到了这个出差神器", "required_tags": ["手持展示", "赠品展示"]},
+  {"sentence_id": 7, "sentence_text": "它折起来就比手机大一点点", "required_tags": ["折叠动作", "手持大小对比"]},
+  {"sentence_id": 8, "sentence_text": "放包里", "required_tags": ["放进包包"]},
+  {"sentence_id": 9, "sentence_text": "行李箱里巨省地方", "required_tags": ["放进行李箱"]},
+  {"sentence_id": 10, "sentence_text": "别看它小", "required_tags": ["手持大小对比", "手持展示"]},
+  {"sentence_id": 11, "sentence_text": "11万转的风力可不是盖的", "required_tags": ["风力展示", "手持展示"]},
+  {"sentence_id": 12, "sentence_text": "我这长头发", "required_tags": ["护发效果", "手持展示"]},
+  {"sentence_id": 13, "sentence_text": "几分钟就搞定了", "required_tags": ["护发效果", "风力展示"]},
+  {"sentence_id": 14, "sentence_text": "而且它这个屏显调温我真的超爱", "required_tags": ["屏显调温"]},
+  {"sentence_id": 15, "sentence_text": "想要什么温度自己调", "required_tags": ["屏显调温"]},
+  {"sentence_id": 16, "sentence_text": "清清楚楚", "required_tags": ["屏显调温"]},
+  {"sentence_id": 17, "sentence_text": "经常出门的姐妹", "required_tags": ["旅行场景", "放进行李箱"]},
+  {"sentence_id": 18, "sentence_text": "这个颜值高又强悍的小东西", "required_tags": ["手持展示", "赠品展示"]},
+  {"sentence_id": 19, "sentence_text": "必须焊在你的行李箱里", "required_tags": ["放进行李箱", "CTA促单"]}
+]

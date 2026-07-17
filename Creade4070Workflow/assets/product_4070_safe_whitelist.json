@@ -1,0 +1,464 @@
+[
+  {
+    "asset_id": "产品展示_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "产品展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_001/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_001/frame_0.8s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_001/frame_1.63s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_001/frame_2.47s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_001/frame_2.97s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "产品展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "产品展示_002",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "产品展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_002/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_002/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_002/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_002/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/产品展示_002/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "产品展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "吹发动作_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "吹发动作",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_001/frame_0.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_001/frame_1.25s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_001/frame_2.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_001/frame_3.75s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_001/frame_4.5s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "吹发动作"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "5"
+  },
+  {
+    "asset_id": "吹发动作_008",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "吹发动作",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_008/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_008/frame_0.77s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_008/frame_1.57s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_008/frame_2.37s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/吹发动作_008/frame_2.83s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "吹发动作"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "屏显调温_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "屏显调温",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_001/frame_0.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_001/frame_1.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_001/frame_2.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_001/frame_3.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_001/frame_4.5s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "屏显调温"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "5"
+  },
+  {
+    "asset_id": "屏显调温_003",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "屏显调温",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "屏显调温"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed_with_exception",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "屏显调温_007",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "屏显调温",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_007/frame_0.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_007/frame_1.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_007/frame_2.53s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_007/frame_3.8s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_007/frame_4.53s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "屏显调温"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "5"
+  },
+  {
+    "asset_id": "屏显调温_008",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "屏显调温",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_008/frame_0.37s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_008/frame_0.93s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_008/frame_1.87s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_008/frame_2.8s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_008/frame_3.37s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "屏显调温"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "手持大小对比_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "手持大小对比",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_001/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_001/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_001/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_001/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_001/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "手持大小对比"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "手持大小对比_002",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "手持大小对比",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_002/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_002/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_002/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_002/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_002/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "手持大小对比"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "手持大小对比_003",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "手持大小对比",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_003/frame_0.33s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_003/frame_0.87s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_003/frame_1.77s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_003/frame_2.63s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_003/frame_3.17s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "手持大小对比"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "手持大小对比_006",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "手持大小对比",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_006/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_006/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_006/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_006/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/手持大小对比_006/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "手持大小对比"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "折叠动作_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "折叠动作",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_001/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_001/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_001/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_001/frame_2.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_001/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "折叠动作"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "折叠动作_002",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "折叠动作",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_002/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_002/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_002/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_002/frame_2.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/折叠动作_002/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "折叠动作"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "放进包包_005",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "放进包包",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进包包_005/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进包包_005/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进包包_005/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进包包_005/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进包包_005/frame_2.7s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "放进包包"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "3"
+  },
+  {
+    "asset_id": "放进行李箱_005",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "放进行李箱",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进行李箱_005/frame_0.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进行李箱_005/frame_1.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进行李箱_005/frame_2.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进行李箱_005/frame_3.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/放进行李箱_005/frame_4.5s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "放进行李箱"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "5"
+  },
+  {
+    "asset_id": "风力展示_001",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "风力展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_001/frame_0.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_001/frame_0.57s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_001/frame_1.17s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_001/frame_1.77s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_001/frame_2.1s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "风力展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "2"
+  },
+  {
+    "asset_id": "风力展示_002",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "风力展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_002/frame_0.4s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_002/frame_1.0s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_002/frame_2.0s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_002/frame_3.0s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_002/frame_3.6s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "风力展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "4"
+  },
+  {
+    "asset_id": "风力展示_004",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "风力展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_004/frame_0.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_004/frame_1.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_004/frame_2.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_004/frame_3.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_004/frame_4.5s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "风力展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "5"
+  },
+  {
+    "asset_id": "风力展示_005",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "风力展示",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_005/frame_0.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_005/frame_0.6s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_005/frame_1.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_005/frame_1.83s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风力展示_005/frame_2.2s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "风力展示"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "2"
+  },
+  {
+    "asset_id": "风嘴配件_007",
+    "target_product": "Creade 4070折叠高速吹风机",
+    "primary_scene_tag": "风嘴配件",
+    "manually_confirmed": true,
+    "confirmation_reason": "来自官方资产库，OCR检测到Creade品牌文字，用户确认展示目标产品",
+    "evidence_frame_paths": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/风嘴配件_007/frame_0.23s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风嘴配件_007/frame_0.6s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风嘴配件_007/frame_1.2s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风嘴配件_007/frame_1.8s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/风嘴配件_007/frame_2.13s.jpg"
+    ],
+    "allowed_scene_tags": [
+      "风嘴配件"
+    ],
+    "confirmed_at": "2026-07-17T15:11:25.350454",
+    "audit_version": "1.0",
+    "text_audit_status": "passed",
+    "product_consistency_status": "passed",
+    "url": "2"
+  }
+]
