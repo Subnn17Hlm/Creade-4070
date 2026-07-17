@@ -155,6 +155,16 @@ async def tos_health():
     return JSONResponse(content=result)
 
 
+@app.get("/")
+async def root():
+    """根路径 - 服务信息"""
+    return {
+        "service": "TOS Health Check Preview",
+        "version": "1.0.0",
+        "endpoints": ["/internal/tos-health", "/health"]
+    }
+
+
 @app.get("/health")
 async def health():
     """基础健康检查"""
