@@ -261,6 +261,27 @@ async_graph: Optional[CompiledStateGraph] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global async_graph, async_runtime
+    
+    # Check if database is configured
+    from storage.database.db import get_db_url
+    db_url = get_db_url()
+    
+    if not db_url:
+        # Database not configured - skip DB initialization
+        logger.info("[lifespan] PGDATABASE_URL not configured, skipping database initialization")
+        # Still compile graph without checkpointer for sync endpoints
+        if graph_helper.is_agent_proj():
+            base = graph_helper.get_agent_instance("agents.agent", None)
+            sync_graph = base.builder.compile()
+        else:
+            base = graph_helper.get_graph_instance("graphs.graph")
+            sync_graph = base.builder.compile()
+        service.set_graph(sync_graph)
+        yield
+        return
+    
+    # Database configured - full initialization
     engine = get_engine()
     @event.listens_for(engine, "connect")
     def _set_utc(dbapi_conn, _):
@@ -273,7 +294,6 @@ async def lifespan(app: FastAPI):
     else:
         base = graph_helper.get_graph_instance("graphs.graph")
         sync_graph = base.builder.compile()
-    global async_graph, async_runtime
     async_graph = base.builder.compile(checkpointer=checkpointer)
     service.set_graph(sync_graph)
     async_runtime = AsyncTaskRuntime(

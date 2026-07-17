@@ -15,12 +15,13 @@ except Exception:
     pass
 
 def get_db_url() -> str:
-    """Build database URL from environment."""
+    """Build database URL from environment. Returns empty string if not configured."""
     url = os.getenv("PGDATABASE_URL") or ""
     if url is not None and url != "":
         return url
-    from coze_workload_identity import Client
+    # Try to load from workload identity
     try:
+        from coze_workload_identity import Client
         client = Client()
         env_vars = client.get_project_env_vars()
         client.close()
@@ -28,13 +29,10 @@ def get_db_url() -> str:
             if env_var.key == "PGDATABASE_URL":
                 url = env_var.value.replace("'", "'\\''")
                 return url
-    except Exception as e:
-        logger.error(f"Error loading PGDATABASE_URL: {e}")
-        raise e
-    finally:
-        if url is None or url == "":
-            logger.error("PGDATABASE_URL is not set")
-    return url
+    except Exception:
+        # Workload identity not available or PGDATABASE_URL not configured
+        pass
+    return ""
 _engine = None
 _SessionLocal = None
 
