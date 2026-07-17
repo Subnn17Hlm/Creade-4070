@@ -4,7 +4,7 @@ set -e
 # 导出环境变量
 
 WORK_DIR="${COZE_WORKSPACE_PATH:-.}"
-PORT="${DEPLOY_RUN_PORT:-5000}"
+PORT="${DEPLOY_RUN_PORT:-80}"
 
 usage() {
   echo "用法: $0 -p <端口>"
