@@ -1,12 +1,6 @@
 [project]
-sub_id = "33f79b0f"
-name = "Creade4070Workflow"
 entrypoint = "src/main.py"
 requires = ["python-3.12"]
-project_type = ""
-
-[preview]
-preview_enable = "disabled"
 
 [dev]
 build = ["bash", "scripts/setup.sh"]
@@ -15,8 +9,4 @@ pack = ["bash", "scripts/pack.sh"]
 
 [deploy]
 build = ["bash", "scripts/setup.sh"]
-run = ["bash", "scripts/http_run.sh", "-p", "5000"]
-
-[deploy.profile]
-kind = "service"
-flavor = "workflow"
+run = ["bash", "scripts/http_run.sh"]

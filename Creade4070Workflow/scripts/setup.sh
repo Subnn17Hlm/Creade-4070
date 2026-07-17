@@ -1,19 +1,15 @@
 #!/bin/bash
-set -Eeuo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$PROJECT_DIR"
+set -eo pipefail
 
 # 初始化目录
 if [ "$COZE_PROJECT_ENV" = "DEV" ]; then
-  if [ ! -d "${PROJECT_DIR}/assets" ]; then
-    mkdir -p "${PROJECT_DIR}/assets"
+  if [ ! -d "${COZE_WORKSPACE_PATH}/assets" ]; then
+    mkdir -p "${COZE_WORKSPACE_PATH}/assets"
   fi
 fi
 
 # uv 安装依赖
-if [ -n "${PIP_TARGET:-}" ]; then
+if [ -n "$PIP_TARGET" ]; then
   echo "[setup] Deploy mode (uv): installing to PIP_TARGET=$PIP_TARGET"
   uv export --frozen --no-hashes --no-dev | uv pip install --no-cache --target "$PIP_TARGET" -r -
 else

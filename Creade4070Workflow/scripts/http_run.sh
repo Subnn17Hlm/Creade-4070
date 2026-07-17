@@ -1,11 +1,10 @@
 #!/bin/bash
-set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$PROJECT_DIR"
+set -e
+# 导出环境变量
 
-PORT=5000
+WORK_DIR="${COZE_WORKSPACE_PATH:-.}"
+PORT="${DEPLOY_RUN_PORT:-5000}"
 
 usage() {
   echo "用法: $0 -p <端口>"
@@ -29,8 +28,8 @@ while getopts "p:h" opt; do
 done
 
 # 激活 .venv（devbox 环境），deploy 无 .venv 则跳过
-if [ -f "${PROJECT_DIR}/.venv/bin/activate" ]; then
-  source "${PROJECT_DIR}/.venv/bin/activate"
+if [ -f "${WORK_DIR}/.venv/bin/activate" ]; then
+  source "${WORK_DIR}/.venv/bin/activate"
 fi
 
-python "${PROJECT_DIR}/src/main.py" -m http -p "$PORT"
+python ${WORK_DIR}/src/main.py -m http -p $PORT
