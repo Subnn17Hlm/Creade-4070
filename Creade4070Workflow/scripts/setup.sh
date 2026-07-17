@@ -1,11 +1,22 @@
 #!/bin/bash
 set -eo pipefail
 
+# 时间戳辅助函数
+step_start() {
+  STEP_START_TIME=$(date +%s)
+  echo "[setup] $(date '+%H:%M:%S') $1"
+}
+step_end() {
+  local end_time=$(date +%s)
+  local duration=$((end_time - STEP_START_TIME))
+  echo "[setup] $(date '+%H:%M:%S') $1 (${duration}s)"
+}
+
 # 根据脚本位置计算项目根目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
-echo "[setup] Working directory: $(pwd)"
+echo "[setup] $(date '+%H:%M:%S') Working directory: $(pwd)"
 
 # 初始化目录
 if [ "$COZE_PROJECT_ENV" = "DEV" ]; then
@@ -16,7 +27,7 @@ fi
 
 # uv 安装依赖
 if [ -n "$PIP_TARGET" ]; then
-  echo "[setup] Deploy mode: installing to PIP_TARGET"
+  echo "[setup] $(date '+%H:%M:%S') Deploy mode: installing to PIP_TARGET"
   
   # 创建 PIP_TARGET 目录
   if ! mkdir -p "$PIP_TARGET"; then
@@ -25,24 +36,25 @@ if [ -n "$PIP_TARGET" ]; then
   fi
   
   # 导出依赖并安装
-  echo "[setup] Step 1: Exporting dependencies..."
+  step_start "Step 1: Exporting dependencies..."
   if ! uv export --frozen --no-hashes --no-dev > /tmp/requirements_export.txt; then
     echo "[setup] ERROR: uv export failed (exit code: $?)"
     exit 1
   fi
-  echo "[setup] Exported $(wc -l < /tmp/requirements_export.txt) dependencies"
+  step_end "Step 1 completed: Exported $(wc -l < /tmp/requirements_export.txt) dependencies"
   
-  echo "[setup] Step 2: Installing to target directory..."
+  step_start "Step 2: Installing to target directory..."
   if ! uv pip install --no-cache --target "$PIP_TARGET" -r /tmp/requirements_export.txt; then
     echo "[setup] ERROR: uv pip install failed (exit code: $?)"
     exit 1
   fi
+  step_end "Step 2 completed"
   
   # 清理临时文件
   rm -f /tmp/requirements_export.txt
   
   # 验证关键模块可导入
-  echo "[setup] Step 3: Verifying installation..."
+  step_start "Step 3: Verifying installation..."
   export PYTHONPATH="$PIP_TARGET:${PYTHONPATH:-}"
   
   # 忽略第三方SDK的SyntaxWarning（如tos/utils.py的invalid escape sequence）
@@ -58,14 +70,16 @@ if [ -n "$PIP_TARGET" ]; then
     echo "[setup] ERROR: Module verification failed"
     exit 1
   fi
+  step_end "Step 3 completed"
   
-  echo "[setup] Deploy installation completed successfully"
+  echo "[setup] $(date '+%H:%M:%S') Deploy installation completed successfully"
 else
-  echo "[setup] Devbox mode (uv): installing to .venv"
+  step_start "Devbox mode (uv): installing to .venv..."
   if [ -f "uv.lock" ]; then
     uv sync --frozen || uv sync
   else
     uv sync
   fi
   touch .venv/.uv_ready
+  step_end "Devbox installation completed"
 fi
