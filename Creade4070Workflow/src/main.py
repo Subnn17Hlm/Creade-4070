@@ -599,6 +599,91 @@ async def health_check():
         raise HTTPException(status_code=503, detail=str(e))
 
 
+@app.get("/internal/tos-health")
+async def tos_health_check():
+    """TOS 素材存储连接健康检查。
+    
+    仅返回连接状态摘要，不返回密钥、完整 URL 或请求签名。
+    """
+    import csv
+    from src.storage.tos.tos_client import (
+        check_env_configured,
+        get_client,
+        is_env_configured,
+        MATERIAL_PREFIX,
+    )
+
+    result = {
+        "env_configured": is_env_configured(),
+        "env_details": check_env_configured(),
+        "head_ok": False,
+        "range_ok": False,
+        "error_type": "",
+    }
+
+    if not is_env_configured():
+        result["error_type"] = "env_not_configured"
+        return result
+
+    client = get_client()
+    if client is None:
+        result["error_type"] = "client_init_failed"
+        return result
+
+    # 从 CSV 获取第一个有效测试对象
+    csv_path = "assets/asset_manifest_v2_bound.csv"
+    test_bucket = ""
+    test_key = ""
+    try:
+        with open(csv_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                bucket = row.get("bucket", "").strip()
+                key = row.get("object_key", "").strip()
+                if bucket and key and key.startswith(MATERIAL_PREFIX):
+                    test_bucket = bucket
+                    test_key = key
+                    break
+    except Exception as e:
+        result["error_type"] = "csv_read_failed"
+        return result
+
+    if not test_bucket or not test_key:
+        result["error_type"] = "no_valid_test_object"
+        return result
+
+    # HEAD 检查
+    head_result = client.head_object(test_bucket, test_key)
+    result["head_ok"] = head_result["exists"]
+    if not head_result["exists"]:
+        result["error_type"] = head_result.get("error_type", "head_failed")
+        return result
+
+    # Range 读取测试（仅读取前 1024 字节）
+    try:
+        presigned_url = client.generate_presigned_url(test_bucket, test_key, expires=60)
+        # 只检查 URL 是否生成成功，不实际请求（避免在健康检查中暴露 URL）
+        if presigned_url and presigned_url.startswith("http"):
+            # 尝试 HTTP Range 请求
+            import urllib.request
+            req = urllib.request.Request(presigned_url, method="GET")
+            req.add_header("Range", "bytes=0-1023")
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    if resp.status in (200, 206):
+                        result["range_ok"] = True
+                    else:
+                        result["error_type"] = f"range_http_{resp.status}"
+            except urllib.error.HTTPError as e:
+                result["error_type"] = f"range_http_{e.code}"
+            except Exception as e:
+                result["error_type"] = "range_request_failed"
+    except Exception as e:
+        result["error_type"] = "presign_failed"
+
+    return result
+
+
 @app.get(path="/graph_parameter")
 async def http_graph_inout_parameter(request: Request):
     return service.graph_inout_schema()

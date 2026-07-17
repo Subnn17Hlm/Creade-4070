@@ -41,6 +41,7 @@ dependencies = [
     "PyGObject==3.48.2",
     "easyocr>=1.7.2",
     "rapidocr-onnxruntime>=1.4.4",
+    "tos>=2.8,<3",
 ]
 
 [tool.uv]

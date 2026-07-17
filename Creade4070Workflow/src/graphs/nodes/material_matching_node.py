@@ -315,28 +315,30 @@ def _generate_sentence_tag_mapping(
 
 
 def _resolve_material_url(row: dict) -> str:
-    """按优先级解析素材 URL：source_url > s3_url > local_path。
-    bucket+object_key 的预签名 URL 在运行时由 _get_presigned_url 生成。
+    """按优先级解析素材 URL：source_url > s3_url > TOS 预签名 URL > local_path。
+    
+    使用统一的 tos_client.resolve_material_url 进行解析。
     """
-    source_url = row.get("source_url", "").strip()
-    if source_url:
-        return source_url
-    s3_url = row.get("s3_url", "").strip()
-    if s3_url:
-        return s3_url
-    local_path = row.get("local_path", "").strip()
-    if local_path:
-        return local_path
-    return ""
+    from src.storage.tos.tos_client import resolve_material_url as _tos_resolve
+    url, _ = _tos_resolve(
+        source_url=row.get("source_url", ""),
+        s3_url=row.get("s3_url", ""),
+        bucket=row.get("bucket", ""),
+        object_key=row.get("object_key", ""),
+        local_path=row.get("local_path", ""),
+    )
+    return url
 
 
 def _get_presigned_url(bucket: str, object_key: str, expire_time: int = 1800) -> str:
-    """通过 S3SyncStorage 运行时生成预签名 URL。
+    """通过 TOS 客户端运行时生成预签名 URL。
     不缓存，每次调用生成新的签名 URL，有效期默认 1800 秒。
     """
-    from src.utils.storage_helper import _get_storage
-    storage = _get_storage()
-    return storage.generate_presigned_url(key=object_key, bucket=bucket, expire_time=expire_time)
+    from src.storage.tos.tos_client import get_client, TosClientError
+    client = get_client()
+    if client is None:
+        raise TosClientError("TOS 客户端不可用（环境变量未配置）")
+    return client.generate_presigned_url(bucket=bucket, object_key=object_key, expires=expire_time)
 
 
 def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:

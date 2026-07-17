@@ -91,19 +91,15 @@ def material_source_audit_node(
         reader = csv.DictReader(f)
         for row in reader:
             asset_id = row.get("asset_id", "").strip()
-            # 按优先级解析 URL：source_url > s3_url > presigned_url > bucket+object_key > local_path
-            url = (row.get("source_url", "") or row.get("s3_url", "") or row.get("presigned_url", "") or "").strip()
-            if not url:
-                bucket = row.get("bucket", "").strip()
-                object_key = row.get("object_key", "").strip()
-                if bucket and object_key:
-                    try:
-                        from src.graphs.nodes.material_matching_node import _get_presigned_url
-                        url = _get_presigned_url(bucket, object_key)
-                    except Exception as e:
-                        logger.warning("[Node3] 素材 %s: 预签名URL生成失败: %s", asset_id, e)
-            if not url:
-                url = row.get("local_path", "").strip()
+            # 使用统一的 URL 解析逻辑
+            from src.storage.tos.tos_client import resolve_material_url
+            url, _ = resolve_material_url(
+                source_url=row.get("source_url", ""),
+                s3_url=row.get("s3_url", ""),
+                bucket=row.get("bucket", ""),
+                object_key=row.get("object_key", ""),
+                local_path=row.get("local_path", ""),
+            )
             file_name = row.get("file_name", "").strip()
             tags_str = row.get("tags", "").strip()
             tags = [t.strip() for t in tags_str.split(",") if t.strip()]
