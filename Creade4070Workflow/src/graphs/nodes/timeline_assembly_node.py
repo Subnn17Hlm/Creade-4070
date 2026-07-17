@@ -221,7 +221,7 @@ def _generate_subtitle_suppression(
 
     # 读取白名单
     workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
-    whitelist_path = os.path.join(workspace_path, "素材质量优化", "native_text_whitelist.json")
+    whitelist_path = os.path.join(workspace_path, "assets", "native_text_whitelist.json")
     if not os.path.exists(whitelist_path):
         logger.info("[Node6] 白名单文件不存在，跳过字幕关闭")
         return
