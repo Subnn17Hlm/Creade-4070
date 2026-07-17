@@ -5,7 +5,7 @@
 
 用法:
     from pipeline.single_run import run_single_pipeline
-    result = run_single_pipeline(script_id=2, script_text="...", material_csv="assets/asset_manifest_v2_clean.csv")
+    result = run_single_pipeline(script_id=2, script_text="...", material_csv="assets/asset_manifest_v2_bound.csv")
 
 输出:
     runs/script_02/

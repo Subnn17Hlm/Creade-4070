@@ -314,8 +314,37 @@ def _generate_sentence_tag_mapping(
     return mappings
 
 
+def _resolve_material_url(row: dict) -> str:
+    """按优先级解析素材 URL：source_url > s3_url > local_path。
+    bucket+object_key 的预签名 URL 在运行时由 _get_presigned_url 生成。
+    """
+    source_url = row.get("source_url", "").strip()
+    if source_url:
+        return source_url
+    s3_url = row.get("s3_url", "").strip()
+    if s3_url:
+        return s3_url
+    local_path = row.get("local_path", "").strip()
+    if local_path:
+        return local_path
+    return ""
+
+
+def _get_presigned_url(bucket: str, object_key: str, expire_time: int = 1800) -> str:
+    """通过 S3SyncStorage 运行时生成预签名 URL。
+    不缓存，每次调用生成新的签名 URL，有效期默认 1800 秒。
+    """
+    from src.utils.storage_helper import _get_storage
+    storage = _get_storage()
+    return storage.generate_presigned_url(key=object_key, bucket=bucket, expire_time=expire_time)
+
+
 def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
-    """加载素材清单CSV，返回素材列表"""
+    """加载素材清单CSV，返回素材列表。
+    
+    URL 解析优先级：source_url > s3_url > bucket+object_key(运行时预签名) > local_path
+    只要记录有可用 URL 或 bucket+object_key，就会被保留。
+    """
     materials = []
     with open(csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
@@ -326,8 +355,10 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
             enabled = row.get('enabled', '').strip().lower()
             if enabled == 'false':
                 continue
-            # 优先使用source_url，其次使用s3_url
-            url = row.get("source_url", "").strip() or row.get("s3_url", "").strip()
+            # 按优先级解析 URL
+            url = _resolve_material_url(row)
+            bucket = row.get("bucket", "").strip()
+            object_key = row.get("object_key", "").strip()
             # 解析duration_sec
             duration_str = row.get("duration_sec", "3").strip()
             try:
@@ -338,8 +369,8 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
                 "asset_id": row.get("asset_id", "").strip(),
                 "file_name": row.get("file_name", "").strip(),
                 "primary_scene_tag": row.get("primary_scene_tag", "").strip(),
-                "bucket": row.get("bucket", "").strip(),
-                "object_key": row.get("object_key", "").strip(),
+                "bucket": bucket,
+                "object_key": object_key,
                 "s3_url": url,
                 "source_url": url,
                 "duration_sec": duration_sec,
@@ -348,7 +379,8 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
                 "notes": row.get("notes", "").strip(),
                 "batch": row.get("batch", "").strip(),
             }
-            if mat["s3_url"]:
+            # 保留有 URL 或有 bucket+object_key 的记录
+            if url or (bucket and object_key):
                 materials.append(mat)
     return materials
 
@@ -587,7 +619,7 @@ def material_matching_node(
     csv_path = state.material_csv
     if not csv_path or not os.path.exists(csv_path):
         # 尝试默认路径
-        default_csv = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "asset_manifest_v2_clean.csv")
+        default_csv = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "asset_manifest_v2_bound.csv")
         if os.path.exists(default_csv):
             csv_path = default_csv
         else:
@@ -1013,7 +1045,11 @@ def material_matching_node(
             "selected_material_id": selected["asset_id"],
             "selected_file_name": selected["file_name"],
             "selected_primary_scene_tag": selected["primary_scene_tag"],
-            "selected_url": selected["s3_url"],
+            "selected_url": selected["s3_url"] or (
+                _get_presigned_url(selected["bucket"], selected["object_key"])
+                if selected.get("bucket") and selected.get("object_key")
+                else ""
+            ),
             "tag_match_type": tag_match_type,
             "tag_overlap": tag_overlap,
             "synonym_overlap": synonym_overlap,
