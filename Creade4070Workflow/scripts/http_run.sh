@@ -32,8 +32,8 @@ while getopts "p:h" opt; do
 done
 
 # 激活 .venv（devbox 环境），deploy 无 .venv 则跳过
-if [ -f "${WORK_DIR}/.venv/bin/activate" ]; then
-  source "${WORK_DIR}/.venv/bin/activate"
+if [ -f ".venv/bin/activate" ]; then
+  source ".venv/bin/activate"
 fi
 
-python ${WORK_DIR}/src/main.py -m http -p $PORT
+python src/main.py -m http -p $PORT

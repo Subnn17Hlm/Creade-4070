@@ -83,3 +83,30 @@ else
   touch .venv/.uv_ready
   step_end "Devbox installation completed"
 fi
+
+# 部署前静态校验：确保关键文件存在
+step_start "Step 4: Static validation..."
+REQUIRED_FILES=(
+  "src/main.py"
+  "src/graphs/__init__.py"
+  "src/graphs/nodes/__init__.py"
+  "pyproject.toml"
+)
+MISSING_FILES=()
+for f in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$f" ]; then
+    MISSING_FILES+=("$f")
+  fi
+done
+
+if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+  echo "[setup] ERROR: Missing required files:"
+  for f in "${MISSING_FILES[@]}"; do
+    echo "  - $f"
+  done
+  echo "[setup] Deployment package is incomplete"
+  exit 1
+fi
+step_end "Step 4 completed"
+
+echo "[setup] $(date '+%H:%M:%S') All validation passed"
