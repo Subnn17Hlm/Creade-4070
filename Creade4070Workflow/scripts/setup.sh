@@ -45,6 +45,10 @@ if [ -n "$PIP_TARGET" ]; then
   echo "[setup] Step 3: Verifying installation..."
   export PYTHONPATH="$PIP_TARGET:${PYTHONPATH:-}"
   
+  # 忽略第三方SDK的SyntaxWarning（如tos/utils.py的invalid escape sequence）
+  # 只检查Python退出码，不以stderr内容为准
+  export PYTHONWARNINGS="ignore::SyntaxWarning"
+  
   VERIFY_RESULT=0
   python3 -c "import fastapi; print('[setup] OK: fastapi')" || VERIFY_RESULT=1
   python3 -c "import uvicorn; print('[setup] OK: uvicorn')" || VERIFY_RESULT=1
