@@ -1,9 +1,13 @@
 [project]
 requires = ["python-3.12"]
-project_type = ""
+project_type = "web"
 
 [preview]
-preview_enable = "disabled"
+preview_enable = "enabled"
+
+[dev]
+build = ["bash", "Creade4070Workflow/scripts/setup.sh"]
+run = ["bash", "Creade4070Workflow/scripts/http_run.sh", "-p", "5000"]
 
 [deploy]
 build = ["bash", "Creade4070Workflow/scripts/setup.sh"]
