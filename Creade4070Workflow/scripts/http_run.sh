@@ -36,4 +36,7 @@ if [ -f ".venv/bin/activate" ]; then
   source ".venv/bin/activate"
 fi
 
+# 设置 PYTHONPATH 以支持相对导入
+export PYTHONPATH="$PROJECT_DIR/src:$PYTHONPATH"
+
 python src/main.py -m http -p $PORT

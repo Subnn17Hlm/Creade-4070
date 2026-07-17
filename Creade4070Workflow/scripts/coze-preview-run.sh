@@ -8,8 +8,10 @@ cd "$PROJECT_DIR"
 
 # 显式声明关键环境变量
 export PORT=5000
+export PYTHONPATH="$PROJECT_DIR/src:$PYTHONPATH"
 
 echo "[coze-preview-run] Working directory: $(pwd)"
+echo "[coze-preview-run] PYTHONPATH: $PYTHONPATH"
 echo "[coze-preview-run] Starting preview server on 0.0.0.0:5000"
 
 # 清理 5000 端口残留进程（绝不碰 9000）
