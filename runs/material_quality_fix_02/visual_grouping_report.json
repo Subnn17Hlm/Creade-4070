@@ -1,0 +1,346 @@
+[
+  {
+    "group_id": 1,
+    "sentence_ids": [
+      1
+    ],
+    "sentence_texts": [
+      "每次出差旅行"
+    ],
+    "original_sentence_durations": [
+      1.021
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_002",
+    "selected_asset_file": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+    "total_duration": 1.021,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 2,
+    "sentence_ids": [
+      2
+    ],
+    "sentence_texts": [
+      "是不是都在为"
+    ],
+    "original_sentence_durations": [
+      1.021
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "痛点共鸣",
+    "selected_asset_id": "痛点共鸣_001",
+    "selected_asset_file": "痛点共鸣_001_老式吹风机行李箱拉不上_3s.mp4",
+    "total_duration": 1.021,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣'] → 痛点共鸣"
+  },
+  {
+    "group_id": 3,
+    "sentence_ids": [
+      3
+    ],
+    "sentence_texts": [
+      "带哪个吹风机发愁"
+    ],
+    "original_sentence_durations": [
+      1.334
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "痛点共鸣",
+    "selected_asset_id": "痛点共鸣_004",
+    "selected_asset_file": "痛点共鸣_004_老式高温吹破保鲜膜_3s.mp4",
+    "total_duration": 1.334,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣'] → 痛点共鸣"
+  },
+  {
+    "group_id": 4,
+    "sentence_ids": [
+      4
+    ],
+    "sentence_texts": [
+      "酒店的吹风机"
+    ],
+    "original_sentence_durations": [
+      1.021
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_003",
+    "selected_asset_file": "旅行场景_003_酒店走廊_3s.mp4",
+    "total_duration": 1.021,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 5,
+    "sentence_ids": [
+      5,
+      6
+    ],
+    "sentence_texts": [
+      "风小还伤发"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.256
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "痛点共鸣",
+    "selected_asset_id": "痛点共鸣_003",
+    "selected_asset_file": "痛点共鸣_003_客房内行李箱拉不上_5s.mp4",
+    "total_duration": 2.156,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['痛点共鸣'] → 痛点共鸣"
+  },
+  {
+    "group_id": 6,
+    "sentence_ids": [
+      7
+    ],
+    "sentence_texts": [
+      "还好被我挖到了这个出差神器"
+    ],
+    "original_sentence_durations": [
+      2.119
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_001",
+    "selected_asset_file": "旅行场景_001_推门进酒店客房_4s.mp4",
+    "total_duration": 2.119,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 7,
+    "sentence_ids": [
+      8
+    ],
+    "sentence_texts": [
+      "它折起来就比手机大一点点"
+    ],
+    "original_sentence_durations": [
+      1.962
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_001",
+    "selected_asset_file": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "total_duration": 1.962,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
+  },
+  {
+    "group_id": 8,
+    "sentence_ids": [
+      9,
+      10
+    ],
+    "sentence_texts": [
+      "放包里"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.334
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "放进包包",
+    "selected_asset_id": "放进包包_005",
+    "selected_asset_file": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+    "total_duration": 2.234,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进包包'] → 放进包包"
+  },
+  {
+    "group_id": 9,
+    "sentence_ids": [
+      11,
+      12
+    ],
+    "sentence_texts": [
+      "别看它小"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.962
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "风力展示",
+    "selected_asset_id": "风力展示_004",
+    "selected_asset_file": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+    "total_duration": 2.862,
+    "low_confidence": true,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['风力展示'] → 风力展示"
+  },
+  {
+    "group_id": 10,
+    "sentence_ids": [
+      13,
+      14
+    ],
+    "sentence_texts": [
+      "我这长头发"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      1.177
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "吹发动作",
+    "selected_asset_id": "吹发动作_001",
+    "selected_asset_file": "吹发动作_001_全景吹发_5s.mp4",
+    "total_duration": 2.077,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作"
+  },
+  {
+    "group_id": 11,
+    "sentence_ids": [
+      15
+    ],
+    "sentence_texts": [
+      "而且它这个屏显调温我真的超爱"
+    ],
+    "original_sentence_durations": [
+      2.276
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_007",
+    "selected_asset_file": "屏显调温_007_屏显热风降到冷风_5s.mp4",
+    "total_duration": 2.276,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
+  },
+  {
+    "group_id": 12,
+    "sentence_ids": [
+      16
+    ],
+    "sentence_texts": [
+      "想要什么温度自己调"
+    ],
+    "original_sentence_durations": [
+      1.491
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_003",
+    "selected_asset_file": "屏显调温_003_温度模式_3s.mp4",
+    "total_duration": 1.491,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
+  },
+  {
+    "group_id": 13,
+    "sentence_ids": [
+      17
+    ],
+    "sentence_texts": [
+      "清清楚楚"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_008",
+    "selected_asset_file": "屏显调温_008_屏显冷热循环_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
+  },
+  {
+    "group_id": 14,
+    "sentence_ids": [
+      18
+    ],
+    "sentence_texts": [
+      "经常出门的姐妹"
+    ],
+    "original_sentence_durations": [
+      1.177
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_005",
+    "selected_asset_file": "旅行场景_005_刷卡进客房_3s.mp4",
+    "total_duration": 1.177,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 15,
+    "sentence_ids": [
+      19
+    ],
+    "sentence_texts": [
+      "这个颜值高又强悍的小东西"
+    ],
+    "original_sentence_durations": [
+      1.962
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "产品展示",
+    "selected_asset_id": "产品展示_001",
+    "selected_asset_file": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+    "total_duration": 1.962,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['产品展示'] → 产品展示"
+  },
+  {
+    "group_id": 16,
+    "sentence_ids": [
+      20
+    ],
+    "sentence_texts": [
+      "必须焊在你的行李箱里"
+    ],
+    "original_sentence_durations": [
+      1.648
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "放进行李箱",
+    "selected_asset_id": "放进行李箱_005",
+    "selected_asset_file": "放进行李箱_005_折叠后放入行李箱_5s.mp4",
+    "total_duration": 1.648,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进行李箱'] → 放进行李箱"
+  }
+]

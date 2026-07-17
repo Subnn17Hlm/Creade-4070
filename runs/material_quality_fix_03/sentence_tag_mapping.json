@@ -1,0 +1,208 @@
+[
+  {
+    "sentence_id": 1,
+    "sentence_text": "不挑包包",
+    "primary_scene_tag": "放进包包",
+    "required_tags": [
+      "放进包包"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '不挑包包...' → 放进包包",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 2,
+    "sentence_text": "不占空间",
+    "primary_scene_tag": "放进包包",
+    "required_tags": [
+      "放进包包"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '不占空间...' → 放进包包",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 3,
+    "sentence_text": "旅行出差",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '旅行出差...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 4,
+    "sentence_text": "闭眼入的好物来了",
+    "primary_scene_tag": "CTA促单",
+    "required_tags": [
+      "CTA促单"
+    ],
+    "duration": 1.536,
+    "reason": "关键词匹配: '闭眼入的好物来了...' → CTA促单",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 5,
+    "sentence_text": "小巧便捷适用各种场景",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 1.907,
+    "reason": "关键词匹配: '小巧便捷适用各种场景...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 6,
+    "sentence_text": "出门旅游最怕带洗护大件",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "吹发动作",
+      "痛点共鸣"
+    ],
+    "duration": 2.092,
+    "reason": "关键词匹配: '出门旅游最怕带洗护大件...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 7,
+    "sentence_text": "科瑞德高速折叠吹风机",
+    "primary_scene_tag": "折叠动作",
+    "required_tags": [
+      "折叠动作",
+      "风力展示",
+      "吹发动作"
+    ],
+    "duration": 1.907,
+    "reason": "关键词匹配: '科瑞德高速折叠吹风机...' → 折叠动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 8,
+    "sentence_text": "机身超轻超薄",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比"
+    ],
+    "duration": 1.164,
+    "reason": "关键词匹配: '机身超轻超薄...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 9,
+    "sentence_text": "折起来手机大小",
+    "primary_scene_tag": "手持大小对比",
+    "required_tags": [
+      "手持大小对比",
+      "折叠动作"
+    ],
+    "duration": 1.35,
+    "reason": "关键词匹配: '折起来手机大小...' → 手持大小对比",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 10,
+    "sentence_text": "行李箱随便一塞就带走",
+    "primary_scene_tag": "放进行李箱",
+    "required_tags": [
+      "放进行李箱",
+      "旅行场景",
+      "放进包包",
+      "折叠动作"
+    ],
+    "duration": 1.907,
+    "reason": "关键词匹配: '行李箱随便一塞就带走...' → 放进行李箱",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 11,
+    "sentence_text": "3到4分钟吹干长发",
+    "primary_scene_tag": "吹发动作",
+    "required_tags": [
+      "吹发动作"
+    ],
+    "duration": 1.721,
+    "reason": "关键词匹配: '3到4分钟吹干长发...' → 吹发动作",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 12,
+    "sentence_text": "吹完之后相当柔顺",
+    "primary_scene_tag": "护发效果",
+    "required_tags": [
+      "护发效果",
+      "吹发动作"
+    ],
+    "duration": 1.536,
+    "reason": "关键词匹配: '吹完之后相当柔顺...' → 护发效果",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 13,
+    "sentence_text": "自带屏显",
+    "primary_scene_tag": "屏显调温",
+    "required_tags": [
+      "屏显调温"
+    ],
+    "duration": 0.9,
+    "reason": "关键词匹配: '自带屏显...' → 屏显调温",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 14,
+    "sentence_text": "还赠旅行收纳袋",
+    "primary_scene_tag": "旅行场景",
+    "required_tags": [
+      "旅行场景",
+      "折叠动作",
+      "放进包包"
+    ],
+    "duration": 1.35,
+    "reason": "关键词匹配: '还赠旅行收纳袋...' → 旅行场景",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  },
+  {
+    "sentence_id": 15,
+    "sentence_text": "赶紧入手吧",
+    "primary_scene_tag": "CTA促单",
+    "required_tags": [
+      "CTA促单"
+    ],
+    "duration": 0.979,
+    "reason": "关键词匹配: '赶紧入手吧...' → CTA促单",
+    "low_confidence": false,
+    "fallback_reason": "",
+    "candidate_tags": []
+  }
+]

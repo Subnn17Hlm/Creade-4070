@@ -206,6 +206,170 @@ def _apply_cross_sentence_continuation(
     return timeline
 
 
+def _generate_subtitle_suppression(
+    timeline: List[Dict[str, Any]],
+    run_dir: str,
+) -> None:
+    """
+    检查timeline中是否使用了白名单素材（suppress_generated_subtitle=true）。
+    如果有，生成：
+    1. subtitle_suppression_intervals.json - 关闭区间信息
+    2. render_subtitles.srt - 裁切后的字幕文件（关闭区间内不渲染系统字幕）
+    """
+    import re as _re
+
+    # 读取白名单
+    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
+    whitelist_path = os.path.join(workspace_path, "素材质量优化", "native_text_whitelist.json")
+    if not os.path.exists(whitelist_path):
+        logger.info("[Node6] 白名单文件不存在，跳过字幕关闭")
+        return
+
+    try:
+        with open(whitelist_path, "r", encoding="utf-8") as f:
+            whitelist = json.load(f)
+    except Exception as e:
+        logger.warning("[Node6] 读取白名单失败: %s", e)
+        return
+
+    whitelist_ids = set()
+    # whitelist is a list of entries
+    whitelist_entries = whitelist if isinstance(whitelist, list) else whitelist.get("entries", [])
+    for entry in whitelist_entries:
+        if entry.get("suppress_generated_subtitle", False):
+            whitelist_ids.add(entry.get("asset_id", ""))
+
+    if not whitelist_ids:
+        logger.info("[Node6] 白名单中无需关闭字幕的素材")
+        return
+
+    # 查找timeline中使用白名单素材的区间
+    suppression_intervals: List[Dict[str, Any]] = []
+    current_interval: Optional[Dict[str, Any]] = None
+
+    for entry in timeline:
+        material_id = entry.get("selected_material_id", "")
+        start_time = entry.get("start_time", 0.0)
+        end_time = entry.get("end_time", 0.0)
+
+        if material_id in whitelist_ids:
+            if current_interval is None:
+                current_interval = {
+                    "asset_id": material_id,
+                    "visual_group_id": entry.get("visual_group_id", 0),
+                    "sentence_ids": [entry.get("sentence_id", 0)],
+                    "output_start": start_time,
+                    "output_end": end_time,
+                }
+            else:
+                current_interval["sentence_ids"].append(entry.get("sentence_id", 0))
+                current_interval["output_end"] = end_time
+        else:
+            if current_interval is not None:
+                suppression_intervals.append(current_interval)
+                current_interval = None
+
+    if current_interval is not None:
+        suppression_intervals.append(current_interval)
+
+    if not suppression_intervals:
+        logger.info("[Node6] timeline中未使用白名单素材，无需关闭字幕")
+        return
+
+    # 保存关闭区间信息
+    suppression_path = os.path.join(run_dir, "subtitle_suppression_intervals.json")
+    with open(suppression_path, "w", encoding="utf-8") as f:
+        json.dump(suppression_intervals, f, ensure_ascii=False, indent=2)
+    logger.info("[Node6] 生成字幕关闭区间: %d个", len(suppression_intervals))
+
+    # 生成 render_subtitles.srt
+    canonical_srt_path = os.path.join(run_dir, "subtitles.srt")
+    render_srt_path = os.path.join(run_dir, "render_subtitles.srt")
+
+    if not os.path.exists(canonical_srt_path):
+        logger.warning("[Node6] canonical subtitles.srt 不存在")
+        return
+
+    with open(canonical_srt_path, "r", encoding="utf-8") as f:
+        srt_content = f.read()
+
+    cues = _parse_srt(srt_content)
+    render_cues: List[Dict[str, Any]] = []
+
+    for cue in cues:
+        cue_start = cue["start"]
+        cue_end = cue["end"]
+        cue_text = cue["text"]
+        remaining_parts: List[tuple] = [(cue_start, cue_end)]
+
+        for interval in suppression_intervals:
+            sup_start = interval["output_start"]
+            sup_end = interval["output_end"]
+            new_parts: List[tuple] = []
+            for part_start, part_end in remaining_parts:
+                if part_start >= sup_start and part_end <= sup_end:
+                    continue
+                if part_end <= sup_start or part_start >= sup_end:
+                    new_parts.append((part_start, part_end))
+                    continue
+                if part_start < sup_start:
+                    new_parts.append((part_start, sup_start))
+                if part_end > sup_end:
+                    new_parts.append((sup_end, part_end))
+            remaining_parts = new_parts
+
+        for part_start, part_end in remaining_parts:
+            if part_end - part_start >= 0.3:
+                render_cues.append({"start": part_start, "end": part_end, "text": cue_text})
+
+    with open(render_srt_path, "w", encoding="utf-8") as f:
+        for i, cue in enumerate(render_cues, 1):
+            start_str = _format_srt_time(cue["start"])
+            end_str = _format_srt_time(cue["end"])
+            f.write(f"{i}\n{start_str} --> {end_str}\n{cue['text']}\n\n")
+
+    logger.info("[Node6] 生成 render_subtitles.srt: %d条cue (原%d条)", len(render_cues), len(cues))
+
+
+def _parse_srt(content: str) -> List[Dict[str, Any]]:
+    """解析SRT内容为cue列表"""
+    import re as _re
+    cues: List[Dict[str, Any]] = []
+    blocks = content.strip().split("\n\n")
+    for block in blocks:
+        lines = block.strip().split("\n")
+        if len(lines) < 3:
+            continue
+        time_line = lines[1]
+        match = _re.match(r"(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,\.]\d{3})", time_line)
+        if not match:
+            continue
+        start_str, end_str = match.groups()
+        start = _parse_srt_time(start_str)
+        end = _parse_srt_time(end_str)
+        text = "\n".join(lines[2:])
+        cues.append({"start": start, "end": end, "text": text})
+    return cues
+
+
+def _parse_srt_time(time_str: str) -> float:
+    """解析SRT时间格式为秒数"""
+    time_str = time_str.replace(",", ".")
+    parts = time_str.split(":")
+    if len(parts) == 3:
+        h, m, s = parts
+        return int(h) * 3600 + int(m) * 60 + float(s)
+    return 0.0
+
+
+def _format_srt_time(seconds: float) -> str:
+    """将秒数格式化为SRT时间格式"""
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = seconds % 60
+    return f"{h:02d}:{m:02d}:{s:06.3f}".replace(".", ",")
+
+
 def timeline_assembly_node(
     state: TimelineAssemblyInput,
     config: RunnableConfig,
@@ -334,6 +498,9 @@ def timeline_assembly_node(
         json.dump(final_timeline, f, ensure_ascii=False, indent=2)
 
     logger.info("[Node6] 完成: %d个片段, %d个活跃clip", len(final_timeline), active_clips)
+
+    # === 字幕关闭区间生成（白名单素材） ===
+    _generate_subtitle_suppression(final_timeline, run_dir)
 
     return TimelineAssemblyOutput(
         final_timeline_path=final_timeline_path,

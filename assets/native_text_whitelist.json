@@ -1,0 +1,42 @@
+[
+  {
+    "asset_id": "屏显调温_003",
+    "canonical_name": "屏显调温_003_温度模式_3s",
+    "file_name": "屏显调温_003_温度模式_3s.mp4",
+    "source_path": "素材/屏显调温/",
+    "url": "https://coze-coding-project.tos.coze.site/coze_storage_7662258808986730531/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_003_%E6%B8%A9%E5%BA%A6%E6%A8%A1%E5%BC%8F_3s.mp4?sign=1784224524-62866ed5e5-0-04c1161862d857d69399c1c1c29c6f8c98b8a8c7e8d9e0f1a2b3c4d5e6f7a8b9",
+    "duration_sec": 3.0,
+    "primary_scene_tag": "屏显调温",
+    "native_text_type": "screen_mode_split",
+    "has_burned_in_text": true,
+    "native_text_allowed": true,
+    "text_audit_status": "passed_with_exception",
+    "suppress_generated_subtitle": true,
+    "manually_confirmed": true,
+    "allowed_scene_tags": ["屏显调温", "风温切换", "温度模式", "档位展示"],
+    "whitelist_reason": "用户确认该分屏素材原生字幕内容正确，显示冷风/温风/热风温度模式",
+    "detected_texts": [
+      {"text": "REC", "text_type": "platform_decoration", "allowed": true},
+      {"text": "4K 60FPS", "text_type": "platform_decoration", "allowed": true},
+      {"text": "HD", "text_type": "platform_decoration", "allowed": true},
+      {"text": "冷风", "text_type": "device_screen_text", "allowed": true},
+      {"text": "温风", "text_type": "device_screen_text", "allowed": true},
+      {"text": "热风", "text_type": "device_screen_text", "allowed": true}
+    ],
+    "evidence_frames": [
+      "runs/visual_opt_fix2_01/material_audit_evidence/屏显调温_003/frame_10pct.jpg",
+      "runs/visual_opt_fix2_01/material_audit_evidence/屏显调温_003/frame_50pct.jpg",
+      "runs/visual_opt_fix2_01/material_audit_evidence/屏显调温_003/frame_90pct.jpg"
+    ],
+    "ocr_engine": "rapidocr_onnxruntime",
+    "ocr_available": true,
+    "audit_version": "v1_20260716",
+    "product_consistency_status": "passed",
+    "safe_for_scene_tags": ["屏显调温", "风温切换", "温度模式", "档位展示"],
+    "forbidden_for_scene_tags": [],
+    "manually_whitelisted": true,
+    "audit_evidence_paths": [
+      "runs/visual_opt_fix2_01/material_audit_evidence/屏显调温_003/"
+    ]
+  }
+]

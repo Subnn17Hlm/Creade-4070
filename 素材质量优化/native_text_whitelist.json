@@ -1,0 +1,29 @@
+[
+  {
+    "asset_id": "屏显调温_003",
+    "canonical_name": "屏显调温_003_温度模式_3s",
+    "native_text_type": "screen_mode_split",
+    "has_burned_in_text": true,
+    "native_text_allowed": true,
+    "text_audit_status": "passed_with_exception",
+    "suppress_generated_subtitle": true,
+    "manually_confirmed": true,
+    "allowed_scene_tags": [
+      "屏显调温",
+      "风温切换",
+      "温度模式",
+      "档位展示"
+    ],
+    "whitelist_reason": "用户确认该分屏素材原生字幕内容正确",
+    "evidence_frames": [
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_0.3s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_0.73s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_1.5s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_2.27s.jpg",
+      "/workspace/projects/素材质量优化/material_audit_evidence/屏显调温_003/frame_2.7s.jpg"
+    ],
+    "url": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_003_%E6%B8%A9%E5%BA%A6%E6%A8%A1%E5%BC%8F_3s.mp4",
+    "source_path": "https://coze-video-assets-hlm.tos-s3-cn-beijing.volces.com/materials_v2/%E5%B1%8F%E6%98%BE%E8%B0%83%E6%B8%A9_003_%E6%B8%A9%E5%BA%A6%E6%A8%A1%E5%BC%8F_3s.mp4",
+    "duration_sec": 3.03
+  }
+]

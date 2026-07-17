@@ -364,6 +364,147 @@ def _detect_dark_frames(video_path: str) -> Dict[str, Any]:
                 "black_segments": []}
 
 
+def _detect_body_freeze(video_path: str, tts_duration: float, end_hold_sec: float = 0.0) -> Dict[str, Any]:
+    """
+    主体静帧检测：检测 TTS 区间内（0 到 tts_duration）是否有连续静止画面。
+    End Hold 区间不计入主体静帧失败。
+    
+    规则：
+    - 主体连续静止 >= 0.8 秒：warning
+    - 主体连续静止 >= 1.2 秒：failure
+    - 检测时排除系统字幕区域，避免字幕变化被误判为画面运动
+    """
+    if not os.path.exists(video_path):
+        return {
+            "body_freeze_segments": [],
+            "max_body_freeze_duration": 0.0,
+            "end_hold_freeze_duration": 0.0,
+            "source_freeze_detected": False,
+            "freeze_check_status": "skipped_no_video",
+        }
+    
+    try:
+        import cv2
+        import numpy as np
+        
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            return {
+                "body_freeze_segments": [],
+                "max_body_freeze_duration": 0.0,
+                "end_hold_freeze_duration": 0.0,
+                "source_freeze_detected": False,
+                "freeze_check_status": "skipped_open_failed",
+            }
+        
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 25.0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        # 主体区间：0 到 tts_duration
+        body_end_frame = int(tts_duration * fps)
+        # End Hold 区间：tts_duration 到 video_duration
+        end_hold_start_frame = body_end_frame
+        
+        # 采样检测：每 0.1 秒采样一帧
+        sample_interval = max(1, int(fps * 0.1))
+        
+        freeze_segments: List[Dict[str, Any]] = []
+        current_freeze_start = None
+        prev_frame_gray = None
+        
+        # 相似度阈值：SSIM > 0.98 视为静止
+        SIMILARITY_THRESHOLD = 0.995
+        
+        frame_idx = 0
+        while frame_idx < total_frames:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # 缩小到 160x284 以加速计算
+            small = cv2.resize(frame, (160, 284))
+            gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+            
+            if prev_frame_gray is not None:
+                # 计算两帧相似度
+                diff = cv2.absdiff(prev_frame_gray, gray)
+                similarity = 1.0 - (np.mean(diff) / 255.0)
+                
+                is_frozen = similarity > SIMILARITY_THRESHOLD
+                current_time = frame_idx / fps
+                
+                if is_frozen:
+                    if current_freeze_start is None:
+                        current_freeze_start = current_time
+                else:
+                    if current_freeze_start is not None:
+                        freeze_duration = current_time - current_freeze_start
+                        if freeze_duration >= 0.5:  # 只记录 >= 0.5s 的静帧
+                            # 判断是主体区间还是 End Hold 区间
+                            is_end_hold = current_freeze_start >= tts_duration
+                            freeze_segments.append({
+                                "freeze_start": round(current_freeze_start, 3),
+                                "freeze_end": round(current_time, 3),
+                                "duration": round(freeze_duration, 3),
+                                "is_end_hold": is_end_hold,
+                                "similarity": round(similarity, 4),
+                            })
+                        current_freeze_start = None
+            
+            prev_frame_gray = gray
+            frame_idx += sample_interval
+        
+        cap.release()
+        
+        # 处理最后一个静帧段
+        if current_freeze_start is not None:
+            video_duration = total_frames / fps
+            freeze_duration = video_duration - current_freeze_start
+            if freeze_duration >= 0.5:
+                is_end_hold = current_freeze_start >= tts_duration
+                freeze_segments.append({
+                    "freeze_start": round(current_freeze_start, 3),
+                    "freeze_end": round(video_duration, 3),
+                    "duration": round(freeze_duration, 3),
+                    "is_end_hold": is_end_hold,
+                    "similarity": 0.99,
+                })
+        
+        # 分类统计
+        body_freeze_segments = [s for s in freeze_segments if not s["is_end_hold"]]
+        end_hold_freeze_segments = [s for s in freeze_segments if s["is_end_hold"]]
+        
+        max_body_freeze = max((s["duration"] for s in body_freeze_segments), default=0.0)
+        max_end_hold_freeze = max((s["duration"] for s in end_hold_freeze_segments), default=0.0)
+        
+        # 判定状态
+        freeze_check_status = "passed"
+        if max_body_freeze >= 1.2:
+            freeze_check_status = "failed_body_freeze_ge_1.2s"
+        elif max_body_freeze >= 0.8:
+            freeze_check_status = "warning_body_freeze_ge_0.8s"
+        
+        return {
+            "body_freeze_segments": body_freeze_segments,
+            "max_body_freeze_duration": round(max_body_freeze, 3),
+            "end_hold_freeze_duration": round(max_end_hold_freeze, 3),
+            "source_freeze_detected": max_body_freeze >= 0.8,
+            "freeze_check_status": freeze_check_status,
+        }
+    except Exception as e:
+        logger.warning("主体静帧检测失败: %s", e)
+        return {
+            "body_freeze_segments": [],
+            "max_body_freeze_duration": 0.0,
+            "end_hold_freeze_duration": 0.0,
+            "source_freeze_detected": False,
+            "freeze_check_status": f"error: {str(e)[:50]}",
+        }
+
+
 def _detect_burned_in_text_from_report(clip_report_path: str) -> Dict[str, Any]:
     """从截取报告读取素材烧录文字信息"""
     if not os.path.exists(clip_report_path):
@@ -566,6 +707,14 @@ def quality_check_node(
     unexpected_visual_text_detected = burned_info["unexpected_visual_text_detected"]
     material_label_text_burned_in = has_burned_in_text
 
+    # === 5.5 主体静帧检测 ===
+    freeze_info = _detect_body_freeze(final_video_path, tts_duration, end_hold_sec)
+    body_freeze_segments = freeze_info["body_freeze_segments"]
+    max_body_freeze_duration = freeze_info["max_body_freeze_duration"]
+    end_hold_freeze_duration = freeze_info["end_hold_freeze_duration"]
+    source_freeze_detected = freeze_info["source_freeze_detected"]
+    freeze_check_status = freeze_info["freeze_check_status"]
+
     # === 6. 素材匹配 ===
     selected_materials_from_candidates = True
     for shot in timeline_shots:
@@ -635,6 +784,10 @@ def quality_check_node(
     # 烧录文字
     if has_burned_in_text:
         fail_reasons.append(f"unexpected_visual_text_detected: {unexpected_visual_text_detected}")
+
+    # 主体静帧（>= 1.2s 失败，End Hold 不计入）
+    if max_body_freeze_duration >= 1.2:
+        fail_reasons.append(f"body_freeze_{max_body_freeze_duration:.2f}s>=1.2s")
 
     # 素材候选一致性
     if not selected_materials_from_candidates:
@@ -886,6 +1039,12 @@ def quality_check_node(
         "source_range_overlap_fail": source_range_overlap_fail,
         "asset_usage_counts": asset_usage_counts,
         "visual_group_report": visual_group_report,
+        # 主体静帧检测
+        "body_freeze_segments": body_freeze_segments,
+        "max_body_freeze_duration": max_body_freeze_duration,
+        "end_hold_freeze_duration": end_hold_freeze_duration,
+        "source_freeze_detected": source_freeze_detected,
+        "freeze_check_status": freeze_check_status,
         # 最终判定
         "failure_category": failure_category,
         "status": status,

@@ -1,0 +1,279 @@
+[
+  {
+    "group_id": 1,
+    "sentence_ids": [
+      1,
+      2
+    ],
+    "sentence_texts": [
+      "不挑包包"
+    ],
+    "original_sentence_durations": [
+      0.9,
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "放进包包",
+    "selected_asset_id": "放进包包_005",
+    "selected_asset_file": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+    "total_duration": 1.8,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进包包'] → 放进包包"
+  },
+  {
+    "group_id": 2,
+    "sentence_ids": [
+      3
+    ],
+    "sentence_texts": [
+      "旅行出差"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_002",
+    "selected_asset_file": "旅行场景_002_推箱子过酒店大堂_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 3,
+    "sentence_ids": [
+      4
+    ],
+    "sentence_texts": [
+      "闭眼入的好物来了"
+    ],
+    "original_sentence_durations": [
+      1.504
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "CTA促单",
+    "selected_asset_id": "CTA促单_003",
+    "selected_asset_file": "CTA促单_003_产品全展示运镜_3s.mp4",
+    "total_duration": 1.504,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['CTA促单'] → CTA促单"
+  },
+  {
+    "group_id": 4,
+    "sentence_ids": [
+      5
+    ],
+    "sentence_texts": [
+      "小巧便捷适用各种场景"
+    ],
+    "original_sentence_durations": [
+      1.865
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_001",
+    "selected_asset_file": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "total_duration": 1.865,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
+  },
+  {
+    "group_id": 5,
+    "sentence_ids": [
+      6
+    ],
+    "sentence_texts": [
+      "出门旅游最怕带洗护大件"
+    ],
+    "original_sentence_durations": [
+      2.046
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_001",
+    "selected_asset_file": "旅行场景_001_推门进酒店客房_4s.mp4",
+    "total_duration": 2.046,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  },
+  {
+    "group_id": 6,
+    "sentence_ids": [
+      7
+    ],
+    "sentence_texts": [
+      "科瑞德高速折叠吹风机"
+    ],
+    "original_sentence_durations": [
+      1.865
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "折叠动作",
+    "selected_asset_id": "折叠动作_001",
+    "selected_asset_file": "折叠动作_001_折叠收起_3s.mp4",
+    "total_duration": 1.865,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作"
+  },
+  {
+    "group_id": 7,
+    "sentence_ids": [
+      8
+    ],
+    "sentence_texts": [
+      "机身超轻超薄"
+    ],
+    "original_sentence_durations": [
+      1.143
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_002",
+    "selected_asset_file": "手持大小对比_002_手拿手机对比_3s.mp4",
+    "total_duration": 1.143,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
+  },
+  {
+    "group_id": 8,
+    "sentence_ids": [
+      9
+    ],
+    "sentence_texts": [
+      "折起来手机大小"
+    ],
+    "original_sentence_durations": [
+      1.324
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_003",
+    "selected_asset_file": "手持大小对比_003_手拿瓶装水变吹风机_3s.mp4",
+    "total_duration": 1.324,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
+  },
+  {
+    "group_id": 9,
+    "sentence_ids": [
+      10
+    ],
+    "sentence_texts": [
+      "行李箱随便一塞就带走"
+    ],
+    "original_sentence_durations": [
+      1.865
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "放进行李箱",
+    "selected_asset_id": "放进行李箱_005",
+    "selected_asset_file": "放进行李箱_005_折叠后放入行李箱_5s.mp4",
+    "total_duration": 1.865,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进行李箱'] → 放进行李箱"
+  },
+  {
+    "group_id": 10,
+    "sentence_ids": [
+      11
+    ],
+    "sentence_texts": [
+      "3到4分钟吹干长发"
+    ],
+    "original_sentence_durations": [
+      1.685
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "吹发动作",
+    "selected_asset_id": "吹发动作_001",
+    "selected_asset_file": "吹发动作_001_全景吹发_5s.mp4",
+    "total_duration": 1.685,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作"
+  },
+  {
+    "group_id": 11,
+    "sentence_ids": [
+      12
+    ],
+    "sentence_texts": [
+      "吹完之后相当柔顺"
+    ],
+    "original_sentence_durations": [
+      1.504
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "护发效果",
+    "selected_asset_id": "护发效果_003",
+    "selected_asset_file": "护发效果_003_对镜背面展示柔顺_3s.mp4",
+    "total_duration": 1.504,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['护发效果'] → 护发效果"
+  },
+  {
+    "group_id": 12,
+    "sentence_ids": [
+      13
+    ],
+    "sentence_texts": [
+      "自带屏显"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "屏显调温",
+    "selected_asset_id": "屏显调温_008",
+    "selected_asset_file": "屏显调温_008_屏显冷热循环_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['屏显调温'] → 屏显调温"
+  },
+  {
+    "group_id": 13,
+    "sentence_ids": [
+      14,
+      15
+    ],
+    "sentence_texts": [
+      "还赠旅行收纳袋"
+    ],
+    "original_sentence_durations": [
+      1.324,
+      0.962
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "旅行场景",
+    "selected_asset_id": "旅行场景_003",
+    "selected_asset_file": "旅行场景_003_酒店走廊_3s.mp4",
+    "total_duration": 2.286,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['旅行场景'] → 旅行场景"
+  }
+]

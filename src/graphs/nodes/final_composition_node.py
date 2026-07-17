@@ -234,9 +234,17 @@ def final_composition_node(
         
         margin_v = int(1920 * (1 - 0.82))  # ≈ 346, >= 180 ✓
 
+        # 优先使用 render_subtitles.srt（已处理白名单字幕关闭）
+        render_srt_path = os.path.join(run_dir, "render_subtitles.srt")
+        actual_srt_path = render_srt_path if os.path.exists(render_srt_path) else srt_path
+        if os.path.exists(render_srt_path):
+            logger.info("[Node7] 使用 render_subtitles.srt（已处理白名单字幕关闭）")
+        else:
+            logger.info("[Node7] 使用 canonical subtitles.srt")
+
         try:
             # 解析SRT文件，获取每句字幕和时间
-            with open(srt_path, "r", encoding="utf-8") as f:
+            with open(actual_srt_path, "r", encoding="utf-8") as f:
                 srt_content = f.read()
             # 按空行分割字幕块
             srt_blocks = re.split(r'\n\n+', srt_content.strip())
