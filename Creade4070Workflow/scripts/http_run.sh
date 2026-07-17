@@ -1,9 +1,13 @@
 #!/bin/bash
 
 set -e
-# 导出环境变量
 
-WORK_DIR="${COZE_WORKSPACE_PATH:-.}"
+# 根据脚本位置计算项目根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_DIR"
+echo "[http_run] Working directory: $(pwd)"
+
 PORT="${DEPLOY_RUN_PORT:-80}"
 
 usage() {

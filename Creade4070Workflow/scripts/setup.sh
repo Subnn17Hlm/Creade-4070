@@ -1,10 +1,16 @@
 #!/bin/bash
 set -eo pipefail
 
+# 根据脚本位置计算项目根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_DIR"
+echo "[setup] Working directory: $(pwd)"
+
 # 初始化目录
 if [ "$COZE_PROJECT_ENV" = "DEV" ]; then
-  if [ ! -d "${COZE_WORKSPACE_PATH}/assets" ]; then
-    mkdir -p "${COZE_WORKSPACE_PATH}/assets"
+  if [ ! -d "assets" ]; then
+    mkdir -p "assets"
   fi
 fi
 
