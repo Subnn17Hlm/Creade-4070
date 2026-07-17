@@ -114,7 +114,7 @@ class GraphInput(BaseModel):
     # 通用
     platform: str = Field(default="抖音", description="平台")
     bgm_url: str = Field(default="", description="BGM链接")
-    material_csv: str = Field(default="assets/asset_manifest_new_no_chuifa.csv", description="素材标签CSV路径")
+    material_csv: str = Field(default="assets/asset_manifest_v2_clean.csv", description="素材标签CSV路径")
 
 
 class GraphOutput(BaseModel):

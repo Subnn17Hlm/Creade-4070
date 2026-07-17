@@ -587,7 +587,7 @@ def material_matching_node(
     csv_path = state.material_csv
     if not csv_path or not os.path.exists(csv_path):
         # 尝试默认路径
-        default_csv = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "asset_manifest_new_no_chuifa.csv")
+        default_csv = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "asset_manifest_v2_clean.csv")
         if os.path.exists(default_csv):
             csv_path = default_csv
         else:

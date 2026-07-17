@@ -78,7 +78,7 @@ def resolve_manifest_path(explicit_path: Optional[str] = None) -> str:
     candidates = [
         explicit_path,
         os.getenv("ASSET_MANIFEST_PATH"),
-        os.path.join(ASSETS_DIR, "asset_manifest_new_no_chuifa.csv"),
+        os.path.join(ASSETS_DIR, "asset_manifest_v2_clean.csv"),
         os.path.join(ASSETS_DIR, "asset_manifest_v2_clean.csv"),
     ]
     for path in candidates:

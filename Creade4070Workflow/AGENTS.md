@@ -69,7 +69,7 @@ GraphInput → script_source_router
 - **Visual Grouping (短句视觉合并)**: 字数<=5或TTS<0.9秒的短句，若语义不完整且无明确独立卖点标签，且单独时长<1.2秒，则与下一句合并为一个视觉组。强语义短句（如"巴掌大"、"十一万转"等）禁止合并。输出visual_grouping_report.json
 - **End Hold (结尾画面停留)**: 视频结尾画面延长1秒(end_hold_sec)，TTS不延长。最终视频时长 = TTS时长 + end_hold_sec。使用FFmpeg tpad滤镜实现
 - **关键词字典**: ~160个关键词映射到标签，覆盖旅行/便携/痛点/小巧/手持/折叠/风力/护发/屏显/吹发/CTA/促销/赠品/风嘴/口语化种草表达
-- **资源文件**: `assets/asset_manifest_new_no_chuifa.csv`（73个无字幕原始素材，primary_scene_tag标签体系）
+- **资源文件**: `assets/asset_manifest_v2_clean.csv`（126个无字幕原始素材，primary_scene_tag标签体系）
 - **标签映射文件**: `assets/sentence_tag_mapping_script_02.json`（19句文案到required_tags的精确映射）
 
 ### 质量验收标准
