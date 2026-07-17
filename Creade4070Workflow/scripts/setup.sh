@@ -16,8 +16,46 @@ fi
 
 # uv 安装依赖
 if [ -n "$PIP_TARGET" ]; then
-  echo "[setup] Deploy mode (uv): installing to PIP_TARGET=$PIP_TARGET"
-  uv export --frozen --no-hashes --no-dev | uv pip install --no-cache --target "$PIP_TARGET" -r -
+  echo "[setup] Deploy mode: installing to PIP_TARGET"
+  
+  # 创建 PIP_TARGET 目录
+  if ! mkdir -p "$PIP_TARGET"; then
+    echo "[setup] ERROR: Failed to create PIP_TARGET directory"
+    exit 1
+  fi
+  
+  # 导出依赖并安装
+  echo "[setup] Step 1: Exporting dependencies..."
+  if ! uv export --frozen --no-hashes --no-dev > /tmp/requirements_export.txt; then
+    echo "[setup] ERROR: uv export failed (exit code: $?)"
+    exit 1
+  fi
+  echo "[setup] Exported $(wc -l < /tmp/requirements_export.txt) dependencies"
+  
+  echo "[setup] Step 2: Installing to target directory..."
+  if ! uv pip install --no-cache --target "$PIP_TARGET" -r /tmp/requirements_export.txt; then
+    echo "[setup] ERROR: uv pip install failed (exit code: $?)"
+    exit 1
+  fi
+  
+  # 清理临时文件
+  rm -f /tmp/requirements_export.txt
+  
+  # 验证关键模块可导入
+  echo "[setup] Step 3: Verifying installation..."
+  export PYTHONPATH="$PIP_TARGET:${PYTHONPATH:-}"
+  
+  VERIFY_RESULT=0
+  python3 -c "import fastapi; print('[setup] OK: fastapi')" || VERIFY_RESULT=1
+  python3 -c "import uvicorn; print('[setup] OK: uvicorn')" || VERIFY_RESULT=1
+  python3 -c "import tos; print('[setup] OK: tos')" || VERIFY_RESULT=1
+  
+  if [ $VERIFY_RESULT -ne 0 ]; then
+    echo "[setup] ERROR: Module verification failed"
+    exit 1
+  fi
+  
+  echo "[setup] Deploy installation completed successfully"
 else
   echo "[setup] Devbox mode (uv): installing to .venv"
   if [ -f "uv.lock" ]; then
