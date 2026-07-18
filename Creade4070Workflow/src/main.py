@@ -1,11 +1,13 @@
 import argparse
 import asyncio
+import csv
 import json
 import threading
 import traceback
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Dict, Iterable, AsyncIterable, AsyncGenerator, Optional
 import cozeloop
 import uvicorn
@@ -605,6 +607,157 @@ async def openai_chat_completions(request: Request):
         raise HTTPException(status_code=400, detail="Invalid JSON format")
     finally:
         cozeloop.flush()
+
+
+# ── 视频素材预览首页 ─────────────────────────────────────────────────────────
+
+_MATERIALS_CSV = Path("assets/asset_manifest_v2_bound.csv")
+
+_INDEX_HTML = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>素材预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f0f0f; color: #e0e0e0; padding: 20px; }
+  h1 { font-size: 1.4rem; margin-bottom: 16px; color: #fff; }
+  .status { padding: 12px; text-align: center; color: #888; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 16px; }
+  .card { background: #1a1a1a; border-radius: 8px; overflow: hidden;
+          cursor: pointer; transition: transform 0.15s; }
+  .card:hover { transform: translateY(-2px); }
+  .card.active { outline: 2px solid #4a9eff; }
+  .card video { width: 100%; aspect-ratio: 16/9; object-fit: cover;
+                background: #000; display: block; }
+  .card .info { padding: 10px 12px; }
+  .card .info .name { font-size: 0.85rem; font-weight: 600; color: #fff;
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .info .meta { font-size: 0.75rem; color: #888; margin-top: 4px; }
+  .player { margin-top: 20px; background: #1a1a1a; border-radius: 8px;
+            padding: 16px; display: none; }
+  .player.show { display: block; }
+  .player video { width: 100%; max-height: 60vh; background: #000;
+                  border-radius: 4px; }
+  .player .title { font-size: 1rem; margin-bottom: 10px; color: #fff; }
+  .error { color: #f44; }
+</style>
+</head>
+<body>
+<h1>素材预览</h1>
+<div id="status" class="status">加载中…</div>
+<div id="grid" class="grid" style="display:none"></div>
+<div id="player" class="player">
+  <div id="player-title" class="title"></div>
+  <video id="player-video" controls></video>
+</div>
+<script>
+const grid = document.getElementById('grid');
+const status = document.getElementById('status');
+const player = document.getElementById('player');
+const playerTitle = document.getElementById('player-title');
+const playerVideo = document.getElementById('player-video');
+
+async function loadMaterials() {
+  try {
+    const res = await fetch('/api/materials');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.materials || data.materials.length === 0) {
+      status.textContent = '暂无可用素材';
+      return;
+    }
+    status.style.display = 'none';
+    grid.style.display = '';
+    data.materials.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<video muted preload="metadata" src="' + m.play_url + '"></video>' +
+        '<div class="info"><div class="name">' + m.asset_id + '</div>' +
+        '<div class="meta">' + (m.description || '') +
+        (m.duration_sec ? ' · ' + m.duration_sec + 's' : '') + '</div></div>';
+      card.addEventListener('click', () => playVideo(m, card));
+      grid.appendChild(card);
+    });
+  } catch (e) {
+    status.innerHTML = '<span class="error">加载失败: ' + e.message + '</span>';
+  }
+}
+
+function playVideo(m, card) {
+  document.querySelectorAll('.card.active').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  player.classList.add('show');
+  playerTitle.textContent = m.asset_id + (m.description ? ' — ' + m.description : '');
+  playerVideo.src = m.play_url;
+  playerVideo.play().catch(() => {});
+  player.scrollIntoView({ behavior: 'smooth' });
+}
+
+playerVideo.addEventListener('error', () => {
+  playerTitle.innerHTML = '<span class="error">播放失败，预签名 URL 可能已过期</span>';
+});
+
+loadMaterials();
+</script>
+</body>
+</html>"""
+
+
+@app.get("/")
+async def index_page():
+    """视频素材预览首页。"""
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=_INDEX_HTML)
+
+
+@app.get("/api/materials")
+async def list_materials():
+    """返回素材列表及预签名播放 URL。"""
+    if not _MATERIALS_CSV.exists():
+        return {"materials": [], "error": "素材清单文件不存在"}
+
+    materials = []
+    try:
+        from storage.tos.tos_client import get_client
+        client = get_client()
+    except Exception:
+        client = None
+
+    with open(_MATERIALS_CSV, "r", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            enabled = row.get("enabled", "true").strip().lower()
+            if enabled not in ("true", "1", "yes"):
+                continue
+            bucket = row.get("bucket", "").strip()
+            object_key = row.get("object_key", "").strip()
+            if not bucket or not object_key:
+                continue
+
+            play_url = ""
+            if client:
+                try:
+                    play_url = client.generate_presigned_url(
+                        bucket=bucket, object_key=object_key, expires=300
+                    )
+                except Exception:
+                    play_url = ""
+
+            materials.append({
+                "asset_id": row.get("asset_id", ""),
+                "file_name": row.get("file_name", ""),
+                "description": row.get("description", ""),
+                "duration_sec": row.get("duration_sec", ""),
+                "primary_scene_tag": row.get("primary_scene_tag", ""),
+                "play_url": play_url,
+            })
+
+    return {"materials": materials, "count": len(materials)}
 
 
 @app.get("/health")
