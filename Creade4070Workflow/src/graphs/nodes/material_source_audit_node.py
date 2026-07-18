@@ -121,11 +121,18 @@ def material_source_audit_node(
             tags_str = row.get("tags", "").strip()
             tags = [t.strip() for t in tags_str.split(",") if t.strip()]
 
+            bucket = row.get("bucket", "").strip()
+            object_key = row.get("object_key", "").strip()
+            has_tos_ref = bool(bucket and object_key)
+
             # 用ffprobe检测
             probe = _probe_material(url)
 
-            # 检测烧录文字
-            text_check = _detect_burned_in_text(file_name)
+            # 有 TOS 引用的素材视为云端原片，不做文件名烧录文字检测
+            if has_tos_ref:
+                text_check = {"has_burned_in_text": False, "detected_texts": []}
+            else:
+                text_check = _detect_burned_in_text(file_name)
 
             # 判断是否为竖屏(9:16)
             w = probe.get("width", 0)
@@ -140,15 +147,20 @@ def material_source_audit_node(
                     aspect_ratio_note = f"非竖屏比例: {w}x{h} (ratio={ratio:.3f})"
 
             # 判断素材是否可用
-            source_ok = (
-                probe.get("probe_ok", False)
-                and not text_check["has_burned_in_text"]
-                and is_vertical
-            )
+            # 有 TOS 引用的素材，只要 probe 成功就视为可用
+            if has_tos_ref:
+                source_ok = probe.get("probe_ok", False)
+            else:
+                source_ok = (
+                    probe.get("probe_ok", False)
+                    and not text_check["has_burned_in_text"]
+                    and is_vertical
+                )
 
             # 源说明
-            source_note = ""
-            if "assets/output" in file_name or file_name.startswith("吹风机_"):
+            if has_tos_ref:
+                source_note = "TOS云端原片"
+            elif "assets/output" in file_name or file_name.startswith("吹风机_"):
                 source_note = "来自旧流水线输出视频，含烧录文字/营销文案，非原始无字幕素材"
             elif "seg_" in file_name:
                 source_note = "来自旧流水线片段，含烧录文字"
