@@ -669,7 +669,10 @@ _INDEX_HTML = """<!DOCTYPE html>
 </style>
 </head>
 <body>
-<h1>素材预览</h1>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<h1 style="margin:0">素材预览</h1>
+<a href="/materials" style="color:#6ea8fe;text-decoration:none;font-size:13px">素材库 →</a>
+</div>
 <div id="status" class="status">加载中…</div>
 <div id="grid" class="grid" style="display:none"></div>
 <div id="player" class="player">
@@ -873,6 +876,110 @@ async def list_materials():
             })
 
     return {"materials": materials, "count": len(materials)}
+
+
+_MATERIALS_HTML = """<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>素材库</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f0f;color:#e0e0e0;padding:24px}
+a{color:#6ea8fe;text-decoration:none}
+a:hover{text-decoration:underline}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h1{font-size:20px;color:#fff}
+.status{padding:12px;text-align:center;color:#888;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#1a1a1a;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1px solid #2a2a2a}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.card.selected{border-color:#4a9eff;box-shadow:0 0 0 2px rgba(74,158,255,.3)}
+.card video{width:100%;aspect-ratio:9/16;object-fit:cover;display:block;background:#000}
+.card-info{padding:10px 12px}
+.card-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-desc{font-size:11px;color:#888;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:10px;color:#666;margin-top:6px}
+.player{margin-top:24px;background:#1a1a1a;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
+.player video{width:100%;max-height:70vh;display:block;background:#000}
+.title{padding:12px 16px;font-size:14px;color:#ccc;border-bottom:1px solid #2a2a2a}
+.error{color:#ff6b6b}
+.ok{color:#4ecdc4}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>素材库</h1>
+<a href="/">← 返回首页</a>
+</div>
+<div id="status" class="status">加载中…</div>
+<div id="grid" class="grid" style="display:none"></div>
+<div id="player" class="player" style="display:none">
+  <div id="player-title" class="title"></div>
+  <video id="player-video" controls></video>
+</div>
+<script>
+const grid = document.getElementById('grid');
+const status = document.getElementById('status');
+const player = document.getElementById('player');
+const playerTitle = document.getElementById('player-title');
+const playerVideo = document.getElementById('player-video');
+
+async function loadMaterials() {
+  try {
+    const res = await fetch('/api/materials');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.materials || data.materials.length === 0) {
+      status.textContent = '暂无可用素材';
+      return;
+    }
+    status.style.display = 'none';
+    grid.style.display = '';
+    data.materials.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<video src="' + m.play_url + '" muted preload="metadata"></video>' +
+        '<div class="card-info">' +
+          '<div class="card-title">' + (m.file_name || m.asset_id) + '</div>' +
+          '<div class="card-desc">' + (m.description || '') + '</div>' +
+          '<div class="card-meta">' + (m.primary_scene_tag || '') +
+            (m.duration_sec ? ' · ' + m.duration_sec + 's' : '') + '</div>' +
+        '</div>';
+      card.addEventListener('click', () => playVideo(m, card));
+      grid.appendChild(card);
+    });
+  } catch (e) {
+    status.innerHTML = '<span class="error">加载失败: ' + e.message + '</span>';
+  }
+}
+
+function playVideo(m, card) {
+  document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  playerTitle.textContent = (m.file_name || m.asset_id) + (m.description ? ' — ' + m.description : '');
+  playerVideo.src = m.play_url;
+  player.style.display = '';
+  playerVideo.play().catch(() => {});
+  player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+playerVideo.addEventListener('error', () => {
+  playerTitle.innerHTML = '<span class="error">视频加载失败（预签名 URL 可能已过期，请刷新页面）</span>';
+});
+
+loadMaterials();
+</script>
+</body>
+</html>"""
+
+
+@app.get("/materials")
+async def materials_page():
+    """素材库页面 - 仅展示素材浏览和播放，不含工作流测试。"""
+    return HTMLResponse(content=_MATERIALS_HTML)
 
 
 @app.get("/health")
