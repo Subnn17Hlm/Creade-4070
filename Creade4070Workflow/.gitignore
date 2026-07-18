@@ -47,6 +47,7 @@ __pycache__/
 *.pptx
 *.xlsx
 *.csv
+!assets/asset_manifest_v2_bound.csv
 
 # Preview files
 .preview
