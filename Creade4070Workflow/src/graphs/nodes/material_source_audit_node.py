@@ -82,9 +82,26 @@ def material_source_audit_node(
     integrations: 对象存储
     """
     # 读取素材CSV
-    csv_path = state.material_csv
-    if not os.path.exists(csv_path):
-        csv_path = os.path.join(os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects"), csv_path)
+    from pathlib import Path
+    _project_root = Path(__file__).resolve().parent.parent.parent.parent
+    _default_csv = _project_root / "assets" / "asset_manifest_v2_bound.csv"
+
+    csv_path_str = state.material_csv
+    if not csv_path_str:
+        csv_path = _default_csv
+    else:
+        p = Path(csv_path_str)
+        if p.is_absolute():
+            csv_path = p
+        else:
+            resolved = _project_root / p
+            csv_path = resolved if resolved.is_file() else _default_csv
+
+    if not csv_path.is_file():
+        return MaterialAuditOutput(
+            materials=[],
+            error=f"素材清单不存在: {csv_path}",
+        )
 
     materials: List[Dict[str, Any]] = []
     with open(csv_path, "r", encoding="utf-8-sig") as f:

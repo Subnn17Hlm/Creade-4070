@@ -27,12 +27,25 @@ WORKSPACE = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
 
 def _read_material_tags(material_csv: str) -> List[str]:
     """从素材CSV读取所有可用标签"""
-    if not material_csv or not os.path.exists(material_csv):
+    from pathlib import Path
+    # 项目根目录：src/graphs/nodes/ -> 上溯 3 级
+    _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+    if not material_csv:
+        material_csv = "assets/asset_manifest_v2_bound.csv"
+
+    csv_path = Path(material_csv)
+    if not csv_path.is_absolute():
+        csv_path = _PROJECT_ROOT / csv_path
+
+    if not csv_path.is_file():
+        logger.warning("[Node0b] 素材CSV不存在: %s", csv_path)
         return []
+
     tags = set()
     try:
         import csv
-        with open(material_csv, "r", encoding="utf-8") as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 tag_str = row.get("tags", row.get("tag", ""))

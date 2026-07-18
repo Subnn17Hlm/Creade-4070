@@ -618,15 +618,25 @@ def material_matching_node(
     run_dir = state.run_dir
 
     # 1. 确定使用的素材清单文件
-    csv_path = state.material_csv
-    if not csv_path or not os.path.exists(csv_path):
-        # 尝试默认路径
-        default_csv = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets", "asset_manifest_v2_bound.csv")
-        if os.path.exists(default_csv):
-            csv_path = default_csv
-        else:
-            raise FileNotFoundError(f"未找到素材标签表: {csv_path}")
+    from pathlib import Path
+    _project_root = Path(__file__).resolve().parent.parent.parent.parent
+    _default_csv = _project_root / "assets" / "asset_manifest_v2_bound.csv"
 
+    csv_path_str = state.material_csv
+    if not csv_path_str:
+        csv_path = _default_csv
+    else:
+        p = Path(csv_path_str)
+        if p.is_absolute():
+            csv_path = p
+        else:
+            resolved = _project_root / p
+            csv_path = resolved if resolved.is_file() else _default_csv
+
+    if not csv_path.is_file():
+        raise FileNotFoundError(f"未找到素材标签表: {csv_path}")
+
+    csv_path = str(csv_path)
     manifest_file_used = os.path.basename(csv_path)
 
     # 2. 加载素材清单
