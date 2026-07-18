@@ -624,6 +624,7 @@ _INDEX_HTML = """<!DOCTYPE html>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
          background: #0f0f0f; color: #e0e0e0; padding: 20px; }
   h1 { font-size: 1.4rem; margin-bottom: 16px; color: #fff; }
+  h2 { font-size: 1.1rem; margin: 28px 0 12px; color: #ccc; border-top: 1px solid #333; padding-top: 20px; }
   .status { padding: 12px; text-align: center; color: #888; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 16px; }
@@ -644,6 +645,27 @@ _INDEX_HTML = """<!DOCTYPE html>
                   border-radius: 4px; }
   .player .title { font-size: 1rem; margin-bottom: 10px; color: #fff; }
   .error { color: #f44; }
+  .wf-section { background: #1a1a1a; border-radius: 8px; padding: 16px; }
+  .wf-row { margin-bottom: 12px; }
+  .wf-row label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; }
+  .wf-row input, .wf-row textarea {
+    width: 100%; background: #0f0f0f; border: 1px solid #333; border-radius: 4px;
+    color: #e0e0e0; padding: 8px 10px; font-size: 0.85rem; font-family: inherit; }
+  .wf-row textarea { min-height: 80px; resize: vertical; }
+  .wf-row input:focus, .wf-row textarea:focus { outline: none; border-color: #4a9eff; }
+  .wf-btn { background: #4a9eff; color: #fff; border: none; border-radius: 4px;
+            padding: 8px 20px; font-size: 0.85rem; cursor: pointer; }
+  .wf-btn:hover { background: #3a8eef; }
+  .wf-btn:disabled { background: #555; cursor: not-allowed; }
+  .wf-result { margin-top: 14px; background: #0f0f0f; border-radius: 4px;
+               padding: 12px; font-size: 0.8rem; display: none; white-space: pre-wrap;
+               word-break: break-all; max-height: 400px; overflow-y: auto; }
+  .wf-result.show { display: block; }
+  .wf-result .ok { color: #4caf50; }
+  .wf-result .fail { color: #f44; }
+  .wf-result .info { color: #4a9eff; }
+  .wf-video { margin-top: 10px; }
+  .wf-video video { width: 100%; max-height: 40vh; background: #000; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -654,6 +676,24 @@ _INDEX_HTML = """<!DOCTYPE html>
   <div id="player-title" class="title"></div>
   <video id="player-video" controls></video>
 </div>
+
+<h2>工作流测试</h2>
+<div class="wf-section">
+  <div class="wf-row">
+    <label for="wf-script-id">script_id</label>
+    <input id="wf-script-id" type="text" value="smoke_test">
+  </div>
+  <div class="wf-row">
+    <label for="wf-script-text">script_text</label>
+    <textarea id="wf-script-text">这款吹风机出差必备，折叠收纳超方便</textarea>
+  </div>
+  <div class="wf-row">
+    <button id="wf-run-btn" class="wf-btn" onclick="runWorkflow()">运行工作流</button>
+  </div>
+  <div id="wf-result" class="wf-result"></div>
+  <div id="wf-video" class="wf-video" style="display:none"></div>
+</div>
+
 <script>
 const grid = document.getElementById('grid');
 const status = document.getElementById('status');
@@ -703,6 +743,81 @@ playerVideo.addEventListener('error', () => {
 });
 
 loadMaterials();
+
+/* ── 工作流测试 ── */
+async function runWorkflow() {
+  const btn = document.getElementById('wf-run-btn');
+  const resultDiv = document.getElementById('wf-result');
+  const videoDiv = document.getElementById('wf-video');
+  const scriptId = document.getElementById('wf-script-id').value.trim() || 'smoke_test';
+  const scriptText = document.getElementById('wf-script-text').value.trim();
+
+  if (!scriptText) {
+    resultDiv.className = 'wf-result show';
+    resultDiv.innerHTML = '<span class="fail">请输入 script_text</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '运行中…';
+  videoDiv.style.display = 'none';
+  resultDiv.className = 'wf-result show';
+  resultDiv.innerHTML = '<span class="info">正在提交工作流请求…</span>';
+
+  const payload = {
+    script_id: scriptId,
+    script_source: 'manual',
+    script_text: scriptText
+  };
+
+  try {
+    const startTime = Date.now();
+    const res = await fetch('/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const raw = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+
+    let html = '<span class="' + (res.ok ? 'ok' : 'fail') + '">HTTP ' + res.status +
+               ' (' + elapsed + 's)</span>\n\n';
+
+    if (parsed) {
+      if (res.ok) {
+        const d = parsed.data || parsed;
+        if (d.final_video_url) {
+          html += '<span class="ok">final_video_url:</span> ' + d.final_video_url + '\n';
+        }
+        if (d.total_duration !== undefined) {
+          html += '<span class="ok">total_duration:</span> ' + d.total_duration + 's\n';
+        }
+        if (d.run_id) {
+          html += '<span class="ok">run_id:</span> ' + d.run_id + '\n';
+        }
+        html += '\n--- 完整响应 ---\n' + JSON.stringify(parsed, null, 2);
+
+        if (d.final_video_url) {
+          videoDiv.style.display = 'block';
+          videoDiv.innerHTML = '<video controls src="' + d.final_video_url + '"></video>';
+        }
+      } else {
+        html += '<span class="fail">错误:</span>\n' + JSON.stringify(parsed, null, 2);
+      }
+    } else {
+      html += raw || '(空响应)';
+    }
+
+    resultDiv.innerHTML = html;
+  } catch (e) {
+    resultDiv.innerHTML = '<span class="fail">请求失败: ' + e.message + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '运行工作流';
+  }
+}
 </script>
 </body>
 </html>"""
