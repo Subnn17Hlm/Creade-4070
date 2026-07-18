@@ -10,6 +10,7 @@ import os
 import glob
 import hashlib
 import logging
+import tempfile
 from typing import List
 
 from langchain_core.runnables import RunnableConfig
@@ -22,7 +23,7 @@ from graphs.shared_utils import ensure_dir
 logger = logging.getLogger(__name__)
 
 WORKSPACE = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
-RUNS_BASE = os.path.join(WORKSPACE, "runs")
+RUNS_BASE = os.path.join(tempfile.gettempdir(), "runs")
 BGM_DIR = os.path.join(WORKSPACE, "assets", "bgm")
 
 

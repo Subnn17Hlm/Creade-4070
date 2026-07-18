@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 WORKSPACE = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
 PROJECT_DIR = os.path.join(WORKSPACE, "..") if os.path.basename(WORKSPACE) == "projects" else WORKSPACE
-RUNS_BASE = os.path.join(WORKSPACE, "runs")
+RUNS_BASE = os.path.join(tempfile.gettempdir(), "runs")
 
 
 # ============================================================
