@@ -626,7 +626,7 @@ async def tos_health_check():
     仅返回连接状态摘要，不返回密钥、完整 URL 或请求签名。
     """
     import csv
-    from src.storage.tos.tos_client import (
+    from storage.tos.tos_client import (
         check_env_configured,
         get_client,
         is_env_configured,
