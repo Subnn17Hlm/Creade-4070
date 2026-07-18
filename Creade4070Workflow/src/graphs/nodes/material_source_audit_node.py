@@ -147,15 +147,19 @@ def material_source_audit_node(
                     aspect_ratio_note = f"非竖屏比例: {w}x{h} (ratio={ratio:.3f})"
 
             # 判断素材是否可用
-            # 有 TOS 引用的素材，只要 probe 成功就视为可用
+            # 有 TOS 引用的素材，只要有有效的 TOS 引用就视为可用（即使 probe 失败）
+            # 因为生产环境可能无法访问 TOS URL 进行 probe
             if has_tos_ref:
-                source_ok = probe.get("probe_ok", False)
+                # TOS 素材：只要有 bucket + object_key 就视为可用
+                source_ok = True
+                probe_status = "skipped" if not probe.get("probe_ok") else "ok"
             else:
                 source_ok = (
                     probe.get("probe_ok", False)
                     and not text_check["has_burned_in_text"]
                     and is_vertical
                 )
+                probe_status = "ok" if probe.get("probe_ok") else "failed"
 
             # 源说明
             if has_tos_ref:
@@ -170,12 +174,14 @@ def material_source_audit_node(
             entry = {
                 "material_id": asset_id,
                 "url": url,
+                "url_type": "tos_presigned" if has_tos_ref else "other",
                 "file_name": file_name,
                 "tags": tags,
                 "width": probe.get("width", 0),
                 "height": probe.get("height", 0),
                 "duration": probe.get("duration", 0.0),
                 "probe_ok": probe.get("probe_ok", False),
+                "probe_status": probe_status,
                 "has_burned_in_text": text_check["has_burned_in_text"],
                 "detected_texts": text_check["detected_texts"],
                 "is_vertical_1080x1920_or_9_16": is_vertical,
@@ -190,19 +196,29 @@ def material_source_audit_node(
     dirty_materials = [m for m in materials if not m["source_ok"]]
     material_source_ok = len(clean_materials) >= 1
 
+    # 统计诊断信息
+    tos_ref_count = sum(1 for m in materials if m.get("url_type") == "tos_presigned")
+    probe_ok_count = sum(1 for m in materials if m.get("probe_ok"))
+    probe_skipped_count = sum(1 for m in materials if m.get("probe_status") == "skipped")
+
     # 保存审计报告
     run_dir = state.run_dir
     audit_path = os.path.join(run_dir, "material_source_audit.json")
     report = {
+        "audit_version": "2.0-tos-trust",
         "total_materials": len(materials),
         "clean_material_count": len(clean_materials),
         "dirty_material_count": len(dirty_materials),
         "material_source_ok": material_source_ok,
+        "tos_ref_count": tos_ref_count,
+        "probe_ok_count": probe_ok_count,
+        "probe_skipped_count": probe_skipped_count,
+        "first_3_materials": materials[:3] if materials else [],
         "materials": materials,
         "summary": (
             f"素材源预检: 共{len(materials)}个素材, "
             f"无字可用{len(clean_materials)}个, "
-            f"含烧录文字{dirty_materials}个"
+            f"含烧录文字{len(dirty_materials)}个"
             if material_source_ok
             else (
                 f"素材源预检失败: 共{len(materials)}个素材, "
