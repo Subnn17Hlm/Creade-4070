@@ -140,11 +140,23 @@ class TosMaterialClient:
             except ImportError as e:
                 raise TosClientError(f"火山引擎 TOS SDK 未安装: {e}")
 
-            access_key = os.environ.get(ENV_TOS_ACCESS_KEY, "")
-            secret_key = os.environ.get(ENV_TOS_SECRET_KEY, "")
+            access_key = os.environ.get(ENV_TOS_ACCESS_KEY, "").strip()
+            secret_key = os.environ.get(ENV_TOS_SECRET_KEY, "").strip()
 
             if not access_key or not secret_key:
                 raise TosConfigError("TOS 认证凭据缺失")
+
+            # 安全校验：仅记录布尔值，不记录原值
+            import re as _re
+            ak_clean = bool(access_key)
+            sk_clean = bool(secret_key)
+            ak_has_invalid_char = bool(_re.search(r'[\s=/]', access_key))
+            logger.info(
+                "TOS 凭据校验: ak_present=%s, sk_present=%s, ak_has_invalid_chars=%s",
+                ak_clean, sk_clean, ak_has_invalid_char,
+            )
+            if ak_has_invalid_char:
+                logger.warning("TOS AK 含空白/换行/等号/斜杠，可能导致签名格式错误")
 
             self._client = tos.TosClientV2(
                 ak=access_key,
