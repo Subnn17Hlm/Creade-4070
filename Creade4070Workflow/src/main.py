@@ -783,28 +783,28 @@ async function runWorkflow() {
     try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
 
     let html = '<span class="' + (res.ok ? 'ok' : 'fail') + '">HTTP ' + res.status +
-               ' (' + elapsed + 's)</span>\n\n';
+               ' (' + elapsed + 's)</span>\\n\\n';
 
     if (parsed) {
       if (res.ok) {
         const d = parsed.data || parsed;
         if (d.final_video_url) {
-          html += '<span class="ok">final_video_url:</span> ' + d.final_video_url + '\n';
+          html += '<span class="ok">final_video_url:</span> ' + d.final_video_url + '\\n';
         }
         if (d.total_duration !== undefined) {
-          html += '<span class="ok">total_duration:</span> ' + d.total_duration + 's\n';
+          html += '<span class="ok">total_duration:</span> ' + d.total_duration + 's\\n';
         }
         if (d.run_id) {
-          html += '<span class="ok">run_id:</span> ' + d.run_id + '\n';
+          html += '<span class="ok">run_id:</span> ' + d.run_id + '\\n';
         }
-        html += '\n--- 完整响应 ---\n' + JSON.stringify(parsed, null, 2);
+        html += '\\n--- 完整响应 ---\\n' + JSON.stringify(parsed, null, 2);
 
         if (d.final_video_url) {
           videoDiv.style.display = 'block';
           videoDiv.innerHTML = '<video controls src="' + d.final_video_url + '"></video>';
         }
       } else {
-        html += '<span class="fail">错误:</span>\n' + JSON.stringify(parsed, null, 2);
+        html += '<span class="fail">错误:</span>\\n' + JSON.stringify(parsed, null, 2);
       }
     } else {
       html += raw || '(空响应)';
