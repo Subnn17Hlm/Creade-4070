@@ -241,9 +241,10 @@ class TosMaterialClient:
             TosClientError: 如果生成失败
         """
         try:
+            from tos.enum import HttpMethodType
             client = self._get_client()
             url = client.pre_signed_url(
-                method="GET",
+                http_method=HttpMethodType.Http_Method_Get,
                 bucket=bucket,
                 key=object_key,
                 expires=expires,
