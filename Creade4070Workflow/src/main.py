@@ -979,6 +979,7 @@ loadMaterials();
 @app.get("/materials")
 async def materials_page():
     """素材库页面 - 仅展示素材浏览和播放，不含工作流测试。"""
+    from fastapi.responses import HTMLResponse
     return HTMLResponse(content=_MATERIALS_HTML)
 
 
