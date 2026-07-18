@@ -249,7 +249,7 @@ class TosMaterialClient:
                 key=object_key,
                 expires=expires,
             )
-            return url
+            return url.signed_url
         except Exception as e:
             raise TosClientError(f"生成预签名 URL 失败: {type(e).__name__}")
 
