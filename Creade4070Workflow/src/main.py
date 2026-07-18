@@ -780,7 +780,7 @@ async function runWorkflow() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const raw = await res.text();
     let parsed;
-    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
 
     let html = '<span class="' + (res.ok ? 'ok' : 'fail') + '">HTTP ' + res.status +
                ' (' + elapsed + 's)</span>\n\n';
