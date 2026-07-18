@@ -92,7 +92,7 @@ def material_source_audit_node(
         for row in reader:
             asset_id = row.get("asset_id", "").strip()
             # 使用统一的 URL 解析逻辑
-            from src.storage.tos.tos_client import resolve_material_url
+            from storage.tos.tos_client import resolve_material_url
             url, _ = resolve_material_url(
                 source_url=row.get("source_url", ""),
                 s3_url=row.get("s3_url", ""),

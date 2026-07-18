@@ -319,7 +319,7 @@ def _resolve_material_url(row: dict) -> str:
     
     使用统一的 tos_client.resolve_material_url 进行解析。
     """
-    from src.storage.tos.tos_client import resolve_material_url as _tos_resolve
+    from storage.tos.tos_client import resolve_material_url as _tos_resolve
     url, _ = _tos_resolve(
         source_url=row.get("source_url", ""),
         s3_url=row.get("s3_url", ""),
@@ -334,7 +334,7 @@ def _get_presigned_url(bucket: str, object_key: str, expire_time: int = 1800) ->
     """通过 TOS 客户端运行时生成预签名 URL。
     不缓存，每次调用生成新的签名 URL，有效期默认 1800 秒。
     """
-    from src.storage.tos.tos_client import get_client, TosClientError
+    from storage.tos.tos_client import get_client, TosClientError
     client = get_client()
     if client is None:
         raise TosClientError("TOS 客户端不可用（环境变量未配置）")
