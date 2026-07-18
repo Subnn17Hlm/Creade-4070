@@ -15,7 +15,7 @@ run = ["bash", "Creade4070Workflow/scripts/http_run.sh"]
 
 [deploy.profile]
 kind = "service"
-flavor = "workflow"
+flavor = "web"
 
 [subprojects]
 path = ["Creade4070Workflow"]
