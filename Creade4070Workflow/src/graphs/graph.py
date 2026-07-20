@@ -53,71 +53,19 @@ def route_script_source(state) -> str:
         return "手动文案"
 
 
+# material_source_ok_router 和 material_fail_node 已停用（可信TOS素材模式）
+# 保留代码供参考，但不再注册到图中
+"""
 def material_source_ok_router(state) -> str:
-    """
-    title: 素材源预检路由
-    desc: 根据素材源预检结果决定下一步：全部通过→素材匹配，有带字素材→直接结束
-    """
     material_source_ok = state_get(state, "material_source_ok", False)
-    passed_count = state_get(state, "material_passed_count", 0)
-    total_count = state_get(state, "material_total_count", 0)
-    
-    # 记录路由决策到日志
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"[AuditRoute] material_source_ok={material_source_ok}, passed_count={passed_count}, total_count={total_count}")
-    
     if material_source_ok:
         return "素材通过"
     else:
         return "素材不合格"
 
-
 def material_fail_node(state, config: RunnableConfig, runtime: Runtime[Context]) -> dict:
-    """
-    title: 素材不可用
-    desc: 素材源检测到带字素材，无法继续生成，直接失败
-    """
-    ctx = runtime.context
-    audit_path = state_get(state, "material_audit_path", "") or ""
-    source_ok = False
-    fail_reason = "素材源检测失败：所有素材均含烧录文字/非原始文案，非无字幕原片"
-
-    if audit_path and os.path.exists(audit_path):
-        try:
-            with open(audit_path, "r") as f:
-                report = json.load(f)
-            materials = report.get("materials", [])
-            total = len(materials)
-            ok_count = sum(1 for m in materials if m.get("source_ok"))
-            if ok_count == 0 and total > 0:
-                fail_reason = (
-                    f"素材源检测失败：{total}个素材中{total - ok_count}个含烧录文字，"
-                    f"素材源不是无字幕原片，无法继续生成"
-                )
-            elif ok_count > 0 and ok_count < total:
-                fail_reason = (
-                    f"素材源检测失败：{total}个素材中仅{ok_count}个通过检查，"
-                    f"其余{total - ok_count}个含烧录文字，可用素材不足"
-                )
-            source_ok = False
-        except Exception as e:
-            fail_reason = f"素材源检测失败：读取审计报告异常 - {e}"
-            source_ok = False
-
-    return {
-        "material_source_ok": source_ok,
-        "material_audit_path": audit_path,
-        "audited_materials": [],
-        "clean_material_count": 0,
-        "dirty_material_count": 0,
-        "final_video_url": "",
-        "total_duration": 0.0,
-        "status": "failed",
-        "fail_reason": fail_reason,
-        "failure_category": "material_source_not_clean",
-        "run_id": "",
-    }
+    ...
+"""
 
 
 # 创建状态图
@@ -149,7 +97,7 @@ builder.add_node("input_normalization", input_normalization_node, metadata={"typ
 builder.add_node("tts_generation", tts_generation_node, metadata={"type": "task"})
 builder.add_node("subtitle_timing", subtitle_timing_node, metadata={"type": "task"})
 builder.add_node("material_source_audit", material_source_audit_node, metadata={"type": "task"})
-builder.add_node("material_fail", material_fail_node, metadata={"type": "task"})
+# material_fail_node 保留在文件中但不再注册到图中（可信TOS素材模式）
 builder.add_node("material_matching", material_matching_node, metadata={"type": "task"})
 builder.add_node("clip_extraction", clip_extraction_node, metadata={"type": "task"})
 builder.add_node("timeline_assembly", timeline_assembly_node, metadata={"type": "task"})
@@ -178,17 +126,9 @@ builder.add_edge("input_normalization", "tts_generation")
 builder.add_edge("tts_generation", "subtitle_timing")
 builder.add_edge("subtitle_timing", "material_source_audit")
 
-# 素材源预检条件分支
-builder.add_conditional_edges(
-    source="material_source_audit",
-    path=material_source_ok_router,
-    path_map={
-        "素材通过": "material_matching",
-        "素材不合格": "material_fail",
-    },
-)
-
-builder.add_edge("material_fail", END)
+# 素材源预检 -> 素材匹配（固定边，可信TOS素材模式）
+# material_fail_node 保留但不再连接到图中
+builder.add_edge("material_source_audit", "material_matching")
 builder.add_edge("material_matching", "clip_extraction")
 builder.add_edge("clip_extraction", "timeline_assembly")
 builder.add_edge("timeline_assembly", "final_composition")
