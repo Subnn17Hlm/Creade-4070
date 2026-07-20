@@ -101,6 +101,7 @@ def tts_generation_node(
             cleaned_script=cleaned_script,
             raw_script=getattr(state, 'raw_script', '') or '',
             script_text=getattr(state, 'script_text', '') or '',
+            node_trace=["tts_generation"],
         )
 
     except Exception as e:
@@ -112,4 +113,5 @@ def tts_generation_node(
             cleaned_script=cleaned_script,
             raw_script=getattr(state, 'raw_script', '') or '',
             script_text=getattr(state, 'script_text', '') or '',
+            node_trace=["tts_generation"],
         )

@@ -58,4 +58,5 @@ def manual_script_node(
         script_source="manual",
         manual_script_path=manual_script_path,
         original_script_path=original_script_path,
+        node_trace=["manual_script"],
     )

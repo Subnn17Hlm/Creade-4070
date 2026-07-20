@@ -95,6 +95,9 @@ class GlobalState(BaseModel):
     final_video_url: str = Field(default="", description="最终视频URL")
     total_duration: float = Field(default=0.0, description="总时长")
 
+    # 节点执行追踪
+    node_trace: List[str] = Field(default=[], description="节点执行顺序追踪")
+
 
 # ============================================================
 # 图出入参
@@ -203,6 +206,7 @@ class ManualScriptOutput(BaseModel):
     script_source: str = Field(default="manual", description="脚本来源")
     manual_script_path: str = Field(default="", description="manual_script.txt路径")
     original_script_path: str = Field(..., description="original_script.txt路径")
+    node_trace: List[str] = Field(default=[], description="节点执行追踪")
 
 
 # ============================================================
@@ -230,6 +234,7 @@ class InputNormOutput(BaseModel):
     input_meta_path: str = Field(..., description="输入元数据路径")
     original_chars: int = Field(..., description="原始文案字符数")
     script_ok: bool = Field(..., description="文案校验通过")
+    node_trace: List[str] = Field(default=[], description="节点执行追踪")
 
 
 # ============================================================
@@ -253,6 +258,7 @@ class TTSGenOutput(BaseModel):
     cleaned_script: str = Field(default="", description="清洗后文案（保留）")
     raw_script: str = Field(default="", description="原始脚本（保留）")
     script_text: str = Field(default="", description="原始文案（保留）")
+    node_trace: List[str] = Field(default=[], description="节点执行追踪")
 
 
 # ============================================================
@@ -281,6 +287,7 @@ class SubtitleTimingOutput(BaseModel):
     cleaned_script: str = Field(default="", description="清洗后文案（保留）")
     raw_script: str = Field(default="", description="原始脚本（保留）")
     script_text: str = Field(default="", description="原始文案（保留）")
+    node_trace: List[str] = Field(default=[], description="节点执行追踪")
 
 
 # ============================================================

@@ -164,4 +164,5 @@ def input_normalization_node(
         input_meta_path=meta_path,
         original_chars=raw_chars,
         script_ok=True,
+        node_trace=["input_normalization"],
     )

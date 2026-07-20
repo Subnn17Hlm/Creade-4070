@@ -625,7 +625,24 @@ def quality_check_node(
     script_ok = script_coverage >= 95.0
 
     # 脚本流转诊断信息
+    # 获取运行时模块路径
+    import graphs.state as state_module
+    import graphs.nodes.manual_script_node as manual_node_module
+    import graphs.nodes.input_normalization_node as input_norm_node_module
+    import graphs.nodes.tts_generation_node as tts_node_module
+    import graphs.nodes.subtitle_timing_node as subtitle_node_module
+    import graphs.graph as graph_module
+    
     script_flow_diagnostics = {
+        "build_version": "state-flow-v3",
+        "runtime_module_files": {
+            "state_module": state_module.__file__,
+            "graph_module": graph_module.__file__,
+            "manual_script_node": manual_node_module.__file__,
+            "input_normalization_node": input_norm_node_module.__file__,
+            "tts_generation_node": tts_node_module.__file__,
+            "subtitle_timing_node": subtitle_node_module.__file__,
+        },
         "original_script_path": state.original_script_path or "",
         "original_script_path_exists": os.path.exists(state.original_script_path) if state.original_script_path else False,
         "original_script_chars": orig_chars,
@@ -646,6 +663,7 @@ def quality_check_node(
         "state_cleaned_script_chars": len(getattr(state, 'cleaned_script', '') or ''),
         "state_script_text_chars": len(getattr(state, 'script_text', '') or ''),
         "tts_duration": tts_duration,
+        "executed_nodes": getattr(state, 'node_trace', []) or [],
     }
 
     # === 2. 音视频同步 ===
