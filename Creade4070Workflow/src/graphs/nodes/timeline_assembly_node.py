@@ -15,6 +15,7 @@ from coze_coding_utils.runtime_ctx.context import Context
 from graphs.state import TimelineAssemblyInput, TimelineAssemblyOutput
 from graphs.shared_utils import atomic_json_write
 from utils.ffmpeg_utils import run_ffmpeg, run_ffprobe, get_media_duration as _get_media_duration_util
+from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
 
@@ -374,6 +375,29 @@ def timeline_assembly_node(
     clip_paths = state.get("clip_paths", [])
     timing = state.get("timing", [])
     run_dir = state.get("run_dir", "")
+    extracted_clips = state.get("extracted_clips", [])
+
+    # Phase: entered
+    write_trace_entered(run_dir, "timeline_assembly",
+        timeline_shots_count=len(timeline_shots),
+        clip_paths_count=len(clip_paths),
+        extracted_clips_count=len(extracted_clips),
+    )
+
+    # 检查是否有截取的片段
+    if not clip_paths and not extracted_clips:
+        error_msg = "没有截取的片段 (clip_paths为空且extracted_clips为空)"
+        logger.error("[Node6] %s", error_msg)
+        write_trace_error(run_dir, "timeline_assembly", "NoClipsError", error_msg)
+        raise RuntimeError(f"时间线组装失败: {error_msg}")
+
+    # 检查是否有失败的片段
+    failed_clips = [c for c in extracted_clips if c.get("status") not in ("ok", "")]
+    if failed_clips and not clip_paths:
+        error_msg = f"所有片段都失败 (failed_clips={len(failed_clips)})"
+        logger.error("[Node6] %s", error_msg)
+        write_trace_error(run_dir, "timeline_assembly", "AllClipsFailedError", error_msg)
+        raise RuntimeError(f"时间线组装失败: {error_msg}")
 
     logger.info("[Node6] 画面timeline组装...")
 
@@ -490,6 +514,14 @@ def timeline_assembly_node(
 
     # === 字幕关闭区间生成（白名单素材） ===
     _generate_subtitle_suppression(final_timeline, run_dir)
+
+    # Phase: completed
+    write_trace_completed(run_dir, "timeline_assembly",
+        timeline_segment_count=len(final_timeline),
+        active_clips=active_clips,
+        total_visual_duration=total_visual_duration,
+        total_tts_duration=total_tts_duration,
+    )
 
     return {
         "final_timeline_path": final_timeline_path,

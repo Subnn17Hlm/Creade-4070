@@ -11,6 +11,7 @@ from langgraph.runtime import Runtime
 from coze_coding_utils.runtime_ctx.context import Context
 from graphs.state import MaterialMatchInput, MaterialMatchOutput
 from graphs.shared_utils import atomic_json_write
+from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
 
@@ -616,6 +617,12 @@ def material_matching_node(
     """
     ctx = runtime.context
     run_dir = state.get("run_dir", "")
+
+    # Phase: entered
+    write_trace_entered(run_dir, "material_matching",
+        material_csv=state.get("material_csv", ""),
+        timing_count=len(state.get("timing", [])),
+    )
 
     # 1. 确定使用的素材清单文件
     from pathlib import Path
@@ -1254,6 +1261,23 @@ def material_matching_node(
             "match_confidence": entry.get("match_confidence", ""),
             "match_score": entry.get("match_score", 0.0),
         })
+
+    # 如果没有匹配到任何素材，抛出异常
+    if not matched_materials:
+        error_msg = f"未匹配到任何素材 (selected_assets={len(selected_assets)}, all_materials={len(all_materials)})"
+        logger.error("[material_matching] %s", error_msg)
+        write_trace_error(run_dir, "material_matching", "NoMaterialMatchedError", error_msg)
+        raise RuntimeError(f"素材匹配失败: {error_msg}")
+
+    # Phase: completed
+    write_trace_completed(run_dir, "material_matching",
+        matched_material_count=len(matched_materials),
+        unique_material_count=len(used_material_ids),
+        exact_tag_match_count=exact_count,
+        synonym_match_count=synonym_count,
+        semantic_fallback_count=fallback_count,
+        unmatched_count=len(unmatched_ids),
+    )
 
     return {
         "materials": all_materials,

@@ -29,6 +29,7 @@ from graphs.shared_utils import (
     run_ffmpeg,
 )
 from utils.media_uploader import upload_local_file
+from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,26 @@ def final_composition_node(
     bgm_url = state.get("bgm_url", "")
     run_dir = state.get("run_dir", "")
 
+    # Phase: entered
+    write_trace_entered(run_dir, "final_composition",
+        final_timeline_path=final_timeline_path,
+        srt_path=srt_path,
+        tts_wav_path=tts_wav_path,
+    )
+
+    # 检查必要文件
+    if not final_timeline_path or not os.path.exists(final_timeline_path):
+        error_msg = f"timeline文件不存在: {final_timeline_path}"
+        logger.error("[Node7] %s", error_msg)
+        write_trace_error(run_dir, "final_composition", "TimelineNotFoundError", error_msg)
+        raise RuntimeError(f"最终合成失败: {error_msg}")
+
+    if not tts_wav_path or not os.path.exists(tts_wav_path):
+        error_msg = f"TTS音频文件不存在: {tts_wav_path}"
+        logger.error("[Node7] %s", error_msg)
+        write_trace_error(run_dir, "final_composition", "TTSNotFoundError", error_msg)
+        raise RuntimeError(f"最终合成失败: {error_msg}")
+
     logger.info("[Node7] 视频合成开始...")
 
     # 读取timeline
@@ -84,12 +105,10 @@ def final_composition_node(
         timeline = json.load(f)
 
     if not timeline:
-        logger.error("[Node7] timeline为空")
-        return {
-            "final_video_path": "",
-            "contact_sheet_path": "",
-            "video_duration": 0.0,
-        }
+        error_msg = "timeline为空"
+        logger.error("[Node7] %s", error_msg)
+        write_trace_error(run_dir, "final_composition", "EmptyTimelineError", error_msg)
+        raise RuntimeError(f"最终合成失败: {error_msg}")
 
     temp_dir = ensure_dir(os.path.join(run_dir, "temp"))
     final_mp4 = os.path.join(run_dir, "final.mp4")
@@ -494,6 +513,14 @@ def final_composition_node(
             logger.warning("[Node7] 联系图生成失败: %s", e)
             contact_sheet_path = ""
 
+        # Phase: completed
+        write_trace_completed(run_dir, "final_composition",
+            final_video_path=final_mp4,
+            video_duration=video_duration,
+            end_hold_sec=end_hold_sec if end_hold_sec > 0 else 0.0,
+            contact_sheet_path=contact_sheet_path,
+        )
+
         return {
             "final_video_path": final_mp4,
             "contact_sheet_path": contact_sheet_path,
@@ -507,13 +534,5 @@ def final_composition_node(
 
     except Exception as e:
         logger.error("[Node7] 合成失败: %s", e)
-        return {
-            "final_video_path": "",
-            "contact_sheet_path": "",
-            "video_duration": 0.0,
-            "final_video_duration": 0.0,
-            "final_audio_duration": 0.0,
-            "mixed_audio_path": "",
-            "node_trace": ["final_composition"],
-            "error": str(e),
-        }
+        write_trace_error(run_dir, "final_composition", "CompositionError", str(e))
+        raise RuntimeError(f"最终合成失败: {e}")

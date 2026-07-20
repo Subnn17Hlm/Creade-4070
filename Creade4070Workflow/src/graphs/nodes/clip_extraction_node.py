@@ -15,6 +15,7 @@ from coze_coding_utils.runtime_ctx.context import Context
 
 from graphs.state import ClipExtractionInput, ClipExtractionOutput
 from graphs.shared_utils import ensure_dir, get_media_duration, run_ffmpeg
+from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,20 @@ def clip_extraction_node(
     ctx = runtime.context
     timeline_shots = state.get("timeline_shots", [])
     run_dir = state.get("run_dir", "")
+    matched_materials = state.get("matched_materials", [])
+
+    # Phase: entered
+    write_trace_entered(run_dir, "clip_extraction",
+        timeline_shots_count=len(timeline_shots),
+        matched_materials_count=len(matched_materials),
+    )
+
+    # 检查是否有匹配的素材
+    if not matched_materials and not timeline_shots:
+        error_msg = "没有匹配的素材 (matched_materials为空且timeline_shots为空)"
+        logger.error("[Node5] %s", error_msg)
+        write_trace_error(run_dir, "clip_extraction", "NoMaterialError", error_msg)
+        raise RuntimeError(f"素材截取失败: {error_msg}")
 
     logger.info("[Node5] 素材片段截取...")
 
@@ -388,6 +403,20 @@ def clip_extraction_node(
             "status": clip_rec.get("status", "ok"),
             "error": clip_rec.get("error", ""),
         })
+
+    # 如果没有成功截取任何片段，抛出异常
+    if not clip_paths:
+        error_msg = f"未截取任何片段 (timeline_shots={len(timeline_shots)}, clip_records={len(clip_records)})"
+        logger.error("[Node5] %s", error_msg)
+        write_trace_error(run_dir, "clip_extraction", "NoClipsExtractedError", error_msg)
+        raise RuntimeError(f"素材截取失败: {error_msg}")
+
+    # Phase: completed
+    write_trace_completed(run_dir, "clip_extraction",
+        extracted_clip_count=len(clip_paths),
+        total_shots=len(timeline_shots),
+        has_issues=has_issues,
+    )
 
     return {
         "clip_paths": clip_paths,

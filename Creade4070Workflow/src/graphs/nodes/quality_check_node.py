@@ -15,6 +15,7 @@ from coze_coding_utils.runtime_ctx.context import Context
 from graphs.state import QualityCheckInput, QualityCheckOutput
 from graphs.shared_utils import get_media_duration
 from utils.ffmpeg_utils import run_ffmpeg, run_ffprobe, get_ffmpeg_info
+from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error, get_executed_nodes_from_trace
 
 logger = logging.getLogger(__name__)
 
@@ -581,6 +582,13 @@ def quality_check_node(
     low_conf_segments = state.get("low_confidence_segments", 0)
     unique_material_count = state.get("unique_material_count", 0)
 
+    # Phase: entered
+    write_trace_entered(run_dir, "quality_check",
+        final_video_path=final_video_path,
+        srt_path=srt_path,
+        tts_duration=tts_duration,
+    )
+
     logger.info("[Node8] 质量验收...")
 
     # === 1. 文案一致性 ===
@@ -676,7 +684,8 @@ def quality_check_node(
                 node_trace_entries = [json.loads(line) for line in f if line.strip()]
             script_flow_diagnostics["node_trace_file"] = node_trace_file
             script_flow_diagnostics["node_trace_entries"] = node_trace_entries
-            script_flow_diagnostics["executed_nodes_from_file"] = [e.get("node") for e in node_trace_entries]
+            # 只计算 completed 阶段的节点，避免 entered/completed 重复计算
+            script_flow_diagnostics["executed_nodes_from_file"] = get_executed_nodes_from_trace(node_trace_entries)
         except Exception as e:
             script_flow_diagnostics["node_trace_file_error"] = str(e)
     else:
@@ -1172,6 +1181,13 @@ def quality_check_node(
             logger.info("[Node8] 最终视频已上传: %s", final_video_url[:60])
         except Exception as e:
             logger.warning("[Node8] 上传视频失败: %s", e)
+
+    # Phase: completed
+    write_trace_completed(run_dir, "quality_check",
+        status=status,
+        video_duration=video_duration,
+        final_video_url=final_video_url,
+    )
 
     return {
         "final_video_url": final_video_url,
