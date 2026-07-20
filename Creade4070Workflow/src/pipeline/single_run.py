@@ -36,6 +36,13 @@ from coze_coding_utils.runtime_ctx.context import Context
 
 from utils.media_uploader import upload_local_file
 from utils.file.file import FileOps, File
+from utils.ffmpeg_utils import (
+    get_ffmpeg_path,
+    get_ffprobe_path,
+    run_ffmpeg as _run_ffmpeg_cmd,
+    run_ffprobe,
+    get_media_duration as _get_media_duration_cmd,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -99,24 +106,13 @@ def _ensure_dir(path: str) -> str:
 
 
 def _get_media_duration(file_path: str) -> float:
-    """ffprobe获取媒体时长"""
-    try:
-        result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-            capture_output=True, text=True, timeout=30
-        )
-        return float(result.stdout.strip())
-    except Exception as e:
-        logger.error("ffprobe获取时长失败 %s: %s", file_path, e)
-        return 0.0
+    """获取媒体时长 - 使用统一 ffmpeg_utils"""
+    return _get_media_duration_cmd(file_path)
 
 
 def _run_ffmpeg(cmd: List[str], timeout: int = 300) -> None:
-    """运行ffmpeg命令"""
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg失败: {result.stderr}")
+    """运行ffmpeg命令 - 使用统一 ffmpeg_utils"""
+    _run_ffmpeg_cmd(cmd, timeout=timeout)
 
 
 def _get_tts_audio(text: str, ctx: Context, run_dir: str) -> str:
