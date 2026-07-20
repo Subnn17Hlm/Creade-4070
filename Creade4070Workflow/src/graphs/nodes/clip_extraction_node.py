@@ -117,6 +117,13 @@ def clip_extraction_node(
 
     logger.info("[Node5] 素材片段截取...")
 
+    # 构建 material_id -> matched_material 映射，用于获取 bucket/object_key
+    material_id_to_info = {}
+    for mat in matched_materials:
+        mat_id = mat.get("asset_id", "") or mat.get("material_id", "")
+        if mat_id:
+            material_id_to_info[mat_id] = mat
+
     temp_dir = ensure_dir(os.path.join(run_dir, "temp"))
     clip_paths = []
     clip_records = []
@@ -142,12 +149,42 @@ def clip_extraction_node(
         file_name = shot.get("selected_file_name", material_id)
         burned_info = _detect_burned_in_text(material_id, file_name)
 
+        # 如果 material_url 为空或可能过期，尝试从 matched_materials 重新生成签名 URL
+        signed_url_generated = False
+        bucket = ""
+        object_key = ""
+        if material_id in material_id_to_info:
+            mat_info = material_id_to_info[material_id]
+            bucket = mat_info.get("bucket", "")
+            object_key = mat_info.get("object_key", "")
+            if bucket and object_key:
+                try:
+                    from storage.tos.tos_client import resolve_material_url
+                    regenerated_url, _ = resolve_material_url(
+                        source_url=mat_info.get("source_url", ""),
+                        s3_url=mat_info.get("s3_url", ""),
+                        bucket=bucket,
+                        object_key=object_key,
+                        local_path=mat_info.get("local_path", ""),
+                    )
+                    if regenerated_url:
+                        material_url = regenerated_url
+                        signed_url_generated = True
+                        logger.info("[Node5] 片段%d: 重新生成签名URL (material_id=%s)", i + 1, material_id)
+                except Exception as e:
+                    logger.warning("[Node5] 片段%d: 重新生成签名URL失败: %s", i + 1, e)
+
         if not material_url:
-            logger.warning("[Node5] 片段%d: 无素材URL (material_id=%s)", i + 1, material_id)
+            error_msg = f"无素材URL (material_id={material_id}, bucket={bucket}, object_key={object_key})"
+            logger.warning("[Node5] 片段%d: %s", i + 1, error_msg)
             clip_records.append({
                 "sentence_id": sentence_id,
                 "material_id": material_id,
                 "status": "skipped_no_url",
+                "error": error_msg,
+                "bucket": bucket,
+                "object_key": object_key,
+                "signed_url_generated": signed_url_generated,
                 "clip_path": "",
                 "visual_continuation": False,
                 "burned_in_text": burned_info,
@@ -319,11 +356,31 @@ def clip_extraction_node(
 
         except Exception as e:
             logger.error("[Node5] 片段%d截取失败: %s", i + 1, e)
+            # 获取 ffmpeg stderr（如果有）
+            ffmpeg_stderr = ""
+            ffmpeg_returncode = None
+            if hasattr(e, 'stderr'):
+                ffmpeg_stderr = str(e.stderr) if e.stderr else ""
+            if hasattr(e, 'returncode'):
+                ffmpeg_returncode = e.returncode
+            
             clip_records.append({
                 "sentence_id": sentence_id,
                 "material_id": material_id,
                 "status": "failed",
                 "error": str(e),
+                "bucket": bucket,
+                "object_key": object_key,
+                "source_url": material_url,
+                "signed_url_generated": signed_url_generated,
+                "download_status": "skipped",
+                "downloaded_size": 0,
+                "source_duration": round(source_duration, 2) if source_duration else 0,
+                "source_start": round(clip_start, 2),
+                "source_end": round(clip_end, 2),
+                "ffmpeg_returncode": ffmpeg_returncode,
+                "ffmpeg_stderr": ffmpeg_stderr,
+                "clip_path": "",
             })
             has_issues = True
 
@@ -406,10 +463,33 @@ def clip_extraction_node(
 
     # 如果没有成功截取任何片段，抛出异常
     if not clip_paths:
+        # 构建详细的错误信息
+        error_details = []
+        for idx, clip_rec in enumerate(clip_records[:2]):  # 只取前两条
+            error_details.append({
+                "index": idx + 1,
+                "asset_id": clip_rec.get("material_id", ""),
+                "status": clip_rec.get("status", ""),
+                "error": clip_rec.get("error", ""),
+                "bucket": clip_rec.get("bucket", ""),
+                "object_key": clip_rec.get("object_key", ""),
+                "source_url_exists": bool(clip_rec.get("source_url", "")),
+                "signed_url_generated": clip_rec.get("signed_url_generated", False),
+                "download_status": clip_rec.get("download_status", ""),
+                "downloaded_size": clip_rec.get("downloaded_size", 0),
+                "source_duration": clip_rec.get("source_duration", 0),
+                "source_start": clip_rec.get("source_start", clip_rec.get("clip_start", 0)),
+                "source_end": clip_rec.get("source_end", clip_rec.get("clip_end", 0)),
+                "ffmpeg_returncode": clip_rec.get("ffmpeg_returncode", None),
+                "ffmpeg_stderr_tail": (clip_rec.get("ffmpeg_stderr", "") or "")[-1000:],
+            })
+        
         error_msg = f"未截取任何片段 (timeline_shots={len(timeline_shots)}, clip_records={len(clip_records)})"
-        logger.error("[Node5] %s", error_msg)
-        write_trace_error(run_dir, "clip_extraction", "NoClipsExtractedError", error_msg)
-        raise RuntimeError(f"素材截取失败: {error_msg}")
+        error_detail_str = json.dumps(error_details, ensure_ascii=False, indent=2)
+        logger.error("[Node5] %s\n详细错误:\n%s", error_msg, error_detail_str)
+        write_trace_error(run_dir, "clip_extraction", "NoClipsExtractedError", 
+                         f"{error_msg}\n详细错误:\n{error_detail_str}")
+        raise RuntimeError(f"素材截取失败: {error_msg}\n详细错误:\n{error_detail_str}")
 
     # Phase: completed
     write_trace_completed(run_dir, "clip_extraction",
