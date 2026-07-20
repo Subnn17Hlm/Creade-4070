@@ -232,8 +232,84 @@ def clip_extraction_node(
         effective_end = float(effective_end_raw) if effective_end_raw is not None else None
         full_play_required = material_config.get("full_play_required", False)
         
-        # 获取素材总时长
-        source_duration = float(get_media_duration(material_url))
+        # 先下载素材到本地文件
+        materials_dir = ensure_dir(os.path.join(run_dir, "materials"))
+        local_material_path = os.path.join(materials_dir, f"{material_id or f'material_{i+1}'}.mp4")
+        
+        download_status = 0
+        downloaded_size = 0
+        download_error = ""
+        
+        try:
+            import httpx
+            logger.info("[Node5] 片段%d: 下载素材到本地: %s", i + 1, material_url[:100])
+            with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+                response = client.get(material_url)
+                download_status = response.status_code
+                if download_status == 200:
+                    with open(local_material_path, 'wb') as f:
+                        f.write(response.content)
+                    downloaded_size = len(response.content)
+                    logger.info("[Node5] 片段%d: 下载成功, size=%d", i + 1, downloaded_size)
+                else:
+                    download_error = f"HTTP {download_status}: {response.text[:500]}"
+                    logger.error("[Node5] 片段%d: 下载失败: %s", i + 1, download_error)
+        except Exception as e:
+            download_error = str(e)
+            logger.error("[Node5] 片段%d: 下载异常: %s", i + 1, download_error)
+        
+        # 验证下载结果
+        if download_status != 200 or downloaded_size == 0 or not os.path.exists(local_material_path):
+            error_msg = f"素材下载失败 (status={download_status}, size={downloaded_size}, error={download_error})"
+            logger.error("[Node5] 片段%d: %s", i + 1, error_msg)
+            clip_records.append({
+                "sentence_id": sentence_id,
+                "material_id": material_id,
+                "status": "download_failed",
+                "error": error_msg,
+                "bucket": bucket,
+                "object_key": object_key,
+                "source_url": material_url,
+                "signed_url_generated": signed_url_generated,
+                "download_status": download_status,
+                "downloaded_size": downloaded_size,
+                "source_duration": 0,
+                "source_start": 0,
+                "source_end": 0,
+                "ffmpeg_returncode": None,
+                "ffmpeg_stderr": "",
+                "clip_path": "",
+                "visual_continuation": False,
+                "burned_in_text": burned_info,
+            })
+            continue
+        
+        # 获取本地素材时长
+        source_duration = float(get_media_duration(local_material_path))
+        if source_duration <= 0:
+            error_msg = f"无法获取素材时长 (local_path={local_material_path})"
+            logger.error("[Node5] 片段%d: %s", i + 1, error_msg)
+            clip_records.append({
+                "sentence_id": sentence_id,
+                "material_id": material_id,
+                "status": "probe_failed",
+                "error": error_msg,
+                "bucket": bucket,
+                "object_key": object_key,
+                "source_url": material_url,
+                "signed_url_generated": signed_url_generated,
+                "download_status": download_status,
+                "downloaded_size": downloaded_size,
+                "source_duration": 0,
+                "source_start": 0,
+                "source_end": 0,
+                "ffmpeg_returncode": None,
+                "ffmpeg_stderr": "",
+                "clip_path": "",
+                "visual_continuation": False,
+                "burned_in_text": burned_info,
+            })
+            continue
         
         # 计算实际截取参数
         # 检查是否是相邻同素材连续播放
@@ -299,13 +375,13 @@ def clip_extraction_node(
         asset_usage_count[material_id] = asset_usage_count.get(material_id, 0) + 1
         
         try:
-            # 构建 ffmpeg 命令
-            cmd = ["ffmpeg", "-y"]
+            # 构建 ffmpeg 命令（使用本地文件）
+            cmd = ["ffmpeg", "-y", "-threads", "1"]
             
             if clip_start > 0:
                 cmd.extend(["-ss", f"{clip_start:.2f}"])
             
-            cmd.extend(["-i", material_url])
+            cmd.extend(["-i", local_material_path])
             
             if clip_duration < source_duration - clip_start:
                 cmd.extend(["-t", f"{clip_duration:.2f}"])
@@ -349,6 +425,12 @@ def clip_extraction_node(
                 "crop_applied": False,
                 "resize_applied": False,
                 "burned_in_text": burned_info,
+                "bucket": bucket,
+                "object_key": object_key,
+                "signed_url_generated": signed_url_generated,
+                "download_status": download_status,
+                "downloaded_size": downloaded_size,
+                "local_material_path": local_material_path,
             }
             clip_records.append(clip_record)
             logger.info("[Node5] 片段%d (sid=%d): %s -> %.2fs (从%.2fs开始, vg=%d, usage=%d)", 
