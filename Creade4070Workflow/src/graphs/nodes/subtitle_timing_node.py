@@ -188,6 +188,13 @@ def _check_srt_overlap(srt_path: str) -> bool:
     return True
 
 
+def _write_trace(run_dir: str, entry: dict) -> None:
+    """写入节点追踪文件"""
+    trace_path = os.path.join(run_dir, "node_trace.jsonl")
+    with open(trace_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
+
+
 def subtitle_timing_node(
     state: dict,
     config: RunnableConfig,
@@ -198,9 +205,22 @@ def subtitle_timing_node(
     desc: 基于文案拆句，使用字符权重+标点停顿分配时长，生成SRT字幕和时间轴调试JSON
     """
     ctx = runtime.context
+    run_dir = state.get("run_dir", "")
     cleaned_script = state.get("cleaned_script", "") or ""
     tts_duration = state.get("tts_duration", 0.0)
-    run_dir = state.get("run_dir", "")
+    tts_wav_path = state.get("tts_wav_path", "")
+    
+    srt_path = os.path.join(run_dir, "subtitles.srt")
+    timing_debug_path = os.path.join(run_dir, "timing_debug.json")
+
+    # Phase: entered
+    _write_trace(run_dir, {
+        "node": "subtitle_timing",
+        "phase": "entered",
+        "input_chars": len(cleaned_script),
+        "tts_duration": tts_duration,
+        "tts_wav_path": tts_wav_path,
+    })
 
     logger.info("[Node3] 字幕时间轴分配... cleaned_script_chars=%d, tts_duration=%.2f", 
                 len(cleaned_script), tts_duration)
@@ -221,79 +241,108 @@ def subtitle_timing_node(
                     cleaned_script = f.read().strip()
                 logger.warning("[Node3] cleaned_script为空，从original_script.txt回退读取 (%d chars)", len(cleaned_script))
 
+    # TTS时长为0时抛出异常
     if tts_duration <= 0:
-        logger.error("[Node3] TTS时长为0，无法分配 (cleaned_script_chars=%d)", len(cleaned_script))
-        # 返回 dict 而非 Pydantic Model
-        return {
-            "sentences": [], "timing": [], "srt_path": "",
-            "timing_debug_path": "", "srt_no_overlap": False,
-            "srt_coverage": 0.0, "final_chars": 0,
-        }
+        error_msg = f"TTS时长为0，无法分配字幕 (cleaned_script_chars={len(cleaned_script)}, tts_wav_path={tts_wav_path})"
+        logger.error("[Node3] %s", error_msg)
+        _write_trace(run_dir, {
+            "node": "subtitle_timing",
+            "phase": "error",
+            "error_type": "ZeroTTSDurationError",
+            "error_message": error_msg,
+        })
+        raise RuntimeError(f"字幕生成失败: {error_msg}")
 
+    # 文案为空时抛出异常
     if not cleaned_script:
-        logger.error("[Node3] 文案为空，无法生成字幕")
-        # 返回 dict 而非 Pydantic Model
+        error_msg = "文案为空，无法生成字幕"
+        logger.error("[Node3] %s", error_msg)
+        _write_trace(run_dir, {
+            "node": "subtitle_timing",
+            "phase": "error",
+            "error_type": "EmptyScriptError",
+            "error_message": error_msg,
+        })
+        raise RuntimeError(f"字幕生成失败: {error_msg}")
+
+    try:
+        # 1. 拆句
+        sentences = _split_sentences(cleaned_script)
+        logger.info("[Node3] 拆句: %d句", len(sentences))
+
+        # 2. 计算时间轴（字符权重+标点，禁止平均）
+        timing = _calculate_sentence_timing(sentences, tts_duration)
+        total_timing = sum(t["duration"] for t in timing)
+        logger.info("[Node3] 时间轴: 总和=%.3fs, TTS=%.3fs", total_timing, tts_duration)
+
+        # 3. 保存时间轴调试JSON
+        with open(timing_debug_path, "w", encoding="utf-8") as f:
+            json.dump(timing, f, ensure_ascii=False, indent=2)
+
+        # 4. 生成SRT字幕（含长句拆分）
+        _build_srt(timing, srt_path)
+        no_overlap = _check_srt_overlap(srt_path)
+        logger.info("[Node3] 字幕生成: %s, 无重叠=%s", srt_path, no_overlap)
+
+        # 5. 计算字幕覆盖率
+        srt_text = " ".join(t["text"] for t in timing)
+        clean_orig = ''.join(cleaned_script.split())
+        clean_srt = ''.join(srt_text.split())
+        overlap_count = sum(1 for ch in clean_orig if ch in clean_srt)
+        coverage = overlap_count / len(clean_orig) if clean_orig else 0
+        final_chars = int(len(clean_orig) * coverage)
+
+        logger.info("[Node3] 字幕覆盖率: %.1f%%", coverage * 100)
+        
+        # 统计 SRT cue 数量
+        cue_count = 0
+        if os.path.exists(srt_path):
+            with open(srt_path, "r", encoding="utf-8") as f:
+                srt_content = f.read()
+            cue_count = len([l for l in srt_content.split("\n") if l.strip().isdigit()])
+
+        # Phase: completed
+        _write_trace(run_dir, {
+            "node": "subtitle_timing",
+            "phase": "completed",
+            "input_chars": len(cleaned_script),
+            "tts_duration": tts_duration,
+            "tts_wav_path": tts_wav_path,
+            "sentence_count": len(sentences),
+            "srt_path": srt_path,
+            "srt_exists": os.path.exists(srt_path),
+            "cue_count": cue_count,
+            "coverage": coverage,
+            "no_overlap": no_overlap,
+        })
+
+        # 返回 dict，确保 LangGraph 正确合并到 State
         return {
-            "sentences": [], "timing": [], "srt_path": "",
-            "timing_debug_path": "", "srt_no_overlap": False,
-            "srt_coverage": 0.0, "final_chars": 0,
+            "sentences": sentences,
+            "timing": timing,
+            "srt_path": srt_path,
+            "timing_debug_path": timing_debug_path,
+            "srt_no_overlap": no_overlap,
+            "srt_coverage": coverage,
+            "final_chars": final_chars,
+            # 保留脚本文本防止被后续节点覆盖
+            "cleaned_script": cleaned_script,
+            "raw_script": state.get("raw_script", "") or "",
+            "script_text": state.get("script_text", "") or "",
+            "node_trace": ["subtitle_timing"],
         }
-
-    # 1. 拆句
-    sentences = _split_sentences(cleaned_script)
-    logger.info("[Node3] 拆句: %d句", len(sentences))
-
-    # 2. 计算时间轴（字符权重+标点，禁止平均）
-    timing = _calculate_sentence_timing(sentences, tts_duration)
-    total_timing = sum(t["duration"] for t in timing)
-    logger.info("[Node3] 时间轴: 总和=%.3fs, TTS=%.3fs", total_timing, tts_duration)
-
-    # 3. 保存时间轴调试JSON
-    timing_debug_path = os.path.join(run_dir, "timing_debug.json")
-    with open(timing_debug_path, "w", encoding="utf-8") as f:
-        json.dump(timing, f, ensure_ascii=False, indent=2)
-
-    # 4. 生成SRT字幕（含长句拆分）
-    srt_path = os.path.join(run_dir, "subtitles.srt")
-    _build_srt(timing, srt_path)
-    no_overlap = _check_srt_overlap(srt_path)
-    logger.info("[Node3] 字幕生成: %s, 无重叠=%s", srt_path, no_overlap)
-
-    # 5. 计算字幕覆盖率
-    srt_text = " ".join(t["text"] for t in timing)
-    clean_orig = ''.join(cleaned_script.split())
-    clean_srt = ''.join(srt_text.split())
-    overlap_count = sum(1 for ch in clean_orig if ch in clean_srt)
-    coverage = overlap_count / len(clean_orig) if clean_orig else 0
-    final_chars = int(len(clean_orig) * coverage)
-
-    logger.info("[Node3] 字幕覆盖率: %.1f%%", coverage * 100)
-
-    # 写入节点追踪文件
-    trace_path = os.path.join(run_dir, "node_trace.jsonl")
-    trace_entry = {
-        "node": "subtitle_timing",
-        "input_cleaned_script_chars": len(cleaned_script),
-        "output_srt_coverage": coverage,
-        "output_final_chars": final_chars,
-        "output_cleaned_script_chars": len(cleaned_script),
-        "return_type": "dict",
-    }
-    with open(trace_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
-
-    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
-    return {
-        "sentences": sentences,
-        "timing": timing,
-        "srt_path": srt_path,
-        "timing_debug_path": timing_debug_path,
-        "srt_no_overlap": no_overlap,
-        "srt_coverage": coverage,
-        "final_chars": final_chars,
-        # 保留脚本文本防止被后续节点覆盖
-        "cleaned_script": cleaned_script,
-        "raw_script": state.get("raw_script", "") or "",
-        "script_text": state.get("script_text", "") or "",
-        "node_trace": ["subtitle_timing"],
-    }
+        
+    except Exception as e:
+        import traceback
+        error_type = type(e).__name__
+        error_message = str(e)
+        logger.error("[Node3] 字幕生成失败: %s: %s", error_type, error_message)
+        logger.error("[Node3] 堆栈:\n%s", traceback.format_exc())
+        
+        _write_trace(run_dir, {
+            "node": "subtitle_timing",
+            "phase": "error",
+            "error_type": error_type,
+            "error_message": error_message,
+        })
+        raise

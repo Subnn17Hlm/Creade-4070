@@ -5,7 +5,8 @@ GlobalState 使用 TypedDict 以支持 LangGraph dict 状态合并。
 节点输入/输出仍可使用 Pydantic Model 进行校验，但 StateGraph 使用 TypedDict。
 """
 
-from typing import Optional, List, Dict, Any, TypedDict
+import operator
+from typing import Optional, List, Dict, Any, TypedDict, Annotated
 from pydantic import BaseModel, Field
 
 
@@ -18,6 +19,8 @@ class GlobalState(TypedDict, total=False):
     
     使用 TypedDict 以支持 LangGraph 的 dict 状态合并机制。
     total=False 表示所有字段都是可选的，节点可以只返回部分字段。
+    
+    node_trace 使用 Annotated reducer 实现列表累计，每个节点返回自身节点名列表。
     """
     # 原始输入
     script_id: str
@@ -103,8 +106,8 @@ class GlobalState(TypedDict, total=False):
     final_video_url: str
     total_duration: float
 
-    # 节点执行追踪
-    node_trace: List[str]
+    # 节点执行追踪（使用 Annotated reducer 实现列表累计）
+    node_trace: Annotated[List[str], operator.add]
 
 
 # ============================================================
