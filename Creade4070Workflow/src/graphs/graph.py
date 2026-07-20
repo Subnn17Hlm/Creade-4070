@@ -59,6 +59,14 @@ def material_source_ok_router(state) -> str:
     desc: 根据素材源预检结果决定下一步：全部通过→素材匹配，有带字素材→直接结束
     """
     material_source_ok = state_get(state, "material_source_ok", False)
+    passed_count = state_get(state, "material_passed_count", 0)
+    total_count = state_get(state, "material_total_count", 0)
+    
+    # 记录路由决策到日志
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[AuditRoute] material_source_ok={material_source_ok}, passed_count={passed_count}, total_count={total_count}")
+    
     if material_source_ok:
         return "素材通过"
     else:

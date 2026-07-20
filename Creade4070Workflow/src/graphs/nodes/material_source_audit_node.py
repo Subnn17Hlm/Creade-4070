@@ -75,7 +75,7 @@ def _detect_burned_in_text(file_name: str) -> Dict[str, Any]:
 
 def material_source_audit_node(
     state: MaterialAuditInput, config: RunnableConfig, runtime: Runtime[Context],
-) -> MaterialAuditOutput:
+) -> dict:
     """
     title: 素材源预检
     desc: 逐个检查素材URL，确认是否为无字幕竖屏原片。检测到烧录文字/非竖屏/尺寸异常的素材会被标记为source_ok=false。
@@ -310,7 +310,12 @@ def material_source_audit_node(
     return {
         "material_audit_path": audit_path,
         "audited_materials": clean_materials,
+        "available_materials": clean_materials,
         "clean_material_count": len(clean_materials),
         "dirty_material_count": len(dirty_materials),
         "material_source_ok": material_source_ok,
+        "material_total_count": total_count,
+        "material_passed_count": passed_count,
+        "material_audit_report": report,
+        "node_trace": ["material_source_audit"],
     }

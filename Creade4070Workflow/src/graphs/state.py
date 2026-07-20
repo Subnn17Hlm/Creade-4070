@@ -68,9 +68,13 @@ class GlobalState(BaseModel):
     # Node4b - 素材源预检
     material_audit_path: str = Field(default="", description="素材审计报告路径")
     audited_materials: List[Dict[str, Any]] = Field(default=[], description="审计后素材列表")
+    available_materials: List[Dict[str, Any]] = Field(default=[], description="可用素材列表")
     clean_material_count: int = Field(default=0, description="无字素材数量")
     dirty_material_count: int = Field(default=0, description="带字素材数量")
     material_source_ok: bool = Field(default=False, description="素材源全部通过预检")
+    material_total_count: int = Field(default=0, description="素材总数")
+    material_passed_count: int = Field(default=0, description="通过审核素材数")
+    material_audit_report: Dict[str, Any] = Field(default={}, description="素材审核报告")
 
     # Node5 - 素材截取
     clip_paths: List[str] = Field(default=[], description="截取片段路径列表")
