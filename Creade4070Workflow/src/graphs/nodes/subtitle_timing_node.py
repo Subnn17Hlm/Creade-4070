@@ -278,7 +278,6 @@ def subtitle_timing_node(
         "return_type": "SubtitleTimingOutput",
     }
     with open(trace_path, "a", encoding="utf-8") as f:
-        import json
         f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
 
     return SubtitleTimingOutput(
