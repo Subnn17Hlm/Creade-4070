@@ -250,19 +250,39 @@ def run_ffprobe(cmd: list, timeout: int = 30) -> Optional[subprocess.CompletedPr
     return result
 
 
-def get_media_duration(file_path: str) -> float:
+def get_media_duration(file_path: str, material_record: dict = None) -> float:
     """
     获取媒体文件时长（秒）
     
-    优先使用 ffprobe，回退到 Python wave 模块（仅支持 WAV）
+    多级降级：
+    1. 素材记录中的 duration 或 duration_sec
+    2. ffprobe（存在时）
+    3. ffmpeg -i stderr 的 Duration
+    4. 从 object_key/文件名末尾解析 _4s、_3s
     
     Args:
         file_path: 媒体文件路径
+        material_record: 素材记录（可选），包含 duration/duration_sec/object_key 等字段
         
     Returns:
         时长（秒），如果无法获取则返回 0.0
     """
-    # 尝试 ffprobe
+    import re
+    
+    # 1. 素材记录中的 duration
+    if material_record:
+        for key in ("duration", "duration_sec"):
+            val = material_record.get(key)
+            if val is not None:
+                try:
+                    duration = float(val)
+                    if duration > 0:
+                        logger.info("[ffmpeg_utils] 从素材记录获取时长: %.2f 秒 (字段=%s)", duration, key)
+                        return duration
+                except (ValueError, TypeError):
+                    pass
+    
+    # 2. ffprobe
     ffprobe_path = get_ffprobe_path()
     if ffprobe_path:
         try:
@@ -273,11 +293,51 @@ def get_media_duration(file_path: str) -> float:
                 file_path
             ])
             if result and result.stdout.strip():
-                return float(result.stdout.strip())
+                duration = float(result.stdout.strip())
+                logger.info("[ffmpeg_utils] ffprobe 获取时长: %.2f 秒", duration)
+                return duration
         except Exception as e:
             logger.warning("[ffmpeg_utils] ffprobe 获取时长失败: %s", e)
     
-    # 回退到 wave 模块（仅支持 WAV）
+    # 3. ffmpeg -i stderr 的 Duration
+    try:
+        ffmpeg_path = get_ffmpeg_path()
+        cmd = [ffmpeg_path, "-hide_banner", "-i", file_path]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        # ffmpeg -i 通常返回非 0，但会在 stderr 中输出 Duration
+        output = (result.stdout or "") + "\n" + (result.stderr or "")
+        duration_match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", output)
+        if duration_match:
+            hours = int(duration_match.group(1))
+            minutes = int(duration_match.group(2))
+            seconds = float(duration_match.group(3))
+            duration = hours * 3600 + minutes * 60 + seconds
+            logger.info("[ffmpeg_utils] ffmpeg -i 获取时长: %.2f 秒 (returncode=%d)", duration, result.returncode)
+            return duration
+        else:
+            logger.warning("[ffmpeg_utils] ffmpeg -i 未找到 Duration (returncode=%d, stderr_tail=%s)", 
+                          result.returncode, (result.stderr or "")[-500:])
+    except Exception as e:
+        logger.warning("[ffmpeg_utils] ffmpeg -i 获取时长失败: %s", e)
+    
+    # 4. 从 object_key/文件名解析 _4s、_3s
+    if material_record:
+        object_key = material_record.get("object_key", "")
+    else:
+        object_key = file_path
+    if object_key:
+        duration_match = re.search(r"_(\d+)s(?:\.|$)", object_key)
+        if duration_match:
+            duration = float(duration_match.group(1))
+            logger.info("[ffmpeg_utils] 从文件名解析时长: %.2f 秒 (pattern=%s)", duration, object_key)
+            return duration
+    
+    # WAV 回退
     if file_path.lower().endswith(".wav"):
         try:
             import wave
@@ -285,8 +345,11 @@ def get_media_duration(file_path: str) -> float:
                 frames = wf.getnframes()
                 rate = wf.getframerate()
                 if rate > 0:
-                    return frames / float(rate)
+                    duration = frames / float(rate)
+                    logger.info("[ffmpeg_utils] wave 模块获取时长: %.2f 秒", duration)
+                    return duration
         except Exception as e:
             logger.warning("[ffmpeg_utils] wave 模块获取时长失败: %s", e)
     
+    logger.error("[ffmpeg_utils] 无法获取文件时长: %s", file_path)
     return 0.0

@@ -41,9 +41,9 @@ def atomic_json_write(path: str, data: Any) -> None:
             os.remove(temp_path)
 
 
-def get_media_duration(file_path: str) -> float:
+def get_media_duration(file_path: str, material_record: dict = None) -> float:
     """获取媒体文件时长（秒）- 使用统一 ffmpeg_utils"""
-    return _get_media_duration(file_path)
+    return _get_media_duration(file_path, material_record=material_record)
 
 
 def run_ffmpeg(cmd: List[str], timeout: int = 300) -> None:

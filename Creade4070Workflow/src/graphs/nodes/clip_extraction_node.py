@@ -284,8 +284,9 @@ def clip_extraction_node(
             })
             continue
         
-        # 获取本地素材时长
-        source_duration = float(get_media_duration(local_material_path))
+        # 获取本地素材时长（传入素材记录以支持多级降级）
+        material_record = material_id_to_info.get(material_id, {}) if material_id else {}
+        source_duration = float(get_media_duration(local_material_path, material_record=material_record))
         if source_duration <= 0:
             error_msg = f"无法获取素材时长 (local_path={local_material_path})"
             logger.error("[Node5] 片段%d: %s", i + 1, error_msg)
