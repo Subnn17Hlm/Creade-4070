@@ -104,10 +104,26 @@ def material_source_audit_node(
         }
 
     materials: List[Dict[str, Any]] = []
+    # 统计计数器
+    total_count = 0
+    passed_count = 0
+    failed_confirmed_count = 0
+    vertical_confirmed_count = 0
+    metadata_unknown_count = 0
+    audit_skipped_count = 0
+    
     with open(csv_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            total_count += 1
             asset_id = row.get("asset_id", "").strip()
+            
+            # 检查 enabled 字段，只处理 enabled=true 的素材
+            enabled_str = row.get("enabled", "true").strip().lower()
+            if enabled_str not in ("true", "1", "yes", ""):
+                audit_skipped_count += 1
+                continue
+            
             # 使用统一的 URL 解析逻辑
             from storage.tos.tos_client import resolve_material_url
             url, _ = resolve_material_url(
@@ -125,51 +141,73 @@ def material_source_audit_node(
             object_key = row.get("object_key", "").strip()
             has_tos_ref = bool(bucket and object_key)
 
-            # 用ffprobe检测
+            # 用ffprobe检测（可能失败，因为生产环境可能无法访问TOS URL）
             probe = _probe_material(url)
+            probe_ok = probe.get("probe_ok", False)
 
-            # 有 TOS 引用的素材视为云端原片，不做文件名烧录文字检测
-            if has_tos_ref:
-                text_check = {"has_burned_in_text": False, "detected_texts": []}
-            else:
-                text_check = _detect_burned_in_text(file_name)
-
-            # 判断是否为竖屏(9:16)
+            # 竖屏判定：必须基于 width/height，元数据缺失时标记 unknown
             w = probe.get("width", 0)
             h = probe.get("height", 0)
             is_vertical = False
+            vertical_status = "unknown"  # passed, failed, unknown
             aspect_ratio_note = ""
+            
             if w > 0 and h > 0:
                 ratio = w / h
                 # 9:16 ≈ 0.5625, 允许偏差 ±0.1
                 is_vertical = 0.46 <= ratio <= 0.66
-                if not is_vertical:
+                if is_vertical:
+                    vertical_status = "passed"
+                    vertical_confirmed_count += 1
+                else:
+                    vertical_status = "failed"
                     aspect_ratio_note = f"非竖屏比例: {w}x{h} (ratio={ratio:.3f})"
+            else:
+                # 元数据缺失，标记 unknown
+                vertical_status = "unknown"
+                metadata_unknown_count += 1
+                aspect_ratio_note = "元数据缺失，无法判定竖屏"
 
-            # 判断素材是否可用
-            # 有 TOS 引用的素材，只要有有效的 TOS 引用就视为可用（即使 probe 失败）
-            # 因为生产环境可能无法访问 TOS URL 进行 probe
+            # 烧录文字判定：
+            # - 只有对视频画面帧进行 OCR/视觉检测才能判定 has_burned_in_text=true
+            # - 文件名、title、description、标签等不能作为证据
+            # - 如果无法执行 OCR/ffprobe，不得默认判定有烧录文字
+            has_burned_in_text = False
+            burned_text_status = "unknown"  # confirmed, unknown
+            detected_texts = []
+            
+            # 注意：当前实现没有 OCR 能力，所以无法确认烧录文字
+            # 只有明确检测到才会标记为 confirmed
+            burned_text_status = "unknown"
+
+            # 素材可用性判定
+            audit_status = "passed"  # passed, failed_confirmed, skipped_unavailable
+            
             if has_tos_ref:
-                # TOS 素材：只要有 bucket + object_key 就视为可用
+                # TOS 素材：只要有有效的 bucket + object_key 就视为可用
+                # 不依赖 ffprobe/OCR 结果
                 source_ok = True
-                probe_status = "skipped" if not probe.get("probe_ok") else "ok"
+                audit_status = "passed"
+                passed_count += 1
+                probe_status = "skipped" if not probe_ok else "ok"
+                source_note = "TOS云端原片，信任引用"
             else:
-                source_ok = (
-                    probe.get("probe_ok", False)
-                    and not text_check["has_burned_in_text"]
-                    and is_vertical
-                )
-                probe_status = "ok" if probe.get("probe_ok") else "failed"
-
-            # 源说明
-            if has_tos_ref:
-                source_note = "TOS云端原片"
-            elif "assets/output" in file_name or file_name.startswith("吹风机_"):
-                source_note = "来自旧流水线输出视频，含烧录文字/营销文案，非原始无字幕素材"
-            elif "seg_" in file_name:
-                source_note = "来自旧流水线片段，含烧录文字"
-            else:
-                source_note = "素材来源未知，需人工确认"
+                # 非 TOS 素材：需要更多信息才能判定
+                if not probe_ok:
+                    # 无法探测，标记为 skipped
+                    source_ok = False
+                    audit_status = "skipped_unavailable"
+                    audit_skipped_count += 1
+                    probe_status = "failed"
+                    source_note = "无法探测素材信息，跳过"
+                else:
+                    # 有探测结果，但无法确认烧录文字（无 OCR）
+                    # 保守处理：标记为 skipped，不直接判定失败
+                    source_ok = False
+                    audit_status = "skipped_unavailable"
+                    audit_skipped_count += 1
+                    probe_status = "ok"
+                    source_note = "非 TOS 素材且无 OCR 能力，无法确认是否含烧录文字"
 
             entry = {
                 "material_id": asset_id,
@@ -177,17 +215,21 @@ def material_source_audit_node(
                 "url_type": "tos_presigned" if has_tos_ref else "other",
                 "file_name": file_name,
                 "tags": tags,
-                "width": probe.get("width", 0),
-                "height": probe.get("height", 0),
+                "width": w,
+                "height": h,
                 "duration": probe.get("duration", 0.0),
-                "probe_ok": probe.get("probe_ok", False),
+                "probe_ok": probe_ok,
                 "probe_status": probe_status,
-                "has_burned_in_text": text_check["has_burned_in_text"],
-                "detected_texts": text_check["detected_texts"],
-                "is_vertical_1080x1920_or_9_16": is_vertical,
+                "has_burned_in_text": has_burned_in_text,
+                "burned_text_status": burned_text_status,
+                "detected_texts": detected_texts,
+                "is_vertical": is_vertical,
+                "vertical_status": vertical_status,
                 "aspect_ratio_note": aspect_ratio_note,
                 "source_ok": source_ok,
+                "audit_status": audit_status,
                 "source_note": source_note,
+                "has_tos_ref": has_tos_ref,
             }
             materials.append(entry)
 
@@ -197,15 +239,48 @@ def material_source_audit_node(
     material_source_ok = len(clean_materials) >= 1
 
     # 统计诊断信息
-    tos_ref_count = sum(1 for m in materials if m.get("url_type") == "tos_presigned")
+    tos_ref_count = sum(1 for m in materials if m.get("has_tos_ref"))
     probe_ok_count = sum(1 for m in materials if m.get("probe_ok"))
     probe_skipped_count = sum(1 for m in materials if m.get("probe_status") == "skipped")
+    burned_text_confirmed_count = sum(1 for m in materials if m.get("burned_text_status") == "confirmed")
+
+    # 获取前3个素材的审核原因
+    first_3_audit_reasons = []
+    for m in materials[:3]:
+        reason_parts = []
+        if m.get("has_tos_ref"):
+            reason_parts.append("TOS云端原片")
+        if m.get("audit_status") == "passed":
+            reason_parts.append("通过")
+        elif m.get("audit_status") == "skipped_unavailable":
+            reason_parts.append("跳过(不可用)")
+        elif m.get("audit_status") == "failed_confirmed":
+            reason_parts.append("失败(已确认)")
+        if m.get("vertical_status") == "unknown":
+            reason_parts.append("竖屏未知")
+        elif m.get("vertical_status") == "passed":
+            reason_parts.append("竖屏通过")
+        if m.get("burned_text_status") == "unknown":
+            reason_parts.append("烧录文字未知")
+        first_3_audit_reasons.append({
+            "material_id": m.get("material_id"),
+            "reasons": reason_parts,
+            "source_ok": m.get("source_ok"),
+        })
 
     # 保存审计报告
     run_dir = state.run_dir
     audit_path = os.path.join(run_dir, "material_source_audit.json")
     report = {
-        "audit_version": "2.0-tos-trust",
+        "audit_version": "3.0-tos-trust-v2",
+        "material_total_count": total_count,
+        "material_passed_count": passed_count,
+        "burned_text_confirmed_count": burned_text_confirmed_count,
+        "vertical_confirmed_count": vertical_confirmed_count,
+        "metadata_unknown_count": metadata_unknown_count,
+        "audit_skipped_count": audit_skipped_count,
+        "first_3_material_audit_reasons": first_3_audit_reasons,
+        # 兼容旧字段
         "total_materials": len(materials),
         "clean_material_count": len(clean_materials),
         "dirty_material_count": len(dirty_materials),
@@ -216,23 +291,22 @@ def material_source_audit_node(
         "first_3_materials": materials[:3] if materials else [],
         "materials": materials,
         "summary": (
-            f"素材源预检: 共{len(materials)}个素材, "
-            f"无字可用{len(clean_materials)}个, "
-            f"含烧录文字{len(dirty_materials)}个"
+            f"素材源预检: 共{total_count}个素材, "
+            f"通过{passed_count}个, "
+            f"TOS引用{tos_ref_count}个, "
+            f"跳过{audit_skipped_count}个"
             if material_source_ok
             else (
-                f"素材源预检失败: 共{len(materials)}个素材, "
-                f"无字可用{len(clean_materials)}个, "
-                f"含烧录文字{len(dirty_materials)}个. "
-                "所有素材均含烧录文字/营销文案, 非原始无字幕素材. "
-                "请提供原始无字幕竖屏素材URL."
+                f"素材源预检失败: 共{total_count}个素材, "
+                f"通过{passed_count}个, "
+                f"无可用素材"
             )
         ),
     }
     with open(audit_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    # 只返回无字素材
+    # 只返回通过的素材
     return {
         "material_audit_path": audit_path,
         "audited_materials": clean_materials,
