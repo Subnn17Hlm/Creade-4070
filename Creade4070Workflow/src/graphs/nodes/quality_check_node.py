@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import subprocess
 import logging
 import tempfile
 from typing import List, Dict, Any, Optional
@@ -15,6 +14,7 @@ from coze_coding_utils.runtime_ctx.context import Context
 
 from graphs.state import QualityCheckInput, QualityCheckOutput
 from graphs.shared_utils import get_media_duration
+from utils.ffmpeg_utils import run_ffmpeg, run_ffprobe, get_ffmpeg_info
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +164,10 @@ def _verify_subtitle_visible(video_path: str, srt_path: str, run_dir: str) -> Di
             frame_path = os.path.join(frames_dir, f"frame_{pos:.1f}s.jpg")
             try:
                 # 抽取单帧
-                subprocess.run(
-                    ["ffmpeg", "-y", "-ss", str(pos), "-i", video_path,
-                     "-vframes", "1", "-q:v", "2", frame_path],
-                    capture_output=True, text=True, timeout=30,
-                )
+                run_ffmpeg([
+                    "ffmpeg", "-y", "-ss", str(pos), "-i", video_path,
+                     "-vframes", "1", "-q:v", "2", frame_path
+                ], timeout=30)
 
                 if not os.path.exists(frame_path):
                     continue
@@ -315,7 +314,7 @@ def _detect_dark_frames(video_path: str) -> Dict[str, Any]:
             "-vf", "blackdetect=d=0.3:pix_th=0.1",
             "-f", "null", "-"
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = run_ffmpeg(cmd, timeout=120)
         stderr = result.stderr
 
         # 解析blackdetect输出
@@ -347,25 +346,26 @@ def _detect_dark_frames(video_path: str) -> Dict[str, Any]:
                 "-of", "csv=p=0",
                 video_path,
             ]
-            probe_result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
-            dims = probe_result.stdout.strip().split(",")
-            if len(dims) == 2:
-                width, height = int(dims[0]), int(dims[1])
-                # 采样底部10%区域的亮度
-                crop_h = int(height * 0.1)
-                crop_cmd = [
-                    "ffmpeg", "-i", video_path,
-                    "-vf", f"crop={width}:{crop_h}:0:{height-crop_h},format=gray",
-                    "-frames:v", "5",
-                    "-f", "null", "-"
-                ]
-                crop_result = subprocess.run(crop_cmd, capture_output=True, text=True, timeout=60)
-                # 检查平均亮度
-                avg_luma_match = re.search(r"mean:\s*([\d.]+)", crop_result.stderr)
-                if avg_luma_match:
-                    avg_luma = float(avg_luma_match.group(1))
-                    has_black_padding = avg_luma < 20.0
-                    bottom_black_ratio = 1.0 - (avg_luma / 255.0) if avg_luma < 255 else 0.0
+            probe_result = run_ffprobe(probe_cmd, timeout=30)
+            if probe_result:
+                dims = probe_result.stdout.strip().split(",")
+                if len(dims) == 2:
+                    width, height = int(dims[0]), int(dims[1])
+                    # 采样底部10%区域的亮度
+                    crop_h = int(height * 0.1)
+                    crop_cmd = [
+                        "ffmpeg", "-i", video_path,
+                        "-vf", f"crop={width}:{crop_h}:0:{height-crop_h},format=gray",
+                        "-frames:v", "5",
+                        "-f", "null", "-"
+                    ]
+                    crop_result = run_ffmpeg(crop_cmd, timeout=60)
+                    # 检查平均亮度
+                    avg_luma_match = re.search(r"mean:\s*([\d.]+)", crop_result.stderr)
+                    if avg_luma_match:
+                        avg_luma = float(avg_luma_match.group(1))
+                        has_black_padding = avg_luma < 20.0
+                        bottom_black_ratio = 1.0 - (avg_luma / 255.0) if avg_luma < 255 else 0.0
         except Exception:
             pass
 
@@ -735,9 +735,9 @@ def quality_check_node(
         if not os.path.exists(file_path):
             return -100.0
         try:
-            result = subprocess.run(
+            result = run_ffmpeg(
                 ["ffmpeg", "-i", file_path, "-af", "volumedetect", "-vn", "-f", "null", "/dev/null"],
-                capture_output=True, text=True, timeout=30
+                timeout=30
             )
             for line in result.stderr.split("\n"):
                 if "mean_volume" in line:
@@ -763,16 +763,17 @@ def quality_check_node(
     if os.path.exists(final_video_path):
         try:
             # 获取音频流信息
-            probe_result = subprocess.run(
+            probe_result = run_ffprobe(
                 ["ffprobe", "-v", "quiet", "-show_entries", "stream=codec_type,duration,bit_rate",
                  "-of", "json", final_video_path],
-                capture_output=True, text=True, timeout=30
+                timeout=30
             )
-            probe_data = json.loads(probe_result.stdout)
-            for stream in probe_data.get("streams", []):
-                if stream.get("codec_type") == "audio":
-                    final_audio_duration = float(stream.get("duration", 0))
-                    final_audio_bitrate = int(stream.get("bit_rate", 0))
+            if probe_result:
+                probe_data = json.loads(probe_result.stdout)
+                for stream in probe_data.get("streams", []):
+                    if stream.get("codec_type") == "audio":
+                        final_audio_duration = float(stream.get("duration", 0))
+                        final_audio_bitrate = int(stream.get("bit_rate", 0))
             
             # 获取最终视频音频音量
             final_audio_mean_volume = get_audio_volume(final_video_path)

@@ -6,7 +6,6 @@ Node6: 画面timeline组装
 import os
 import json
 import logging
-import subprocess
 from typing import List, Dict, Any, Optional
 
 from langchain_core.runnables import RunnableConfig
@@ -15,23 +14,14 @@ from coze_coding_utils.runtime_ctx.context import Context
 
 from graphs.state import TimelineAssemblyInput, TimelineAssemblyOutput
 from graphs.shared_utils import atomic_json_write
+from utils.ffmpeg_utils import run_ffmpeg, run_ffprobe, get_media_duration as _get_media_duration_util
 
 logger = logging.getLogger(__name__)
 
 
 def _get_media_duration(path: str) -> float:
     """获取媒体文件时长"""
-    try:
-        cmd = [
-            "ffprobe", "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
-            path
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        return float(result.stdout.strip())
-    except Exception:
-        return 0.0
+    return _get_media_duration_util(path)
 
 
 def _trim_clip(clip_path: str, target_duration: float, output_path: str) -> str:
@@ -46,7 +36,7 @@ def _trim_clip(clip_path: str, target_duration: float, output_path: str) -> str:
             "-movflags", "+faststart",
             output_path
         ]
-        subprocess.run(cmd, capture_output=True, timeout=60)
+        run_ffmpeg(cmd, timeout=60)
         return output_path
     except Exception as e:
         logger.error("[Node6] 裁剪clip失败: %s -> %s", clip_path, e)

@@ -5,13 +5,13 @@
 import os
 import json
 import csv
-import subprocess
 from typing import List, Dict, Any
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
 from coze_coding_utils.runtime_ctx.context import Context
 from pydantic import BaseModel, Field
 from graphs.state import MaterialAuditInput, MaterialAuditOutput
+from utils.ffmpeg_utils import run_ffprobe
 
 # 已知烧录文字模式 → 素材文件名关键词映射
 KNOWN_BURNED_IN_TEXT_PATTERNS: Dict[str, List[str]] = {
@@ -32,15 +32,14 @@ def _probe_material(url: str) -> Dict[str, Any]:
     """用ffprobe检测素材基本信息"""
     info: Dict[str, Any] = {"width": 0, "height": 0, "duration": 0.0, "probe_ok": False}
     try:
-        r = subprocess.run(
-            ["ffprobe", "-v", "error",
+        r = run_ffprobe([
+            "ffprobe", "-v", "error",
              "-select_streams", "v:0",
              "-show_entries", "stream=width,height:format=duration",
              "-of", "json",
-             url],
-            capture_output=True, text=True, timeout=30,
-        )
-        if r.returncode == 0:
+             url
+        ], timeout=30)
+        if r and r.returncode == 0:
             data = json.loads(r.stdout)
             streams = data.get("streams", [])
             if streams:

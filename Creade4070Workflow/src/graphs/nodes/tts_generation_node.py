@@ -1,6 +1,6 @@
 """
 Node2: TTS生成
-职责：将cleaned_script送入TTS，生成tts.wav，用ffprobe获取audio_duration
+职责：将cleaned_script送入TTS，生成tts.wav，获取audio_duration
 """
 import os
 import json
@@ -13,13 +13,13 @@ from langgraph.runtime import Runtime
 from coze_coding_utils.runtime_ctx.context import Context
 from coze_coding_dev_sdk import TTSClient
 
-from graphs.shared_utils import ensure_dir, get_media_duration, run_ffmpeg
+from utils.ffmpeg_utils import get_ffmpeg_path, run_ffmpeg, get_ffmpeg_info
 
 logger = logging.getLogger(__name__)
 
 
 def _get_wav_duration(wav_path: str) -> float:
-    """使用 wave 标准库读取 WAV 文件时长（ffprobe 不可用时的回退方案）"""
+    """使用 wave 标准库读取 WAV 文件时长（不依赖 ffprobe）"""
     try:
         with wave.open(wav_path, 'rb') as wf:
             frames = wf.getnframes()
@@ -51,6 +51,10 @@ def tts_generation_node(
     ctx = runtime.context
     run_dir = state.get("run_dir", "")
     
+    # 获取 ffmpeg 信息
+    ffmpeg_info = get_ffmpeg_info()
+    ffmpeg_path = ffmpeg_info.get("ffmpeg_resolved_path")
+    
     # 获取文案内容
     cleaned_script = state.get("cleaned_script", "") or ""
     original_script_path = state.get("original_script_path", "") or ""
@@ -73,9 +77,12 @@ def tts_generation_node(
         "input_path": tts_input_path,
         "input_chars": len(cleaned_script),
         "requested_output_path": tts_wav_path,
+        "ffmpeg_path": ffmpeg_path,
+        "ffmpeg_source": ffmpeg_info.get("ffmpeg_source"),
     })
     
-    logger.info("[Node2] TTS合成开始... cleaned_script_chars=%d", len(cleaned_script))
+    logger.info("[Node2] TTS合成开始... cleaned_script_chars=%d, ffmpeg=%s", 
+                len(cleaned_script), ffmpeg_path)
 
     # 文案为空时抛出异常，不静默返回
     if not cleaned_script:
@@ -124,9 +131,13 @@ def tts_generation_node(
         with open(tts_mp3_path, "wb") as f:
             f.write(resp.content)
         
-        # 转码为 WAV
-        run_ffmpeg(["ffmpeg", "-y", "-i", tts_mp3_path,
-                     "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "1", tts_wav_path])
+        source_audio_path = tts_mp3_path
+        source_audio_size = os.path.getsize(tts_mp3_path)
+        
+        # 转码为 WAV (PCM signed 16-bit little-endian, mono, 24000 Hz)
+        conversion_command = f"{ffmpeg_path} -y -i {tts_mp3_path} -acodec pcm_s16le -ar 24000 -ac 1 {tts_wav_path}"
+        run_ffmpeg([ffmpeg_path, "-y", "-i", tts_mp3_path,
+                     "-acodec", "pcm_s16le", "-ar", "24000", "-ac", "1", tts_wav_path])
         
         # 删除临时 MP3
         if os.path.exists(tts_mp3_path):
@@ -136,29 +147,27 @@ def tts_generation_node(
         if not os.path.exists(tts_wav_path):
             raise RuntimeError(f"TTS输出文件不存在: {tts_wav_path}")
         
-        output_file_size = os.path.getsize(tts_wav_path)
-        if output_file_size == 0:
+        wav_size = os.path.getsize(tts_wav_path)
+        if wav_size == 0:
             raise RuntimeError(f"TTS输出文件大小为0: {tts_wav_path}")
         
-        # 获取时长：优先 ffprobe，回退 wave 标准库
-        tts_duration = get_media_duration(tts_wav_path)
-        if tts_duration <= 0:
-            tts_duration = _get_wav_duration(tts_wav_path)
-            logger.info("[Node2] ffprobe 不可用，使用 wave 模块读取时长: %.2fs", tts_duration)
+        # 获取时长：使用 wave 标准库（不依赖 ffprobe）
+        wav_duration = _get_wav_duration(tts_wav_path)
         
-        if tts_duration <= 0:
+        if wav_duration <= 0:
             raise RuntimeError(f"TTS输出文件时长为0: {tts_wav_path}")
         
-        logger.info("[Node2] TTS完成: duration=%.2fs, size=%d bytes", tts_duration, output_file_size)
+        logger.info("[Node2] TTS完成: duration=%.2fs, size=%d bytes", wav_duration, wav_size)
 
         # 保存TTS元数据
         tts_meta = {
-            "tts_duration": tts_duration,
+            "tts_duration": wav_duration,
             "speaker": "zh_female_xiaohe_uranus_bigtts",
-            "sample_rate": 44100,
+            "sample_rate": 24000,
             "provider": provider,
             "audio_url": audio_url[:100] if audio_url else "",
             "audio_size": audio_size,
+            "ffmpeg_path": ffmpeg_path,
         }
         with open(tts_meta_path, "w", encoding="utf-8") as f:
             json.dump(tts_meta, f, ensure_ascii=False, indent=2)
@@ -172,9 +181,15 @@ def tts_generation_node(
             "input_chars": len(cleaned_script),
             "requested_output_path": tts_wav_path,
             "response_status": response_status,
+            "source_audio_path": source_audio_path,
+            "source_audio_size": source_audio_size,
+            "conversion_command": conversion_command,
+            "wav_path": tts_wav_path,
+            "wav_size": wav_size,
+            "wav_duration": wav_duration,
             "output_file_exists": True,
-            "output_file_size": output_file_size,
-            "measured_duration": tts_duration,
+            "output_file_size": wav_size,
+            "measured_duration": wav_duration,
         })
 
         # 返回 dict，确保 LangGraph 正确合并到 State
@@ -182,8 +197,8 @@ def tts_generation_node(
             "tts_wav_path": tts_wav_path,
             "tts_input_path": tts_input_path,
             "tts_meta_path": tts_meta_path,
-            "tts_duration": tts_duration,
-            "audio_duration": tts_duration,  # 兼容字段
+            "tts_duration": wav_duration,
+            "audio_duration": wav_duration,  # 兼容字段
             # 保留脚本文本防止被后续节点覆盖
             "cleaned_script": cleaned_script,
             "raw_script": state.get("raw_script", "") or "",
@@ -203,16 +218,11 @@ def tts_generation_node(
         _write_trace(run_dir, {
             "node": "tts_generation",
             "phase": "error",
-            "provider": provider,
-            "input_path": tts_input_path,
-            "input_chars": len(cleaned_script),
-            "requested_output_path": tts_wav_path,
-            "response_status": response_status,
             "error_type": error_type,
             "error_message": error_message,
-            "output_file_exists": os.path.exists(tts_wav_path),
-            "output_file_size": os.path.getsize(tts_wav_path) if os.path.exists(tts_wav_path) else 0,
+            "provider": provider,
+            "response_status": response_status,
         })
         
-        # 抛出异常，不静默返回空值
-        raise RuntimeError(f"TTS失败 [{error_type}]: {error_message}") from e
+        # 抛出异常，不静默返回
+        raise RuntimeError(f"TTS失败 [{error_type}]: {error_message}")

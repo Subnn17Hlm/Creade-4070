@@ -4,9 +4,16 @@
 import os
 import json
 import tempfile
-import subprocess
 import logging
 from typing import List, Dict, Any
+
+from utils.ffmpeg_utils import (
+    get_ffmpeg_path,
+    get_ffprobe_path,
+    run_ffmpeg as _run_ffmpeg,
+    run_ffprobe,
+    get_media_duration as _get_media_duration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,21 +42,13 @@ def atomic_json_write(path: str, data: Any) -> None:
 
 
 def get_media_duration(file_path: str) -> float:
-    try:
-        result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-            capture_output=True, text=True, timeout=30
-        )
-        return float(result.stdout.strip())
-    except Exception:
-        return 0.0
+    """获取媒体文件时长（秒）- 使用统一 ffmpeg_utils"""
+    return _get_media_duration(file_path)
 
 
 def run_ffmpeg(cmd: List[str], timeout: int = 300) -> None:
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg失败: {result.stderr[:500]}")
+    """运行 ffmpeg 命令 - 使用统一 ffmpeg_utils"""
+    _run_ffmpeg(cmd, timeout=timeout)
 
 
 def generate_contact_sheet(video_path: str, output_path: str, cols: int = 5, rows: int = 4):
@@ -61,7 +60,7 @@ def generate_contact_sheet(video_path: str, output_path: str, cols: int = 5, row
     interval = dur / total
     run_ffmpeg([
         "ffmpeg", "-y", "-i", video_path,
-        "-vf", f"fps=1/{interval:.3f},scale=320:-1,setpts=N/FRAME_RATE/TB,tile={cols}x{rows}",
+        "-vf", f"fps=1/{interval:.3f},scale=320:-1,setpts=N/Frame_RATE/TB,tile={cols}x{rows}",
         "-frames:v", "1",
         "-q:v", "2",
         output_path

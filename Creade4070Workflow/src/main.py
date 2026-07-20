@@ -265,6 +265,14 @@ async_graph: Optional[CompiledStateGraph] = None
 async def lifespan(app: FastAPI):
     global async_graph, async_runtime
     
+    # FFmpeg 诊断信息
+    try:
+        from utils.ffmpeg_utils import get_ffmpeg_info
+        ffmpeg_info = get_ffmpeg_info()
+        logger.info("[lifespan] FFmpeg 诊断: %s", json.dumps(ffmpeg_info, ensure_ascii=False))
+    except Exception as e:
+        logger.warning("[lifespan] FFmpeg 诊断失败: %s", e)
+    
     # Check if database is configured
     from storage.database.db import get_db_url
     db_url = get_db_url()
