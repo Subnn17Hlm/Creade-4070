@@ -97,6 +97,10 @@ def tts_generation_node(
             tts_input_path=tts_input_path,
             tts_meta_path=tts_meta_path,
             tts_duration=tts_duration,
+            # 保留脚本文本防止被后续节点覆盖
+            cleaned_script=cleaned_script,
+            raw_script=getattr(state, 'raw_script', '') or '',
+            script_text=getattr(state, 'script_text', '') or '',
         )
 
     except Exception as e:
@@ -104,4 +108,8 @@ def tts_generation_node(
         return TTSGenOutput(
             tts_wav_path="", tts_input_path=tts_input_path,
             tts_meta_path="", tts_duration=0.0,
+            # 即使失败也要保留脚本文本
+            cleaned_script=cleaned_script,
+            raw_script=getattr(state, 'raw_script', '') or '',
+            script_text=getattr(state, 'script_text', '') or '',
         )

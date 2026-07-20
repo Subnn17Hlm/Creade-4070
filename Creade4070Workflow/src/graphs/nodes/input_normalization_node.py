@@ -156,6 +156,8 @@ def input_normalization_node(
 
     return InputNormOutput(
         cleaned_script=cleaned,
+        raw_script=raw_script,  # 保留 raw_script 防止被覆盖为空
+        script_text=script_text_fallback or raw_script,  # 保留 script_text
         run_dir=run_dir,
         original_script_path=script_path,
         cleaned_script_path=cleaned_path,

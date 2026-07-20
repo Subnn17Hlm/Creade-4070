@@ -275,4 +275,8 @@ def subtitle_timing_node(
         srt_no_overlap=no_overlap,
         srt_coverage=coverage,
         final_chars=final_chars,
+        # 保留脚本文本防止被后续节点覆盖
+        cleaned_script=cleaned_script,
+        raw_script=getattr(state, 'raw_script', '') or '',
+        script_text=getattr(state, 'script_text', '') or '',
     )

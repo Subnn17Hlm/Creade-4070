@@ -54,6 +54,7 @@ def manual_script_node(
 
     return ManualScriptOutput(
         raw_script=script_text,
+        script_text=script_text,  # 保留 script_text 防止被覆盖为空
         script_source="manual",
         manual_script_path=manual_script_path,
         original_script_path=original_script_path,

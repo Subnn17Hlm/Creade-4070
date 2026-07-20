@@ -199,8 +199,9 @@ class ManualScriptInput(BaseModel):
 class ManualScriptOutput(BaseModel):
     """手动文案节点输出"""
     raw_script: str = Field(..., description="原始脚本")
+    script_text: str = Field(default="", description="原始文案（保留输入值）")
     script_source: str = Field(default="manual", description="脚本来源")
-    manual_script_path: str = Field(..., description="manual_script.txt路径")
+    manual_script_path: str = Field(default="", description="manual_script.txt路径")
     original_script_path: str = Field(..., description="original_script.txt路径")
 
 
@@ -221,6 +222,8 @@ class InputNormInput(BaseModel):
 class InputNormOutput(BaseModel):
     """输入规范化节点输出"""
     cleaned_script: str = Field(..., description="清洗后文案")
+    raw_script: str = Field(default="", description="原始脚本（保留防止被覆盖）")
+    script_text: str = Field(default="", description="原始文案（保留防止被覆盖）")
     run_dir: str = Field(..., description="运行目录")
     original_script_path: str = Field(..., description="原始文案保存路径")
     cleaned_script_path: str = Field(..., description="清洗文案保存路径")
@@ -246,6 +249,10 @@ class TTSGenOutput(BaseModel):
     tts_input_path: str = Field(..., description="TTS输入文本路径")
     tts_meta_path: str = Field(..., description="TTS元数据路径")
     tts_duration: float = Field(..., description="TTS时长(秒)")
+    # 保留脚本文本防止被后续节点覆盖
+    cleaned_script: str = Field(default="", description="清洗后文案（保留）")
+    raw_script: str = Field(default="", description="原始脚本（保留）")
+    script_text: str = Field(default="", description="原始文案（保留）")
 
 
 # ============================================================
@@ -270,6 +277,10 @@ class SubtitleTimingOutput(BaseModel):
     srt_no_overlap: bool = Field(..., description="字幕无重叠")
     srt_coverage: float = Field(..., description="字幕文案覆盖率")
     final_chars: int = Field(..., description="最终字幕字符数")
+    # 保留脚本文本防止被后续节点覆盖
+    cleaned_script: str = Field(default="", description="清洗后文案（保留）")
+    raw_script: str = Field(default="", description="原始脚本（保留）")
+    script_text: str = Field(default="", description="原始文案（保留）")
 
 
 # ============================================================
