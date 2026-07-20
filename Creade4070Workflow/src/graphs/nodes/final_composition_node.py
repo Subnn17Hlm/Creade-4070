@@ -14,6 +14,7 @@ import json
 import re
 import shutil
 import logging
+import subprocess
 from typing import List, Dict, Any
 
 from langchain_core.runnables import RunnableConfig
@@ -28,6 +29,7 @@ from graphs.shared_utils import (
     get_media_duration,
     run_ffmpeg,
 )
+from utils.ffmpeg_utils import get_ffmpeg_path, get_ffprobe_path
 from utils.media_uploader import upload_local_file
 from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
@@ -59,6 +61,76 @@ def _download_bgm(bgm_url: str, temp_dir: str) -> str:
     with open(local_bgm, "wb") as f:
         f.write(resp.content)
     return local_bgm
+
+
+def _check_subtitle_filter(ffmpeg_path: str) -> bool:
+    """检查 FFmpeg 是否支持 subtitles 滤镜"""
+    try:
+        result = subprocess.run(
+            [ffmpeg_path, "-hide_banner", "-filters"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        output = result.stdout + result.stderr
+        # 检查是否支持 subtitles 或 ass 滤镜
+        return "subtitles" in output or "ass" in output
+    except Exception as e:
+        logger.warning("[Node7] 检查字幕滤镜失败: %s", e)
+        return False
+
+
+def _find_chinese_font() -> str:
+    """查找支持中文的字体"""
+    # 优先使用项目字体
+    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
+    preferred_font = os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF")
+    if os.path.exists(preferred_font):
+        return preferred_font
+    
+    # 扫描系统字体
+    font_dirs = [
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        os.path.expanduser("~/.fonts"),
+    ]
+    
+    chinese_font_patterns = [
+        "wqy", "noto", "cjk", "chinese", "hans", "hei", "song", "kai",
+        "puhuiti", "alibaba", "source", "fang", "yuan"
+    ]
+    
+    for font_dir in font_dirs:
+        if not os.path.exists(font_dir):
+            continue
+        for root, dirs, files in os.walk(font_dir):
+            for f in files:
+                if f.lower().endswith(('.ttf', '.ttc', '.otf')):
+                    f_lower = f.lower()
+                    if any(p in f_lower for p in chinese_font_patterns):
+                        return os.path.join(root, f)
+    
+    # 回退到常见中文字体路径
+    fallback_fonts = [
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    ]
+    for f in fallback_fonts:
+        if os.path.exists(f):
+            return f
+    
+    return ""
+
+
+def _escape_srt_path(srt_path: str) -> str:
+    """转义 SRT 路径用于 FFmpeg subtitles 滤镜"""
+    # FFmpeg subtitles 滤镜需要转义特殊字符
+    escaped = srt_path.replace("\\", "\\\\")
+    escaped = escaped.replace(":", "\\:")
+    escaped = escaped.replace("'", "\\'")
+    return escaped
 
 
 def final_composition_node(
@@ -114,6 +186,17 @@ def final_composition_node(
     final_mp4 = os.path.join(run_dir, "final.mp4")
     end_hold_sec = 0.0  # 初始化 end_hold_sec
     
+    # 获取 FFmpeg 路径
+    ffmpeg_path = get_ffmpeg_path()
+    
+    # 检查字幕滤镜支持
+    subtitle_filter_supported = _check_subtitle_filter(ffmpeg_path)
+    logger.info("[Node7] 字幕滤镜支持: %s", subtitle_filter_supported)
+    
+    # 查找中文字体
+    font_path = _find_chinese_font()
+    logger.info("[Node7] 使用字体: %s", font_path)
+    
     # 获取TTS时长
     tts_duration = get_media_duration(tts_wav_path) if os.path.exists(tts_wav_path) else 0.0
     if tts_duration <= 0:
@@ -137,7 +220,6 @@ def final_composition_node(
         logger.info("[Node7] 活跃clip数: %d/%d", len(clip_files), len(timeline))
 
         # 1. 拼接素材片段（concat filter）- 统一缩放到1080x1920
-        #    新版素材分辨率不一致（1080p/4K/非标准），需要先统一分辨率
         concat_path = os.path.join(temp_dir, "concat.mp4")
         target_width = 1080
         target_height = 1920
@@ -145,7 +227,7 @@ def final_composition_node(
         if len(clip_files) == 1:
             # 单个clip也需要统一分辨率
             cmd = [
-                "ffmpeg", "-y", "-i", clip_files[0],
+                ffmpeg_path, "-y", "-i", clip_files[0],
                 "-vf", f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                 "-pix_fmt", "yuv420p",
@@ -156,19 +238,17 @@ def final_composition_node(
             run_ffmpeg(cmd, timeout=120)
         else:
             # 多个clip：先scale每个视频，再concat
-            # 构建filter_complex：每个输入先scale，再concat
             scale_filters = []
             for i in range(len(clip_files)):
                 scale_filters.append(f"[{i}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}]")
                 scale_filters.append(f"[{i}:a]aresample=44100[a{i}]")
             
-            # concat所有缩放后的视频
             concat_inputs = "".join(f"[v{i}][a{i}]" for i in range(len(clip_files)))
             concat_filter = f"{concat_inputs}concat=n={len(clip_files)}:v=1:a=1[outv][outa]"
             
             filter_complex = ";".join(scale_filters) + ";" + concat_filter
             
-            cmd = ["ffmpeg", "-y"]
+            cmd = [ffmpeg_path, "-y"]
             for cf in clip_files:
                 cmd.extend(["-i", cf])
             cmd.extend([
@@ -186,14 +266,12 @@ def final_composition_node(
         logger.info("[Node7] 拼接完成: %.2fs, TTS时长: %.2fs", concat_duration, tts_duration)
 
         # 1.4 精确Trim: 确保主体视频时长与TTS时长一致
-        # 如果concat视频比TTS长，裁剪到TTS时长
-        # 如果concat视频比TTS短，保持原样（不允许拉伸）
-        trim_tolerance = 0.05  # 允许50ms误差
+        trim_tolerance = 0.05
         if concat_duration > tts_duration + trim_tolerance:
             trimmed_path = os.path.join(temp_dir, "trimmed.mp4")
             logger.info("[Node7] 精确Trim: %.2fs -> %.2fs", concat_duration, tts_duration)
             run_ffmpeg([
-                "ffmpeg", "-y", "-i", concat_path,
+                ffmpeg_path, "-y", "-i", concat_path,
                 "-t", str(tts_duration),
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                 "-pix_fmt", "yuv420p",
@@ -207,14 +285,13 @@ def final_composition_node(
         elif concat_duration < tts_duration - trim_tolerance:
             logger.warning("[Node7] 主体视频时长不足: %.2fs < TTS %.2fs", concat_duration, tts_duration)
 
-        # 1.5 End Hold: 延长最后一帧，让结尾画面多停留1秒
-        # 使用 tpad filter 延长视频最后一帧
-        end_hold_sec = 1.0  # 结尾停留时长
+        # 1.5 End Hold: 延长最后一帧
+        end_hold_sec = 1.0
         if end_hold_sec > 0:
             tpad_path = os.path.join(temp_dir, "tpad.mp4")
             logger.info("[Node7] End Hold: 延长最后一帧 %.1fs...", end_hold_sec)
             run_ffmpeg([
-                "ffmpeg", "-y", "-i", concat_path,
+                ffmpeg_path, "-y", "-i", concat_path,
                 "-vf", f"tpad=stop_mode=clone:stop_duration={end_hold_sec}",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
                 "-pix_fmt", "yuv420p",
@@ -224,11 +301,9 @@ def final_composition_node(
             ], timeout=120)
             tpad_duration = get_media_duration(tpad_path)
             logger.info("[Node7] End Hold完成: %.2fs (原 %.2fs + %.1fs)", tpad_duration, concat_duration, end_hold_sec)
-            # 使用 tpad 后的视频作为后续处理的输入
             concat_path = tpad_path
             concat_duration = tpad_duration
             
-            # 保存 end_hold_meta.json 供质量检查节点读取
             end_hold_meta = {
                 "end_hold_sec": end_hold_sec,
                 "original_video_duration": concat_duration - end_hold_sec,
@@ -236,112 +311,134 @@ def final_composition_node(
             }
             end_hold_meta_path = os.path.join(run_dir, "end_hold_meta.json")
             atomic_json_write(end_hold_meta_path, end_hold_meta)
-            logger.info("[Node7] end_hold_meta.json 已保存: %s", end_hold_meta_path)
 
-        # 2. 渲染字幕 - 使用drawtext filter链
-        #    ffmpeg的subtitles/ass filter存在渲染问题，改用drawtext逐句渲染
-        #    固定参数：白色字体，黑色描边，font_size=38, y=0.82
-        #    禁止：crop, pad, drawbox, 等画面修改
+        # 2. 渲染字幕 - 使用 subtitles 滤镜
         subbed_path = os.path.join(temp_dir, "subbed.mp4")
         
-        # 字体加载逻辑：优先使用项目 assets/Fonts 下的字体
-        # 常规字幕优先使用：assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF
-        # 如果不存在或加载失败，回退到系统字体
-        workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
-        preferred_font = os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF")
-        fallback_font = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
-        
-        if os.path.exists(preferred_font):
-            font_path = preferred_font
-            logger.info("[Node7] 使用项目字体: %s", font_path)
-        else:
-            font_path = fallback_font
-            logger.warning("[Node7] 项目字体不存在，回退到系统字体: %s", font_path)
-        
-        margin_v = int(1920 * (1 - 0.82))  # ≈ 346, >= 180 ✓
-
-        # 优先使用 render_subtitles.srt（已处理白名单字幕关闭）
+        # 优先使用 render_subtitles.srt
         render_srt_path = os.path.join(run_dir, "render_subtitles.srt")
         actual_srt_path = render_srt_path if os.path.exists(render_srt_path) else srt_path
-        if os.path.exists(render_srt_path):
-            logger.info("[Node7] 使用 render_subtitles.srt（已处理白名单字幕关闭）")
+        
+        subtitle_burned = False
+        subtitle_filter_used = ""
+        
+        if subtitle_filter_supported and font_path and os.path.exists(actual_srt_path):
+            try:
+                escaped_srt_path = _escape_srt_path(actual_srt_path)
+                escaped_font_path = _escape_srt_path(font_path)
+                
+                # 使用 subtitles 滤镜烧录字幕
+                subtitle_filter = f"subtitles='{escaped_srt_path}':fontsdir='{os.path.dirname(font_path)}':force_style='FontName={os.path.basename(font_path)},FontSize=19,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,MarginV=346'"
+                subtitle_filter_used = subtitle_filter
+                
+                logger.info("[Node7] 使用 subtitles 滤镜烧录字幕: %s", actual_srt_path)
+                
+                run_ffmpeg([
+                    ffmpeg_path, "-y", "-i", concat_path,
+                    "-vf", subtitle_filter,
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "copy",
+                    "-movflags", "+faststart",
+                    subbed_path
+                ], timeout=300)
+                
+                # 验证字幕是否成功烧录
+                subbed_duration = get_media_duration(subbed_path)
+                if subbed_duration > 0:
+                    subtitle_burned = True
+                    logger.info("[Node7] 字幕烧录成功: %.2fs", subbed_duration)
+                else:
+                    raise RuntimeError("字幕烧录后视频时长为0")
+                    
+            except Exception as e:
+                logger.error("[Node7] subtitles 滤镜失败: %s", e)
+                # 尝试 drawtext 作为备选
+                try:
+                    logger.info("[Node7] 尝试 drawtext 滤镜...")
+                    # 解析 SRT 文件
+                    with open(actual_srt_path, "r", encoding="utf-8") as f:
+                        srt_content = f.read()
+                    srt_blocks = re.split(r'\n\n+', srt_content.strip())
+                    drawtext_filters = []
+                    
+                    for block in srt_blocks:
+                        lines = block.strip().split('\n')
+                        if len(lines) < 3:
+                            continue
+                        time_match = re.match(r'(\d+:\d+:\d+[,.]\d+)\s*-->\s*(\d+:\d+:\d+[,.]\d+)', lines[1])
+                        if not time_match:
+                            continue
+
+                        def _to_seconds(t: str) -> float:
+                            t = t.replace(',', '.')
+                            parts = t.split(':')
+                            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+
+                        start = _to_seconds(time_match.group(1))
+                        end = _to_seconds(time_match.group(2))
+                        text = '\n'.join(lines[2:])
+
+                        escaped = text.replace("\\", "\\\\")
+                        escaped = escaped.replace("'", "'\\\\\\''")
+                        escaped = escaped.replace(":", "\\:")
+                        escaped = escaped.replace(",", "\\,")
+                        escaped = escaped.replace("!", "\\!")
+                        escaped = escaped.replace("\n", "\\N")
+
+                        if start < end:
+                            drawtext_filters.append(
+                                f"drawtext=text='{escaped}':fontfile={font_path}:"
+                                f"fontcolor=white:fontsize=38:"
+                                f"bordercolor=black:borderw=3:"
+                                f"x=(w-text_w)/2:y=h-346:"
+                                f"enable='between(t,{start},{end})'"
+                            )
+
+                    if drawtext_filters:
+                        filter_chain = ",".join(drawtext_filters)
+                        run_ffmpeg([
+                            ffmpeg_path, "-y", "-i", concat_path,
+                            "-vf", filter_chain,
+                            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                            "-pix_fmt", "yuv420p",
+                            "-c:a", "copy",
+                            "-movflags", "+faststart",
+                            subbed_path
+                        ], timeout=300)
+                        subbed_duration = get_media_duration(subbed_path)
+                        if subbed_duration > 0:
+                            subtitle_burned = True
+                            subtitle_filter_used = "drawtext"
+                            logger.info("[Node7] drawtext 字幕烧录成功: %.2fs", subbed_duration)
+                        else:
+                            raise RuntimeError("drawtext 烧录后视频时长为0")
+                    else:
+                        raise RuntimeError("无有效的字幕渲染")
+                        
+                except Exception as e2:
+                    logger.error("[Node7] drawtext 也失败: %s", e2)
+                    # 最终回退：无字幕版本
+                    shutil.copy2(concat_path, subbed_path)
+                    subtitle_burned = False
+                    logger.warning("[Node7] 回退到无字幕版本")
         else:
-            logger.info("[Node7] 使用 canonical subtitles.srt")
-
-        try:
-            # 解析SRT文件，获取每句字幕和时间
-            with open(actual_srt_path, "r", encoding="utf-8") as f:
-                srt_content = f.read()
-            # 按空行分割字幕块
-            srt_blocks = re.split(r'\n\n+', srt_content.strip())
-            drawtext_filters = []
-            for block in srt_blocks:
-                lines = block.strip().split('\n')
-                if len(lines) < 3:
-                    continue
-                time_match = re.match(r'(\d+:\d+:\d+[,.]\d+)\s*-->\s*(\d+:\d+:\d+[,.]\d+)', lines[1])
-                if not time_match:
-                    continue
-
-                def _to_seconds(t: str) -> float:
-                    t = t.replace(',', '.')
-                    parts = t.split(':')
-                    return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
-
-                start = _to_seconds(time_match.group(1))
-                end = _to_seconds(time_match.group(2))
-                text = '\n'.join(lines[2:])
-
-                # 转义text中的特殊字符
-                escaped = text.replace("\\", "\\\\")
-                escaped = escaped.replace("'", "'\\\\\\''")
-                escaped = escaped.replace(":", "\\:")
-                escaped = escaped.replace(",", "\\,")
-                escaped = escaped.replace("!", "\\!")
-                escaped = escaped.replace("[", "\\[")
-                escaped = escaped.replace("]", "\\]")
-                escaped = escaped.replace("(", "\\(")
-                escaped = escaped.replace(")", "\\)")
-                # 换行符转ASS换行
-                escaped = escaped.replace("\n", "\\N")
-
-                if start < end:
-                    drawtext_filters.append(
-                        f"drawtext=text='{escaped}':fontfile={font_path}:"
-                        f"fontcolor=white:fontsize=38:"
-                        f"bordercolor=black:borderw=3:"
-                        f"x=(w-text_w)/2:y=h-{margin_v}:"
-                        f"enable='between(t,{start},{end})'"
-                    )
-
-            if not drawtext_filters:
-                raise RuntimeError("无有效的字幕渲染")
-
-            filter_chain = ",".join(drawtext_filters)
-            logger.info("[Node7] 字幕渲染: %d句, filter链长度=%d字符", len(drawtext_filters), len(filter_chain))
-
-            run_ffmpeg([
-                "ffmpeg", "-y", "-i", concat_path,
-                "-vf", filter_chain,
-                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "copy",
-                "-movflags", "+faststart",
-                subbed_path
-            ], timeout=300)
-            subbed_duration = get_media_duration(subbed_path)
-            logger.info("[Node7] 字幕渲染完成: %.2fs", subbed_duration)
-        except Exception as e:
-            logger.error("[Node7] 字幕渲染失败: %s", e)
-            # 回退: 直接使用无字幕版本
+            # 字幕滤镜不支持或字体不存在
+            if not subtitle_filter_supported:
+                logger.error("[Node7] FFmpeg 不支持 subtitles 滤镜")
+            if not font_path:
+                logger.error("[Node7] 未找到中文字体")
+            if not os.path.exists(actual_srt_path):
+                logger.error("[Node7] SRT 文件不存在: %s", actual_srt_path)
+            
+            # 回退到无字幕版本
             shutil.copy2(concat_path, subbed_path)
-            subbed_duration = get_media_duration(subbed_path)
-            logger.warning("[Node7] 回退到无字幕版本: %.2fs", subbed_duration)
+            subtitle_burned = False
+        
+        subbed_duration = get_media_duration(subbed_path)
+        video_duration = subbed_duration
 
-        # 3. 混音（TTS + BGM）- 分步处理，确保BGM可听见
-        #    步骤：1. 截取BGM到视频时长 -> bgm_trimmed.wav
-        #          2. 混合TTS+BGM -> mixed_audio.wav
-        #          3. 将混合音频混入视频 -> final.mp4
+        # 3. 混音（TTS + 可选 BGM）
         mixed_path = os.path.join(temp_dir, "mixed.mp4")
         
         # 获取视频时长
@@ -350,27 +447,19 @@ def final_composition_node(
         
         logger.info("[Node7] 视频时长=%.2fs, TTS时长=%.2fs", video_duration, tts_duration)
         
-        # 输出调试文件路径
-        bgm_trimmed_path = os.path.join(run_dir, "bgm_trimmed.wav")
-        tts_normalized_path = os.path.join(run_dir, "tts_normalized.wav")
-        mixed_audio_path = os.path.join(run_dir, "mixed_audio.wav")
+        # BGM 处理
+        bgm_used = False
+        local_bgm = ""
         
-        # BGM 默认选择逻辑：如果没有传 bgm_url，从 assets/bgm/ 下的 bgm_01.mp3 到 bgm_12.mp3 中选择一个
         if not bgm_url:
-            bgm_dir = os.path.join(workspace_path, "assets/bgm")
+            bgm_dir = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets/bgm")
             if os.path.exists(bgm_dir):
                 bgm_files = sorted([f for f in os.listdir(bgm_dir) if f.endswith(".mp3")])
                 if bgm_files:
-                    # 按 run_dir 稳定选择，保证相同 run_dir 总是选择同一个 BGM
                     import hashlib
                     hash_val = int(hashlib.md5(run_dir.encode()).hexdigest(), 16)
                     bgm_index = hash_val % len(bgm_files)
                     bgm_url = os.path.join(bgm_dir, bgm_files[bgm_index])
-                    logger.info("[Node7] 未指定 bgm_url，自动选择: %s", bgm_url)
-                else:
-                    logger.warning("[Node7] assets/bgm/ 目录下没有 mp3 文件")
-            else:
-                logger.warning("[Node7] assets/bgm/ 目录不存在")
         
         if bgm_url:
             try:
@@ -378,134 +467,74 @@ def final_composition_node(
                 bgm_duration = get_media_duration(local_bgm)
                 logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
                 
-                # ========== 步骤1: 截取BGM到视频时长 ==========
-                logger.info("[Node7] 步骤1: 截取BGM到视频时长...")
-                run_ffmpeg([
-                    "ffmpeg", "-y",
-                    "-stream_loop", "-1", "-i", local_bgm,
-                    "-t", str(video_duration),
-                    "-c:a", "pcm_s16le",
-                    "-ar", "44100",
-                    "-ac", "1",
-                    bgm_trimmed_path
-                ], timeout=60)
-                bgm_trimmed_duration = get_media_duration(bgm_trimmed_path)
-                logger.info("[Node7] bgm_trimmed.wav 生成完成: %.2fs", bgm_trimmed_duration)
-                
-                # ========== 步骤2: 归一化TTS ==========
-                logger.info("[Node7] 步骤2: 归一化TTS...")
-                run_ffmpeg([
-                    "ffmpeg", "-y",
-                    "-i", tts_wav_path,
-                    "-af", "volume=1.0,loudnorm",
-                    "-c:a", "pcm_s16le",
-                    "-ar", "44100",
-                    "-ac", "1",
-                    tts_normalized_path
-                ], timeout=60)
-                logger.info("[Node7] tts_normalized.wav 生成完成")
-                
-                # ========== 步骤3: 混合TTS + BGM ==========
-                # BGM音量设为0.40，确保人耳可听见但不盖过人声
+                # 混合 TTS + BGM
                 bgm_volume = 0.40
-                logger.info("[Node7] 步骤3: 混合TTS(volume=1.0) + BGM(volume=%.2f)...", bgm_volume)
                 run_ffmpeg([
-                    "ffmpeg", "-y",
-                    "-i", tts_normalized_path,
-                    "-i", bgm_trimmed_path,
-                    "-filter_complex",
-                    f"[0:a]volume=1.0[tts];[1:a]volume={bgm_volume}[bgm];[tts][bgm]amix=inputs=2:duration=first:normalize=0,loudnorm[aout]",
-                    "-map", "[aout]",
-                    "-c:a", "pcm_s16le",
-                    "-ar", "44100",
-                    "-ac", "1",
-                    mixed_audio_path
-                ], timeout=60)
-                mixed_audio_duration = get_media_duration(mixed_audio_path)
-                logger.info("[Node7] mixed_audio.wav 生成完成: %.2fs", mixed_audio_duration)
-                
-                # ========== 步骤4: 将混合音频混入视频 ==========
-                # 注意：不使用 -shortest，因为视频可能比音频长（end_hold）
-                # 使用 -t 指定输出时长为视频时长
-                logger.info("[Node7] 步骤4: 将混合音频混入视频...")
-                run_ffmpeg([
-                    "ffmpeg", "-y",
+                    ffmpeg_path, "-y",
                     "-i", subbed_path,
-                    "-i", mixed_audio_path,
-                    "-map", "0:v", "-map", "1:a",
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                    "-pix_fmt", "yuv420p",
+                    "-i", tts_wav_path,
+                    "-i", local_bgm,
+                    "-filter_complex",
+                    f"[1:a]volume=1.0[tts];[2:a]volume={bgm_volume},aloop=loop=-1:size=2e+09[bgm];[tts][bgm]amix=inputs=2:duration=first:normalize=0[aout]",
+                    "-map", "0:v", "-map", "[aout]",
+                    "-c:v", "copy",
                     "-c:a", "aac", "-b:a", "128k",
                     "-ar", "44100",
                     "-movflags", "+faststart",
-                    "-t", str(video_duration),  # 使用视频时长（包含end_hold）
+                    "-t", str(video_duration),
                     mixed_path
                 ], timeout=180)
-                
-                # 验证音频是否正常
-                final_audio_duration = get_media_duration(mixed_path)
-                logger.info("[Node7] 混音完成: 视频=%.2fs, 音频=%.2fs", final_audio_duration, final_audio_duration)
-                
-                # 生成音频混流报告
-                audio_mix_report = {
-                    "tts_file": tts_wav_path,
-                    "bgm_file": local_bgm,
-                    "tts_volume": 1.0,
-                    "bgm_volume": bgm_volume,
-                    "tts_duration": tts_duration,
-                    "bgm_duration": bgm_duration,
-                    "video_duration": video_duration,
-                    "output_duration": final_audio_duration,
-                    "mix_strategy": "step_by_step_mix",
-                    "bgm_trimmed_exists": os.path.exists(bgm_trimmed_path),
-                    "mixed_audio_exists": os.path.exists(mixed_audio_path),
-                    "output_codec": "aac",
-                    "output_bitrate": "128k"
-                }
-                audio_mix_report_path = os.path.join(run_dir, "audio_mix_report.json")
-                atomic_json_write(audio_mix_report_path, audio_mix_report)
-                logger.info("[Node7] 音频混流报告已保存: %s", audio_mix_report_path)
+                bgm_used = True
+                logger.info("[Node7] TTS+BGM 混音完成")
                 
             except Exception as e:
                 logger.error("[Node7] BGM混合失败: %s，仅使用TTS", e)
-                # 回退：仅使用TTS
-                run_ffmpeg([
-                    "ffmpeg", "-y",
-                    "-i", subbed_path,
-                    "-i", tts_wav_path,
-                    "-filter_complex", "[1:a]volume=1.0[aout]",
-                    "-map", "0:v", "-map", "[aout]",
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                    "-pix_fmt", "yuv420p",
-                    "-c:a", "aac", "-b:a", "128k",
-                    "-ar", "44100",
-                    "-movflags", "+faststart",
-                    "-t", str(video_duration),  # 使用视频时长（包含end_hold）
-                    mixed_path
-                ], timeout=120)
-        else:
-            # 无BGM，仅使用TTS
+                bgm_used = False
+        
+        if not bgm_used:
+            # 仅使用 TTS
             run_ffmpeg([
-                "ffmpeg", "-y",
+                ffmpeg_path, "-y",
                 "-i", subbed_path,
                 "-i", tts_wav_path,
-                "-filter_complex", "[1:a]volume=1.0[aout]",
-                "-map", "0:v", "-map", "[aout]",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                "-pix_fmt", "yuv420p",
+                "-map", "0:v", "-map", "1:a",
+                "-c:v", "copy",
                 "-c:a", "aac", "-b:a", "128k",
                 "-ar", "44100",
                 "-movflags", "+faststart",
-                "-t", str(video_duration),  # 使用视频时长（包含end_hold）
+                "-t", str(video_duration),
                 mixed_path
             ], timeout=120)
+            logger.info("[Node7] 仅使用 TTS 音轨")
 
         # 4. 复制到最终输出
         shutil.copy2(mixed_path, final_mp4)
         video_duration = get_media_duration(final_mp4)
         logger.info("[Node7] 合成完成: %.2fs", video_duration)
 
-        # 5. 生成联系图
+        # 5. 验证最终输出
+        final_size = os.path.getsize(final_mp4) if os.path.exists(final_mp4) else 0
+        if final_size == 0:
+            raise RuntimeError("最终视频大小为0")
+        
+        # 检查音频流
+        try:
+            probe_cmd = [ffmpeg_path, "-i", final_mp4, "-f", "null", "-"]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+            stderr_output = result.stderr
+            has_audio = "Audio:" in stderr_output
+            has_video = "Video:" in stderr_output
+            
+            if not has_video:
+                raise RuntimeError("最终视频无视频流")
+            if not has_audio:
+                raise RuntimeError("最终视频无音频流")
+            
+            logger.info("[Node7] 验证通过: 视频流=%s, 音频流=%s", has_video, has_audio)
+        except Exception as e:
+            logger.warning("[Node7] 验证失败: %s", e)
+
+        # 6. 生成联系图
         contact_sheet_path = os.path.join(run_dir, "contact_sheet.jpg")
         try:
             generate_contact_sheet(final_mp4, contact_sheet_path)
@@ -519,6 +548,10 @@ def final_composition_node(
             video_duration=video_duration,
             end_hold_sec=end_hold_sec if end_hold_sec > 0 else 0.0,
             contact_sheet_path=contact_sheet_path,
+            subtitle_burned=subtitle_burned,
+            subtitle_filter_used=subtitle_filter_used,
+            font_path=font_path,
+            bgm_used=bgm_used,
         )
 
         return {
@@ -527,7 +560,7 @@ def final_composition_node(
             "video_duration": video_duration,
             "end_hold_sec": end_hold_sec if end_hold_sec > 0 else 0.0,
             "final_video_duration": video_duration,
-            "final_audio_duration": video_duration,  # 音频时长与视频时长一致
+            "final_audio_duration": video_duration,
             "mixed_audio_path": mixed_path,
             "node_trace": ["final_composition"],
         }
