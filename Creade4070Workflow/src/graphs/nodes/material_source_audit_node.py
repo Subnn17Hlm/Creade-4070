@@ -98,10 +98,10 @@ def material_source_audit_node(
             csv_path = resolved if resolved.is_file() else _default_csv
 
     if not csv_path.is_file():
-        return MaterialAuditOutput(
-            materials=[],
-            error=f"素材清单不存在: {csv_path}",
-        )
+        return {
+            "materials": [],
+            "error": f"素材清单不存在: {csv_path}",
+        }
 
     materials: List[Dict[str, Any]] = []
     with open(csv_path, "r", encoding="utf-8-sig") as f:
@@ -233,10 +233,10 @@ def material_source_audit_node(
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     # 只返回无字素材
-    return MaterialAuditOutput(
-        material_audit_path=audit_path,
-        audited_materials=clean_materials,
-        clean_material_count=len(clean_materials),
-        dirty_material_count=len(dirty_materials),
-        material_source_ok=material_source_ok,
-    )
+    return {
+        "material_audit_path": audit_path,
+        "audited_materials": clean_materials,
+        "clean_material_count": len(clean_materials),
+        "dirty_material_count": len(dirty_materials),
+        "material_source_ok": material_source_ok,
+    }

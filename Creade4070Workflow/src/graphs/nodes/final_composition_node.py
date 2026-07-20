@@ -85,9 +85,11 @@ def final_composition_node(
 
     if not timeline:
         logger.error("[Node7] timeline为空")
-        return FinalCompositionOutput(
-            final_video_path="", contact_sheet_path="", video_duration=0.0,
-        )
+        return {
+            "final_video_path": "",
+            "contact_sheet_path": "",
+            "video_duration": 0.0,
+        }
 
     temp_dir = ensure_dir(os.path.join(run_dir, "temp"))
     final_mp4 = os.path.join(run_dir, "final.mp4")
@@ -492,15 +494,17 @@ def final_composition_node(
             logger.warning("[Node7] 联系图生成失败: %s", e)
             contact_sheet_path = ""
 
-        return FinalCompositionOutput(
-            final_video_path=final_mp4,
-            contact_sheet_path=contact_sheet_path,
-            video_duration=video_duration,
-            end_hold_sec=end_hold_sec if end_hold_sec > 0 else 0.0,
-        )
+        return {
+            "final_video_path": final_mp4,
+            "contact_sheet_path": contact_sheet_path,
+            "video_duration": video_duration,
+            "end_hold_sec": end_hold_sec if end_hold_sec > 0 else 0.0,
+        }
 
     except Exception as e:
         logger.error("[Node7] 合成失败: %s", e)
-        return FinalCompositionOutput(
-            final_video_path="", contact_sheet_path="", video_duration=0.0,
-        )
+        return {
+            "final_video_path": "",
+            "contact_sheet_path": "",
+            "video_duration": 0.0,
+        }

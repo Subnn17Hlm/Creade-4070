@@ -501,6 +501,6 @@ def timeline_assembly_node(
     # === 字幕关闭区间生成（白名单素材） ===
     _generate_subtitle_suppression(final_timeline, run_dir)
 
-    return TimelineAssemblyOutput(
-        final_timeline_path=final_timeline_path,
-    )
+    return {
+        "final_timeline_path": final_timeline_path,
+    }

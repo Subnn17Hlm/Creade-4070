@@ -373,8 +373,8 @@ def clip_extraction_node(
 
     logger.info("[Node5] 完成: %d/%d 成功", len(clip_paths), len(timeline_shots))
 
-    return ClipExtractOutput(
-        clip_paths=clip_paths,
-        clipped_assets_path=clipped_assets_path,
-        clip_report_path=clip_report_path,
-    )
+    return {
+        "clip_paths": clip_paths,
+        "clipped_assets_path": clipped_assets_path,
+        "clip_report_path": clip_report_path,
+    }

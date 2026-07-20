@@ -1170,11 +1170,11 @@ def quality_check_node(
         except Exception as e:
             logger.warning("[Node8] 上传视频失败: %s", e)
 
-    return QualityCheckOutput(
-        final_video_url=final_video_url,
-        quality_report=quality_report,
-        total_duration=round(video_duration, 3),
-        status=status,
-        fail_reason="; ".join(fail_reasons) if fail_reasons else "",
-        failure_category=failure_category,
-    )
+    return {
+        "final_video_url": final_video_url,
+        "quality_report": quality_report,
+        "total_duration": round(video_duration, 3),
+        "status": status,
+        "fail_reason": "; ".join(fail_reasons) if fail_reasons else "",
+        "failure_category": failure_category,
+    }

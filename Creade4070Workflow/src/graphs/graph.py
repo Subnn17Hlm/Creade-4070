@@ -32,35 +32,46 @@ from graphs.state import (
 logger = logging.getLogger(__name__)
 
 
-def route_script_source(state: ScriptSourceRouteCheck) -> str:
+def state_get(state, key, default=None):
+    """
+    统一读取 LangGraph State 字段，兼容 dict 和 Pydantic Model
+    """
+    if isinstance(state, dict):
+        return state.get(key, default)
+    return getattr(state, key, default)
+
+
+def route_script_source(state) -> str:
     """
     title: 文案来源路由
     desc: 根据script_source决定进入生成文案分支还是手动文案分支
     """
-    if state.script_source == "generated":
+    script_source = state_get(state, "script_source", "")
+    if script_source == "generated":
         return "生成文案"
     else:
         return "手动文案"
 
 
-def material_source_ok_router(state: MaterialSourceCheck) -> str:
+def material_source_ok_router(state) -> str:
     """
     title: 素材源预检路由
     desc: 根据素材源预检结果决定下一步：全部通过→素材匹配，有带字素材→直接结束
     """
-    if state.material_source_ok:
+    material_source_ok = state_get(state, "material_source_ok", False)
+    if material_source_ok:
         return "素材通过"
     else:
         return "素材不合格"
 
 
-def material_fail_node(state: MaterialAuditInput, config: RunnableConfig, runtime: Runtime[Context]) -> MaterialAuditOutput:
+def material_fail_node(state, config: RunnableConfig, runtime: Runtime[Context]) -> dict:
     """
     title: 素材不可用
     desc: 素材源检测到带字素材，无法继续生成，直接失败
     """
     ctx = runtime.context
-    audit_path = state.material_audit_path or ""
+    audit_path = state_get(state, "material_audit_path", "") or ""
     source_ok = False
     fail_reason = "素材源检测失败：所有素材均含烧录文字/非原始文案，非无字幕原片"
 
@@ -86,19 +97,19 @@ def material_fail_node(state: MaterialAuditInput, config: RunnableConfig, runtim
             fail_reason = f"素材源检测失败：读取审计报告异常 - {e}"
             source_ok = False
 
-    return MaterialAuditOutput(
-        material_source_ok=source_ok,
-        material_audit_path=audit_path,
-        audited_materials=[],
-        clean_material_count=0,
-        dirty_material_count=0,
-        final_video_url="",
-        total_duration=0.0,
-        status="failed",
-        fail_reason=fail_reason,
-        failure_category="material_source_not_clean",
-        run_id="",
-    )
+    return {
+        "material_source_ok": source_ok,
+        "material_audit_path": audit_path,
+        "audited_materials": [],
+        "clean_material_count": 0,
+        "dirty_material_count": 0,
+        "final_video_url": "",
+        "total_duration": 0.0,
+        "status": "failed",
+        "fail_reason": fail_reason,
+        "failure_category": "material_source_not_clean",
+        "run_id": "",
+    }
 
 
 # 创建状态图
