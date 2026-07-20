@@ -212,6 +212,7 @@ class InputNormInput(BaseModel):
     """输入规范化节点输入"""
     script_source: str = Field(..., description="脚本来源")
     raw_script: str = Field(..., description="原始脚本正文")
+    script_text: str = Field(default="", description="原始文案（手动模式，用于回退）")
     run_dir: str = Field(..., description="运行目录")
     product_name: str = Field(default="", description="产品名")
     material_csv: str = Field(default="", description="素材CSV路径")
@@ -235,6 +236,7 @@ class InputNormOutput(BaseModel):
 class TTSGenInput(BaseModel):
     """TTS生成节点输入"""
     cleaned_script: str = Field(..., description="清洗后文案")
+    original_script_path: str = Field(default="", description="原始文案路径（用于回退）")
     run_dir: str = Field(..., description="运行目录")
 
 
@@ -253,6 +255,8 @@ class TTSGenOutput(BaseModel):
 class SubtitleTimingInput(BaseModel):
     """字幕时间轴节点输入"""
     cleaned_script: str = Field(..., description="清洗后文案")
+    cleaned_script_path: str = Field(default="", description="清洗文案路径（用于回退）")
+    original_script_path: str = Field(default="", description="原始文案路径（用于回退）")
     tts_duration: float = Field(..., description="TTS时长")
     run_dir: str = Field(..., description="运行目录")
 

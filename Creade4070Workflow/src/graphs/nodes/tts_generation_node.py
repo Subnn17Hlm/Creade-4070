@@ -31,10 +31,19 @@ def tts_generation_node(
     cleaned_script = state.cleaned_script
     run_dir = state.run_dir
 
-    logger.info("[Node2] TTS合成开始...")
+    logger.info("[Node2] TTS合成开始... cleaned_script_chars=%d", len(cleaned_script))
+
+    # 防御性回退：如果 cleaned_script 为空，尝试从 original_script.txt 读取
+    if not cleaned_script:
+        original_script_path = getattr(state, 'original_script_path', '') or ''
+        if original_script_path and os.path.exists(original_script_path):
+            with open(original_script_path, "r", encoding="utf-8") as f:
+                cleaned_script = f.read().strip()
+            logger.warning("[Node2] cleaned_script为空，从original_script.txt回退读取 (%d chars)", len(cleaned_script))
 
     if not cleaned_script:
-        logger.error("[Node2] 文案为空")
+        logger.error("[Node2] 文案为空 (cleaned_script=0, original_script_path=%s)", 
+                     getattr(state, 'original_script_path', ''))
         return TTSGenOutput(
             tts_wav_path="", tts_input_path="", tts_meta_path="",
             tts_duration=0.0,

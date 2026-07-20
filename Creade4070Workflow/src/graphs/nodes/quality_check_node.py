@@ -594,9 +594,24 @@ def quality_check_node(
     # 去除标点后计算覆盖率（字幕通常不显示标点）
     orig_chars = len(re.sub(r'[，。！？、；：\s]+', '', orig_text))
 
+    # 读取 cleaned_script 用于诊断
+    cleaned_script_text = ""
+    cleaned_script_path = getattr(state, 'cleaned_script_path', '') or ''
+    if cleaned_script_path and os.path.exists(cleaned_script_path):
+        with open(cleaned_script_path, "r", encoding="utf-8") as f:
+            cleaned_script_text = f.read().strip()
+
+    # 读取 TTS 输入文件用于诊断
+    tts_input_text = ""
+    tts_input_path = getattr(state, 'tts_input_path', '') or ''
+    if tts_input_path and os.path.exists(tts_input_path):
+        with open(tts_input_path, "r", encoding="utf-8") as f:
+            tts_input_text = f.read().strip()
+
     # 读取SRT拼接文案
     srt_text = ""
-    if os.path.exists(srt_path):
+    srt_file_exists = os.path.exists(srt_path) if srt_path else False
+    if srt_file_exists:
         with open(srt_path, "r", encoding="utf-8") as f:
             srt_content = f.read()
         # 从SRT提取文本
@@ -608,6 +623,30 @@ def quality_check_node(
     final_chars = len(srt_text.replace(" ", "").replace("\n", ""))
     script_coverage = round(final_chars / orig_chars * 100, 1) if orig_chars > 0 else 0.0
     script_ok = script_coverage >= 95.0
+
+    # 脚本流转诊断信息
+    script_flow_diagnostics = {
+        "original_script_path": state.original_script_path or "",
+        "original_script_path_exists": os.path.exists(state.original_script_path) if state.original_script_path else False,
+        "original_script_chars": orig_chars,
+        "original_script_preview": orig_text[:50] if orig_text else "",
+        "cleaned_script_path": cleaned_script_path,
+        "cleaned_script_path_exists": os.path.exists(cleaned_script_path) if cleaned_script_path else False,
+        "cleaned_script_chars": len(cleaned_script_text),
+        "cleaned_script_preview": cleaned_script_text[:50] if cleaned_script_text else "",
+        "tts_input_path": tts_input_path,
+        "tts_input_path_exists": os.path.exists(tts_input_path) if tts_input_path else False,
+        "tts_input_chars": len(tts_input_text),
+        "tts_input_preview": tts_input_text[:50] if tts_input_text else "",
+        "srt_path": srt_path or "",
+        "srt_file_exists": srt_file_exists,
+        "srt_text_chars": len(srt_text),
+        "srt_preview": srt_text[:50] if srt_text else "",
+        "state_raw_script_chars": len(getattr(state, 'raw_script', '') or ''),
+        "state_cleaned_script_chars": len(getattr(state, 'cleaned_script', '') or ''),
+        "state_script_text_chars": len(getattr(state, 'script_text', '') or ''),
+        "tts_duration": tts_duration,
+    }
 
     # === 2. 音视频同步 ===
     video_duration = get_media_duration(final_video_path) if os.path.exists(final_video_path) else 0.0
@@ -1075,6 +1114,8 @@ def quality_check_node(
         "failure_category": failure_category,
         "status": status,
         "fail_reason": "; ".join(fail_reasons) if fail_reasons else "",
+        # 脚本流转诊断（新增）
+        "script_flow_diagnostics": script_flow_diagnostics,
     }
 
     # 保存quality_report

@@ -62,16 +62,24 @@ def input_normalization_node(
     """
     ctx = runtime.context
     script_source = state.script_source
-    raw_script = state.raw_script
     run_dir = state.run_dir
     product_name = state.product_name or ""
     material_csv = state.material_csv or ""
 
-    logger.info("[Node1] script_source=%s, run_dir=%s", script_source, run_dir)
+    # 防御性回退：如果 raw_script 为空，尝试从 script_text 获取
+    # 这解决了 manual 模式下 raw_script 未被正确传递的问题
+    raw_script = state.raw_script
+    script_text_fallback = getattr(state, 'script_text', '') or ''
+    if not raw_script and script_text_fallback:
+        logger.warning("[Node1] raw_script为空，使用script_text回退 (%d chars)", len(script_text_fallback))
+        raw_script = script_text_fallback
+
+    logger.info("[Node1] script_source=%s, run_dir=%s, raw_script_chars=%d", 
+                script_source, run_dir, len(raw_script))
 
     # 1. 校验：原始脚本不能为空
     if not raw_script or not raw_script.strip():
-        logger.error("[Node1] raw_script为空")
+        logger.error("[Node1] raw_script为空 (script_text=%d chars)", len(script_text_fallback))
         return InputNormOutput(
             cleaned_script="",
             run_dir=run_dir,

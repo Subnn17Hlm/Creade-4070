@@ -202,10 +202,35 @@ def subtitle_timing_node(
     tts_duration = state.tts_duration
     run_dir = state.run_dir
 
-    logger.info("[Node3] 字幕时间轴分配...")
+    logger.info("[Node3] 字幕时间轴分配... cleaned_script_chars=%d, tts_duration=%.2f", 
+                len(cleaned_script), tts_duration)
+
+    # 防御性回退：如果 cleaned_script 为空，尝试从文件读取
+    if not cleaned_script:
+        # 优先从 cleaned_script_path 读取
+        cleaned_script_path = getattr(state, 'cleaned_script_path', '') or ''
+        if cleaned_script_path and os.path.exists(cleaned_script_path):
+            with open(cleaned_script_path, "r", encoding="utf-8") as f:
+                cleaned_script = f.read().strip()
+            logger.warning("[Node3] cleaned_script为空，从cleaned_script.txt回退读取 (%d chars)", len(cleaned_script))
+        # 再尝试从 original_script_path 读取
+        elif getattr(state, 'original_script_path', ''):
+            original_script_path = state.original_script_path
+            if os.path.exists(original_script_path):
+                with open(original_script_path, "r", encoding="utf-8") as f:
+                    cleaned_script = f.read().strip()
+                logger.warning("[Node3] cleaned_script为空，从original_script.txt回退读取 (%d chars)", len(cleaned_script))
 
     if tts_duration <= 0:
-        logger.error("[Node3] TTS时长为0，无法分配")
+        logger.error("[Node3] TTS时长为0，无法分配 (cleaned_script_chars=%d)", len(cleaned_script))
+        return SubtitleTimingOutput(
+            sentences=[], timing=[], srt_path="",
+            timing_debug_path="", srt_no_overlap=False,
+            srt_coverage=0.0, final_chars=0,
+        )
+
+    if not cleaned_script:
+        logger.error("[Node3] 文案为空，无法生成字幕")
         return SubtitleTimingOutput(
             sentences=[], timing=[], srt_path="",
             timing_debug_path="", srt_no_overlap=False,
