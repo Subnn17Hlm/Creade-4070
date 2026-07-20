@@ -8,6 +8,7 @@ Node0c: 手动文案（Mode B）
   - original_script.txt（统一入口，等于manual_script.txt）
 """
 import os
+import json
 import logging
 
 from langchain_core.runnables import RunnableConfig
