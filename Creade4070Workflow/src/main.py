@@ -265,6 +265,20 @@ async_graph: Optional[CompiledStateGraph] = None
 async def lifespan(app: FastAPI):
     global async_graph, async_runtime
     
+    # imageio-ffmpeg 导入检查
+    try:
+        import imageio_ffmpeg
+        imageio_ffmpeg_version = getattr(imageio_ffmpeg, "__version__", "unknown")
+        imageio_ffmpeg_module_path = getattr(imageio_ffmpeg, "__file__", "unknown")
+        resolved_ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+        resolved_ffmpeg_exists = os.path.isfile(resolved_ffmpeg_path) if resolved_ffmpeg_path else False
+        logger.info("[lifespan] imageio_ffmpeg_version=%s, module_path=%s, resolved_ffmpeg_path=%s, exists=%s",
+                   imageio_ffmpeg_version, imageio_ffmpeg_module_path, resolved_ffmpeg_path, resolved_ffmpeg_exists)
+    except ImportError as e:
+        logger.error("[lifespan] imageio-ffmpeg 未安装: %s", e)
+    except Exception as e:
+        logger.warning("[lifespan] imageio-ffmpeg 检查失败: %s", e)
+    
     # FFmpeg 诊断信息
     try:
         from utils.ffmpeg_utils import get_ffmpeg_info
