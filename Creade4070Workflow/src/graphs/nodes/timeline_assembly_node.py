@@ -493,4 +493,5 @@ def timeline_assembly_node(
 
     return {
         "final_timeline_path": final_timeline_path,
+        "node_trace": ["timeline_assembly"],
     }

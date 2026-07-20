@@ -1180,5 +1180,5 @@ def quality_check_node(
         "status": status,
         "fail_reason": "; ".join(fail_reasons) if fail_reasons else "",
         "failure_category": failure_category,
-        "node_trace": state.get("node_trace", []) or [],
+        "node_trace": ["quality_check"],
     }

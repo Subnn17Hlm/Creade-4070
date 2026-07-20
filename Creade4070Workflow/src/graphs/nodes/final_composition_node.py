@@ -499,6 +499,10 @@ def final_composition_node(
             "contact_sheet_path": contact_sheet_path,
             "video_duration": video_duration,
             "end_hold_sec": end_hold_sec if end_hold_sec > 0 else 0.0,
+            "final_video_duration": video_duration,
+            "final_audio_duration": video_duration,  # 音频时长与视频时长一致
+            "mixed_audio_path": mixed_path,
+            "node_trace": ["final_composition"],
         }
 
     except Exception as e:
@@ -507,4 +511,9 @@ def final_composition_node(
             "final_video_path": "",
             "contact_sheet_path": "",
             "video_duration": 0.0,
+            "final_video_duration": 0.0,
+            "final_audio_duration": 0.0,
+            "mixed_audio_path": "",
+            "node_trace": ["final_composition"],
+            "error": str(e),
         }

@@ -71,6 +71,7 @@ class GlobalState(TypedDict, total=False):
     low_confidence_segments: int
     unique_material_count: int
     used_manifest_file: str
+    matched_materials: List[Dict[str, Any]]  # 匹配后的素材详情（含 asset_id, bucket, object_key, source_url 等）
 
     # Node4b - 素材源预检
     material_audit_path: str
@@ -87,9 +88,12 @@ class GlobalState(TypedDict, total=False):
     clip_paths: List[str]
     clipped_assets_path: str
     clip_report_path: str
+    extracted_clips: List[Dict[str, Any]]  # 截取后的片段详情（含 clip_path, source_start, source_end, duration 等）
 
     # Node6 - Timeline组装
     final_timeline_path: str
+    timeline_video_path: str  # 组装后的基础视频路径
+    timeline_duration: float  # 组装后的视频时长
 
     # Node7 - 最终合成
     final_video_path: str
@@ -97,6 +101,9 @@ class GlobalState(TypedDict, total=False):
     video_duration: float
     video_duration_before_pad: float
     end_hold_sec: float
+    final_video_duration: float  # 最终视频时长
+    final_audio_duration: float  # 最终音频时长
+    mixed_audio_path: str  # 混音后的音频路径
 
     # Node8 - 质量验收
     quality_report: Dict[str, Any]

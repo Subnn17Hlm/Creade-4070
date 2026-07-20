@@ -373,8 +373,26 @@ def clip_extraction_node(
 
     logger.info("[Node5] 完成: %d/%d 成功", len(clip_paths), len(timeline_shots))
 
+    # 构建 extracted_clips（保留完整截取信息）
+    extracted_clips = []
+    for i, clip_path in enumerate(clip_paths):
+        clip_rec = clip_records[i] if i < len(clip_records) else {}
+        extracted_clips.append({
+            "sentence_id": clip_rec.get("sentence_id", i + 1),
+            "asset_id": clip_rec.get("material_id", ""),
+            "clip_path": clip_path,
+            "source_start": clip_rec.get("source_start", clip_rec.get("clip_start", 0)),
+            "source_end": clip_rec.get("source_end", clip_rec.get("clip_end", 0)),
+            "duration": clip_rec.get("actual_duration", clip_rec.get("used_duration", 0)),
+            "source_duration": clip_rec.get("source_duration", 0),
+            "status": clip_rec.get("status", "ok"),
+            "error": clip_rec.get("error", ""),
+        })
+
     return {
         "clip_paths": clip_paths,
         "clipped_assets_path": clipped_assets_path,
         "clip_report_path": clip_report_path,
+        "extracted_clips": extracted_clips,
+        "node_trace": ["clip_extraction"],
     }

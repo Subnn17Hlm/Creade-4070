@@ -1235,6 +1235,26 @@ def material_matching_node(
                 "match_reason": entry["match_reason"],
             })
 
+    # 构建 matched_materials（保留完整素材信息）
+    matched_materials = []
+    for entry in selected_assets:
+        mat_id = entry.get("selected_material_id", "")
+        # 从 all_materials 中找到对应的完整素材信息
+        full_mat = next((m for m in all_materials if m.get("material_id") == mat_id), {})
+        matched_materials.append({
+            "asset_id": mat_id,
+            "bucket": full_mat.get("bucket", ""),
+            "object_key": full_mat.get("object_key", ""),
+            "source_url": entry.get("selected_url", ""),
+            "file_name": entry.get("selected_file_name", ""),
+            "width": full_mat.get("width", 0),
+            "height": full_mat.get("height", 0),
+            "duration": full_mat.get("duration", 0.0),
+            "primary_scene_tag": entry.get("selected_primary_scene_tag", ""),
+            "match_confidence": entry.get("match_confidence", ""),
+            "match_score": entry.get("match_score", 0.0),
+        })
+
     return {
         "materials": all_materials,
         "timeline_shots": timeline_shots,
@@ -1253,4 +1273,6 @@ def material_matching_node(
         "high_confidence_segments": high_conf,
         "medium_confidence_segments": medium_conf,
         "semantic_mismatch_segments": mismatch_ids,
+        "matched_materials": matched_materials,
+        "node_trace": ["material_matching"],
     }
