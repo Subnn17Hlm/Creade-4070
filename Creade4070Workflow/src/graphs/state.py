@@ -1,110 +1,114 @@
 """
 状态定义 - 10节点流水线（含文案来源选择）
 ================================
-每个节点使用独立的 NodeInput/NodeOutput。
-GlobalState 包含所有中间字段用于 LangGraph 自动合并。
+GlobalState 使用 TypedDict 以支持 LangGraph dict 状态合并。
+节点输入/输出仍可使用 Pydantic Model 进行校验，但 StateGraph 使用 TypedDict。
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TypedDict
 from pydantic import BaseModel, Field
 
 
 # ============================================================
-# 全局状态（LangGraph 自动合并）
+# 全局状态（LangGraph 自动合并）- TypedDict 版本
 # ============================================================
 
-class GlobalState(BaseModel):
-    """全局状态 - 包含所有节点中间产物字段"""
+class GlobalState(TypedDict, total=False):
+    """全局状态 - 包含所有节点中间产物字段
+    
+    使用 TypedDict 以支持 LangGraph 的 dict 状态合并机制。
+    total=False 表示所有字段都是可选的，节点可以只返回部分字段。
+    """
     # 原始输入
-    script_id: str = Field(default="", description="脚本ID")
-    script_source: str = Field(default="manual", description="脚本来源：generated|manual")
-    script_text: str = Field(default="", description="原始文案（手动模式）")
-    product_name: str = Field(default="", description="产品名（生成模式）")
-    core_selling_points: List[str] = Field(default=[], description="核心卖点（生成模式）")
-    target_audience: str = Field(default="", description="目标人群（生成模式）")
-    video_style: str = Field(default="", description="视频风格（生成模式）")
-    platform: str = Field(default="", description="平台")
-    bgm_url: str = Field(default="", description="BGM链接")
-    material_csv: str = Field(default="", description="素材标签CSV路径")
-    run_dir: str = Field(default="", description="运行目录")
+    script_id: str
+    script_source: str
+    script_text: str
+    product_name: str
+    core_selling_points: List[str]
+    target_audience: str
+    video_style: str
+    platform: str
+    bgm_url: str
+    material_csv: str
+    run_dir: str
 
     # Node0 - 文案来源选择
-    raw_script: str = Field(default="", description="最终原始脚本")
-    generated_script_path: str = Field(default="", description="生成脚本路径（仅生成模式）")
+    raw_script: str
+    generated_script_path: str
 
     # Node1 - 输入规范化
-    cleaned_script: str = Field(default="", description="清洗后文案")
-    original_script_path: str = Field(default="", description="原始文案保存路径")
-    cleaned_script_path: str = Field(default="", description="清洗文案保存路径")
-    input_meta_path: str = Field(default="", description="输入元数据路径")
-    original_chars: int = Field(default=0, description="原始文案字符数")
-    script_ok: bool = Field(default=False, description="文案校验通过")
+    cleaned_script: str
+    original_script_path: str
+    cleaned_script_path: str
+    input_meta_path: str
+    original_chars: int
+    script_ok: bool
 
     # Node2 - TTS生成
-    tts_wav_path: str = Field(default="", description="TTS音频路径")
-    tts_input_path: str = Field(default="", description="TTS输入文本路径")
-    tts_meta_path: str = Field(default="", description="TTS元数据路径")
-    tts_duration: float = Field(default=0.0, description="TTS时长(秒)")
+    tts_wav_path: str
+    tts_input_path: str
+    tts_meta_path: str
+    tts_duration: float
 
     # Node3 - 字幕时间轴
-    sentences: List[str] = Field(default=[], description="分句列表")
-    timing: List[Dict[str, Any]] = Field(default=[], description="时间轴")
-    srt_path: str = Field(default="", description="SRT字幕路径")
-    timing_debug_path: str = Field(default="", description="时间轴调试JSON路径")
-    srt_no_overlap: bool = Field(default=False, description="字幕无重叠")
-    srt_coverage: float = Field(default=0.0, description="字幕文案覆盖率")
-    final_chars: int = Field(default=0, description="最终字幕字符数")
+    sentences: List[str]
+    timing: List[Dict[str, Any]]
+    srt_path: str
+    timing_debug_path: str
+    srt_no_overlap: bool
+    srt_coverage: float
+    final_chars: int
 
     # Node4 - 素材匹配
-    materials: List[Dict[str, Any]] = Field(default=[], description="素材库")
-    timeline_shots: List[Dict[str, Any]] = Field(default=[], description="时间线镜头")
-    selected_assets: List[Dict[str, Any]] = Field(default=[], description="选中素材明细")
-    selected_assets_path: str = Field(default="", description="选中素材JSON路径")
-    match_report_path: str = Field(default="", description="匹配报告路径")
-    low_confidence_segments: int = Field(default=0, description="低置信度段落数")
-    unique_material_count: int = Field(default=0, description="唯一素材数")
-    used_manifest_file: str = Field(default="", description="使用的素材清单文件")
+    materials: List[Dict[str, Any]]
+    timeline_shots: List[Dict[str, Any]]
+    selected_assets: List[Dict[str, Any]]
+    selected_assets_path: str
+    match_report_path: str
+    low_confidence_segments: int
+    unique_material_count: int
+    used_manifest_file: str
 
     # Node4b - 素材源预检
-    material_audit_path: str = Field(default="", description="素材审计报告路径")
-    audited_materials: List[Dict[str, Any]] = Field(default=[], description="审计后素材列表")
-    available_materials: List[Dict[str, Any]] = Field(default=[], description="可用素材列表")
-    clean_material_count: int = Field(default=0, description="无字素材数量")
-    dirty_material_count: int = Field(default=0, description="带字素材数量")
-    material_source_ok: bool = Field(default=False, description="素材源全部通过预检")
-    material_total_count: int = Field(default=0, description="素材总数")
-    material_passed_count: int = Field(default=0, description="通过审核素材数")
-    material_audit_report: Dict[str, Any] = Field(default={}, description="素材审核报告")
+    material_audit_path: str
+    audited_materials: List[Dict[str, Any]]
+    available_materials: List[Dict[str, Any]]
+    clean_material_count: int
+    dirty_material_count: int
+    material_source_ok: bool
+    material_total_count: int
+    material_passed_count: int
+    material_audit_report: Dict[str, Any]
 
     # Node5 - 素材截取
-    clip_paths: List[str] = Field(default=[], description="截取片段路径列表")
-    clipped_assets_path: str = Field(default="", description="截取素材JSON路径")
-    clip_report_path: str = Field(default="", description="截取报告路径")
+    clip_paths: List[str]
+    clipped_assets_path: str
+    clip_report_path: str
 
     # Node6 - Timeline组装
-    final_timeline_path: str = Field(default="", description="最终timeline路径")
+    final_timeline_path: str
 
     # Node7 - 最终合成
-    final_video_path: str = Field(default="", description="最终视频路径")
-    contact_sheet_path: str = Field(default="", description="联系图路径")
-    video_duration: float = Field(default=0.0, description="视频时长(秒)")
-    video_duration_before_pad: float = Field(default=0.0, description="填充前视频时长")
-    end_hold_sec: float = Field(default=0.0, description="结尾停留时长(秒)")
+    final_video_path: str
+    contact_sheet_path: str
+    video_duration: float
+    video_duration_before_pad: float
+    end_hold_sec: float
 
     # Node8 - 质量验收
-    quality_report: Dict[str, Any] = Field(default={}, description="质量报告")
-    status: str = Field(default="", description="最终状态")
-    fail_reason: str = Field(default="", description="失败原因")
-    failure_category: str = Field(default="", description="失败分类")
-    final_video_url: str = Field(default="", description="最终视频URL")
-    total_duration: float = Field(default=0.0, description="总时长")
+    quality_report: Dict[str, Any]
+    status: str
+    fail_reason: str
+    failure_category: str
+    final_video_url: str
+    total_duration: float
 
     # 节点执行追踪
-    node_trace: List[str] = Field(default=[], description="节点执行顺序追踪")
+    node_trace: List[str]
 
 
 # ============================================================
-# 图出入参
+# 图出入参（Pydantic Model 用于 API 校验）
 # ============================================================
 
 class GraphInput(BaseModel):
@@ -347,30 +351,24 @@ class MaterialAuditOutput(BaseModel):
     dirty_material_count: int = Field(..., description="带字素材数量")
     material_source_ok: bool = Field(..., description="有足够无字素材可用")
     # 图输出字段（含失败路径）
-    final_video_url: str = Field(default="", description="最终视频URL")
-    total_duration: float = Field(default=0.0, description="最终视频时长")
-    status: str = Field(default="", description="最终状态")
-    fail_reason: str = Field(default="", description="失败原因")
-    failure_category: str = Field(default="", description="失败分类")
-    run_id: str = Field(default="", description="运行ID")
-
-
-class MaterialSourceCheck(BaseModel):
-    """素材源条件判断的输入"""
-    material_source_ok: bool = Field(..., description="素材源是否通过预检")
+    available_materials: List[Dict[str, Any]] = Field(default=[], description="可用素材列表")
+    material_total_count: int = Field(default=0, description="素材总数")
+    material_passed_count: int = Field(default=0, description="通过审核素材数")
+    material_audit_report: Dict[str, Any] = Field(default={}, description="素材审核报告")
+    node_trace: List[str] = Field(default=[], description="节点执行追踪")
 
 
 # ============================================================
 # Node5 - 素材截取
 # ============================================================
 
-class ClipExtractInput(BaseModel):
+class ClipExtractionInput(BaseModel):
     """素材截取节点输入"""
     timeline_shots: List[Dict[str, Any]] = Field(..., description="时间线镜头")
     run_dir: str = Field(..., description="运行目录")
 
 
-class ClipExtractOutput(BaseModel):
+class ClipExtractionOutput(BaseModel):
     """素材截取节点输出"""
     clip_paths: List[str] = Field(..., description="截取片段路径列表")
     clipped_assets_path: str = Field(..., description="截取素材JSON路径")
@@ -383,9 +381,9 @@ class ClipExtractOutput(BaseModel):
 
 class TimelineAssemblyInput(BaseModel):
     """Timeline组装节点输入"""
-    timeline_shots: List[Dict[str, Any]] = Field(..., description="时间线镜头")
-    clip_paths: List[str] = Field(..., description="截取片段路径")
-    timing: List[Dict[str, Any]] = Field(..., description="时间轴")
+    clip_paths: List[str] = Field(..., description="截取片段路径列表")
+    tts_wav_path: str = Field(default="", description="TTS音频路径")
+    bgm_url: str = Field(default="", description="BGM链接")
     run_dir: str = Field(..., description="运行目录")
 
 
@@ -401,17 +399,15 @@ class TimelineAssemblyOutput(BaseModel):
 class FinalCompositionInput(BaseModel):
     """最终合成节点输入"""
     final_timeline_path: str = Field(..., description="最终timeline路径")
-    srt_path: str = Field(..., description="SRT字幕路径")
-    tts_wav_path: str = Field(..., description="TTS音频路径")
-    bgm_url: str = Field(default="", description="BGM链接")
     run_dir: str = Field(..., description="运行目录")
 
 
 class FinalCompositionOutput(BaseModel):
     """最终合成节点输出"""
     final_video_path: str = Field(..., description="最终视频路径")
-    contact_sheet_path: str = Field(..., description="联系图路径")
+    contact_sheet_path: str = Field(default="", description="联系图路径")
     video_duration: float = Field(..., description="视频时长(秒)")
+    video_duration_before_pad: float = Field(default=0.0, description="填充前视频时长")
     end_hold_sec: float = Field(default=0.0, description="结尾停留时长(秒)")
 
 
@@ -421,34 +417,20 @@ class FinalCompositionOutput(BaseModel):
 
 class QualityCheckInput(BaseModel):
     """质量验收节点输入"""
-    original_script_path: str = Field(..., description="原始文案路径")
-    tts_input_path: str = Field(..., description="TTS输入路径")
-    tts_wav_path: str = Field(..., description="TTS音频路径")
-    srt_path: str = Field(..., description="SRT字幕路径")
-    timing_debug_path: str = Field(..., description="时间轴调试路径")
     final_video_path: str = Field(..., description="最终视频路径")
-    clip_report_path: str = Field(..., description="截取报告路径")
-    selected_assets: List[Dict[str, Any]] = Field(..., description="选中素材明细")
-    timeline_shots: List[Dict[str, Any]] = Field(..., description="时间线镜头")
-    timing: List[Dict[str, Any]] = Field(..., description="时间轴")
-    tts_duration: float = Field(..., description="TTS时长")
-    low_confidence_segments: int = Field(..., description="低置信度段落数")
-    unique_material_count: int = Field(..., description="唯一素材数")
-    used_manifest_file: str = Field(..., description="素材清单文件")
+    video_duration: float = Field(..., description="视频时长")
+    original_script_path: str = Field(default="", description="原始文案路径")
+    cleaned_script_path: str = Field(default="", description="清洗文案路径")
+    srt_path: str = Field(default="", description="SRT字幕路径")
+    tts_wav_path: str = Field(default="", description="TTS音频路径")
     run_dir: str = Field(..., description="运行目录")
-    original_chars: int = Field(..., description="原始字符数")
-    final_chars: int = Field(..., description="最终字符数")
-    srt_coverage: float = Field(..., description="字幕覆盖率")
-    script_ok: bool = Field(..., description="文案校验通过")
-    srt_no_overlap: bool = Field(..., description="字幕无重叠")
-    sentences: List[str] = Field(..., description="分句列表")
 
 
 class QualityCheckOutput(BaseModel):
     """质量验收节点输出"""
     quality_report: Dict[str, Any] = Field(..., description="质量报告")
-    status: str = Field(..., description="最终状态：success/failed/needs_review")
-    fail_reason: str = Field(..., description="失败原因")
-    failure_category: str = Field(..., description="失败分类")
-    final_video_url: str = Field(..., description="最终视频URL")
-    total_duration: float = Field(..., description="总时长")
+    status: str = Field(..., description="最终状态")
+    fail_reason: str = Field(default="", description="失败原因")
+    failure_category: str = Field(default="", description="失败分类")
+    final_video_url: str = Field(default="", description="最终视频URL")
+    total_duration: float = Field(default=0.0, description="总时长")

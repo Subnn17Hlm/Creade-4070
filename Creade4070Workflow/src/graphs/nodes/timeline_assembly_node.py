@@ -371,19 +371,19 @@ def _format_srt_time(seconds: float) -> str:
 
 
 def timeline_assembly_node(
-    state: TimelineAssemblyInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> TimelineAssemblyOutput:
+) -> dict:
     """
     title: 画面timeline组装
     desc: 将时间轴、素材片段和截取结果合并为最终视频timeline JSON，处理跨句视觉延续和视觉组合并
     """
     ctx = runtime.context
-    timeline_shots = state.timeline_shots
-    clip_paths = state.clip_paths
-    timing = state.timing
-    run_dir = state.run_dir
+    timeline_shots = state.get("timeline_shots", [])
+    clip_paths = state.get("clip_paths", [])
+    timing = state.get("timing", [])
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node6] 画面timeline组装...")
 

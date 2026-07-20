@@ -136,22 +136,22 @@ def _generate_script_with_llm(
 
 
 def generate_script_node(
-    state: GenerateScriptInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> GenerateScriptOutput:
+) -> dict:
     """
     title: 生成文案
     desc: 根据产品信息、核心卖点、目标人群、视频风格和素材标签，使用LLM生成完整短视频口播文案。仅当script_source=generated时进入此分支。
     integrations: 大语言模型
     """
     ctx = runtime.context
-    product_name = state.product_name or "未知产品"
-    selling_points = state.core_selling_points or []
-    target_audience = state.target_audience or "目标消费者"
-    video_style = state.video_style or "短视频带货"
-    material_csv = state.material_csv or ""
-    run_dir = state.run_dir
+    product_name = state.get("product_name", "") or "未知产品"
+    selling_points = state.get("core_selling_points", []) or []
+    target_audience = state.get("target_audience", "") or "目标消费者"
+    video_style = state.get("video_style", "") or "短视频带货"
+    material_csv = state.get("material_csv", "") or ""
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node0b] 生成文案: product=%s, run_dir=%s", product_name, run_dir)
 

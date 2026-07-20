@@ -61,21 +61,21 @@ def _download_bgm(bgm_url: str, temp_dir: str) -> str:
 
 
 def final_composition_node(
-    state: FinalCompositionInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> FinalCompositionOutput:
+) -> dict:
     """
     title: 最终合成
     desc: 拼接素材片段，混音TTS+BGM，渲染字幕，输出final.mp4和contact_sheet.jpg
     integrations: 音频
     """
     ctx = runtime.context
-    final_timeline_path = state.final_timeline_path
-    srt_path = state.srt_path
-    tts_wav_path = state.tts_wav_path
-    bgm_url = state.bgm_url
-    run_dir = state.run_dir
+    final_timeline_path = state.get("final_timeline_path", "")
+    srt_path = state.get("srt_path", "")
+    tts_wav_path = state.get("tts_wav_path", "")
+    bgm_url = state.get("bgm_url", "")
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node7] 视频合成开始...")
 

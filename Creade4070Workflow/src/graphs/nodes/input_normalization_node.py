@@ -52,24 +52,24 @@ def _split_sentences(text: str) -> List[str]:
 
 
 def input_normalization_node(
-    state: InputNormInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> InputNormOutput:
+) -> dict:
     """
     title: 输入规范化
     desc: 接收统一字段，保存original_script.txt，生成cleaned_script.txt和增强版input_meta.json
     """
     ctx = runtime.context
-    script_source = state.script_source
-    run_dir = state.run_dir
-    product_name = state.product_name or ""
-    material_csv = state.material_csv or ""
+    script_source = state.get("script_source", "")
+    run_dir = state.get("run_dir", "")
+    product_name = state.get("product_name", "") or ""
+    material_csv = state.get("material_csv", "") or ""
 
     # 防御性回退：如果 raw_script 为空，尝试从 script_text 获取
     # 这解决了 manual 模式下 raw_script 未被正确传递的问题
-    raw_script = state.raw_script
-    script_text_fallback = getattr(state, 'script_text', '') or ''
+    raw_script = state.get("raw_script", "") or ""
+    script_text_fallback = state.get("script_text", "") or ""
     if not raw_script and script_text_fallback:
         logger.warning("[Node1] raw_script为空，使用script_text回退 (%d chars)", len(script_text_fallback))
         raw_script = script_text_fallback

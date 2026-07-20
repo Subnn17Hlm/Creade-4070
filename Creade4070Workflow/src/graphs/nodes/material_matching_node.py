@@ -605,24 +605,24 @@ def _build_visual_groups(
 
 
 def material_matching_node(
-    state: MaterialMatchInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> MaterialMatchOutput:
+) -> dict:
     """
     title: 素材标签匹配
     desc: 根据句子标签映射和素材清单的primary_scene_tag进行精确/同义/语义回落匹配
     integrations: 
     """
     ctx = runtime.context
-    run_dir = state.run_dir
+    run_dir = state.get("run_dir", "")
 
     # 1. 确定使用的素材清单文件
     from pathlib import Path
     _project_root = Path(__file__).resolve().parent.parent.parent.parent
     _default_csv = _project_root / "assets" / "asset_manifest_v2_bound.csv"
 
-    csv_path_str = state.material_csv
+    csv_path_str = state.get("material_csv", "") or ""
     if not csv_path_str:
         csv_path = _default_csv
     else:
@@ -666,7 +666,7 @@ def material_matching_node(
         # 如果不存在，基于 timing 自动生成
         # 禁止回退到 assets/sentence_tag_mapping_script_02.json
         logger.info("句子标签映射不存在，基于 timing 自动生成")
-        sentence_mappings = _generate_sentence_tag_mapping(state.timing, available_tags)
+        sentence_mappings = _generate_sentence_tag_mapping(state.get("timing", []), available_tags)
         mapping_file_used = "auto_generated"
         
         # 保存生成的映射到 run_dir
@@ -676,7 +676,7 @@ def material_matching_node(
     logger.info(f"句子标签映射: {len(sentence_mappings)} 条")
 
     # 4.5 构建视觉分组（短句合并）
-    visual_groups = _build_visual_groups(sentence_mappings, state.timing)
+    visual_groups = _build_visual_groups(sentence_mappings, state.get("timing", []))
     merged_groups = [g for g in visual_groups if g["merged"]]
     merged_sentence_count = sum(len(g["sentence_ids"]) - 1 for g in merged_groups)
     logger.info(f"视觉分组: {len(visual_groups)} 组，其中 {len(merged_groups)} 组发生了合并，合并了 {merged_sentence_count} 个短句")
@@ -716,12 +716,12 @@ def material_matching_node(
     
     # 构建 timing_by_sid 用于计算 visual_group_total_duration
     timing_by_sid: Dict[int, Dict[str, Any]] = {}
-    for t in state.timing:
+    for t in state.get("timing", []):
         sid = t.get("sentence_id", 0)
         if sid > 0:
             timing_by_sid[sid] = t
 
-    total_sentences = len(state.timing)
+    total_sentences = len(state.get("timing", []))
 
     for group_idx, group in enumerate(visual_groups):
         group_id = group["group_id"]
@@ -1153,7 +1153,7 @@ def material_matching_node(
             sentence_to_group_entry[sid] = entry
 
     timeline_shots = []
-    for idx, shot in enumerate(state.timing):
+    for idx, shot in enumerate(state.get("timing", [])):
         shot_text = shot.get("text", "").strip()
         shot_sid = shot.get("sentence_id", idx + 1)
         

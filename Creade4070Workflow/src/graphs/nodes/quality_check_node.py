@@ -556,18 +556,18 @@ def _detect_burned_in_text_from_report(clip_report_path: str) -> Dict[str, Any]:
 
 
 def quality_check_node(
-    state: QualityCheckInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> QualityCheckOutput:
+) -> dict:
     """
     title: 质量验收
     desc: 检测最终视频的文案、字幕、音视频同步、素材匹配、暗场和烧录文字，不修改视频
     """
     ctx = runtime.context
-    run_dir = state.run_dir
-    final_video_path = state.final_video_path
-    canonical_srt_path = state.srt_path
+    run_dir = state.get("run_dir", "")
+    final_video_path = state.get("final_video_path", "")
+    canonical_srt_path = state.get("srt_path", "")
     render_srt_path = os.path.join(run_dir, "render_subtitles.srt")
     srt_path = render_srt_path if os.path.exists(render_srt_path) else canonical_srt_path
     subtitle_render_source = (
@@ -575,19 +575,20 @@ def quality_check_node(
         if srt_path == render_srt_path
         else "subtitles_srt"
     )
-    selected_assets = state.selected_assets
-    timeline_shots = state.timeline_shots
-    tts_duration = state.tts_duration
-    low_conf_segments = state.low_confidence_segments
-    unique_material_count = state.unique_material_count
+    selected_assets = state.get("selected_assets", [])
+    timeline_shots = state.get("timeline_shots", [])
+    tts_duration = state.get("tts_duration", 0.0)
+    low_conf_segments = state.get("low_confidence_segments", 0)
+    unique_material_count = state.get("unique_material_count", 0)
 
     logger.info("[Node8] 质量验收...")
 
     # === 1. 文案一致性 ===
     # 读取original_script
     orig_text = ""
-    if os.path.exists(state.original_script_path):
-        with open(state.original_script_path, "r", encoding="utf-8") as f:
+    original_script_path = state.get("original_script_path", "")
+    if original_script_path and os.path.exists(original_script_path):
+        with open(original_script_path, "r", encoding="utf-8") as f:
             orig_text = f.read().strip()
     # 保留原始字符数（含标点）用于报告
     orig_chars_with_punct = len(orig_text.replace(" ", "").replace("\n", ""))
@@ -596,14 +597,14 @@ def quality_check_node(
 
     # 读取 cleaned_script 用于诊断
     cleaned_script_text = ""
-    cleaned_script_path = getattr(state, 'cleaned_script_path', '') or ''
+    cleaned_script_path = state.get("cleaned_script_path", "") or ""
     if cleaned_script_path and os.path.exists(cleaned_script_path):
         with open(cleaned_script_path, "r", encoding="utf-8") as f:
             cleaned_script_text = f.read().strip()
 
     # 读取 TTS 输入文件用于诊断
     tts_input_text = ""
-    tts_input_path = getattr(state, 'tts_input_path', '') or ''
+    tts_input_path = state.get("tts_input_path", "") or ""
     if tts_input_path and os.path.exists(tts_input_path):
         with open(tts_input_path, "r", encoding="utf-8") as f:
             tts_input_text = f.read().strip()
@@ -634,7 +635,8 @@ def quality_check_node(
     import graphs.graph as graph_module
     
     script_flow_diagnostics = {
-        "build_version": "state-flow-v3",
+        "build_version": "state-flow-v4-typeddict",
+        "state_schema_type": "TypedDict",
         "runtime_module_files": {
             "state_module": state_module.__file__,
             "graph_module": graph_module.__file__,
@@ -643,8 +645,8 @@ def quality_check_node(
             "tts_generation_node": tts_node_module.__file__,
             "subtitle_timing_node": subtitle_node_module.__file__,
         },
-        "original_script_path": state.original_script_path or "",
-        "original_script_path_exists": os.path.exists(state.original_script_path) if state.original_script_path else False,
+        "original_script_path": state.get("original_script_path", "") or "",
+        "original_script_path_exists": os.path.exists(state.get("original_script_path", "")) if state.get("original_script_path") else False,
         "original_script_chars": orig_chars,
         "original_script_preview": orig_text[:50] if orig_text else "",
         "cleaned_script_path": cleaned_script_path,
@@ -659,11 +661,11 @@ def quality_check_node(
         "srt_file_exists": srt_file_exists,
         "srt_text_chars": len(srt_text),
         "srt_preview": srt_text[:50] if srt_text else "",
-        "state_raw_script_chars": len(getattr(state, 'raw_script', '') or ''),
-        "state_cleaned_script_chars": len(getattr(state, 'cleaned_script', '') or ''),
-        "state_script_text_chars": len(getattr(state, 'script_text', '') or ''),
+        "state_raw_script_chars": len(state.get("raw_script", "") or ""),
+        "state_cleaned_script_chars": len(state.get("cleaned_script", "") or ""),
+        "state_script_text_chars": len(state.get("script_text", "") or ""),
         "tts_duration": tts_duration,
-        "executed_nodes": getattr(state, 'node_trace', []) or [],
+        "executed_nodes": state.get("node_trace", []) or [],
     }
 
     # 从 node_trace.jsonl 文件读取实际执行节点
@@ -708,7 +710,7 @@ def quality_check_node(
     body_sync_diff = round(video_duration_before_end_hold - audio_duration, 3)
 
     # === 2.5. 音频详细检查 ===
-    tts_wav_path = state.tts_wav_path
+    tts_wav_path = state.get("tts_wav_path", "")
     tts_wav_exists = os.path.exists(tts_wav_path)
     
     # BGM 路径从 assets 目录获取
@@ -785,7 +787,7 @@ def quality_check_node(
 
     # === 3. 字幕统计 ===
     subtitle_cue_count = 0
-    subtitles_no_overlap = state.srt_no_overlap
+    subtitles_no_overlap = state.get("srt_no_overlap", False)
     if os.path.exists(srt_path):
         with open(srt_path, "r", encoding="utf-8") as f:
             srt_content = f.read()
@@ -799,7 +801,7 @@ def quality_check_node(
     bottom_black_area_ratio = dark_info["bottom_black_area_ratio"]
 
     # === 5. 烧录文字检测 ===
-    clip_report_path = state.clip_report_path
+    clip_report_path = state.get("clip_report_path", "")
     burned_info = _detect_burned_in_text_from_report(clip_report_path)
     has_burned_in_text = burned_info["has_burned_in_text"]
     unexpected_visual_text_detected = burned_info["unexpected_visual_text_detected"]
@@ -1128,7 +1130,7 @@ def quality_check_node(
         # 时间轴
         "timeline_split_method": "character_weighted_punctuation",
         "timeline_average_split": False,
-        "used_manifest_file": state.used_manifest_file,
+        "used_manifest_file": state.get("used_manifest_file", ""),
         "unique_material_count": unique_material_count,
         # 新增质量检查
         "adjacent_same_asset_restart": adjacent_same_asset_restart,
@@ -1177,4 +1179,5 @@ def quality_check_node(
         "status": status,
         "fail_reason": "; ".join(fail_reasons) if fail_reasons else "",
         "failure_category": failure_category,
+        "node_trace": state.get("node_trace", []) or [],
     }

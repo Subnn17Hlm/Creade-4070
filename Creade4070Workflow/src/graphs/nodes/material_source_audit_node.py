@@ -74,7 +74,7 @@ def _detect_burned_in_text(file_name: str) -> Dict[str, Any]:
 
 
 def material_source_audit_node(
-    state: MaterialAuditInput, config: RunnableConfig, runtime: Runtime[Context],
+    state: dict, config: RunnableConfig, runtime: Runtime[Context],
 ) -> dict:
     """
     title: 素材源预检
@@ -86,7 +86,7 @@ def material_source_audit_node(
     _project_root = Path(__file__).resolve().parent.parent.parent.parent
     _default_csv = _project_root / "assets" / "asset_manifest_v2_bound.csv"
 
-    csv_path_str = state.material_csv
+    csv_path_str = state.get("material_csv", "") or ""
     if not csv_path_str:
         csv_path = _default_csv
     else:
@@ -269,7 +269,7 @@ def material_source_audit_node(
         })
 
     # 保存审计报告
-    run_dir = state.run_dir
+    run_dir = state.get("run_dir", "")
     audit_path = os.path.join(run_dir, "material_source_audit.json")
     report = {
         "audit_version": "3.0-tos-trust-v2",

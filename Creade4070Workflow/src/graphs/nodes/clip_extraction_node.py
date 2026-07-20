@@ -13,7 +13,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
 from coze_coding_utils.runtime_ctx.context import Context
 
-from graphs.state import ClipExtractInput, ClipExtractOutput
+from graphs.state import ClipExtractionInput, ClipExtractionOutput
 from graphs.shared_utils import ensure_dir, get_media_duration, run_ffmpeg
 
 logger = logging.getLogger(__name__)
@@ -88,17 +88,17 @@ def _detect_burned_in_text(material_id: str, file_name: str) -> Dict[str, Any]:
 
 
 def clip_extraction_node(
-    state: ClipExtractInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> ClipExtractOutput:
+) -> dict:
     """
     title: 素材片段截取
     desc: 根据timeline从素材URL截取对应时长片段，保持原竖屏画幅和原始画面内容。支持视觉组合并和相邻同素材连续播放。
     """
     ctx = runtime.context
-    timeline_shots = state.timeline_shots
-    run_dir = state.run_dir
+    timeline_shots = state.get("timeline_shots", [])
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node5] 素材片段截取...")
 

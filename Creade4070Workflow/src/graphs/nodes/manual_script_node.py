@@ -21,17 +21,17 @@ logger = logging.getLogger(__name__)
 
 
 def manual_script_node(
-    state: ManualScriptInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> ManualScriptOutput:
+) -> dict:
     """
     title: 手动文案
     desc: 直接使用用户提供的文案，不做任何改写、扩写、摘要。仅当script_source=manual时进入此分支。
     """
     ctx = runtime.context
-    script_text = state.script_text.strip()
-    run_dir = state.run_dir
+    script_text = (state.get("script_text", "") or "").strip()
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node0c] 手动文案: run_dir=%s", run_dir)
 

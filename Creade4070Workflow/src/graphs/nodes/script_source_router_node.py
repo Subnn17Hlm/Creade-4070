@@ -50,17 +50,17 @@ def _select_bgm_stable(script_id: str) -> str:
 
 
 def script_source_router_node(
-    state: ScriptSourceRouterInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> ScriptSourceRouterOutput:
+) -> dict:
     """
     title: 文案来源路由
     desc: 根据 script_source 决定进入"生成文案"还是"手动文案"分支。同时创建运行目录并传递所有输入字段。
     """
     ctx = runtime.context
-    script_source = state.script_source
-    script_id = state.script_id
+    script_source = state.get("script_source", "")
+    script_id = state.get("script_id", "")
 
     # 创建运行目录
     run_dir = ensure_dir(os.path.join(RUNS_BASE, script_id))
@@ -73,12 +73,12 @@ def script_source_router_node(
         # 仍然返回，让条件判断路由到失败处理
 
     # 处理 core_selling_points：如果传入的是字符串，转为列表
-    csp = state.core_selling_points
+    csp = state.get("core_selling_points", [])
     if isinstance(csp, str):
         csp = [s.strip() for s in csp.split(",") if s.strip()]
 
     # 处理BGM：如果没有指定，稳定选择一个
-    bgm_url = state.bgm_url or ""
+    bgm_url = state.get("bgm_url", "") or ""
     if not bgm_url:
         bgm_url = _select_bgm_stable(script_id)
         if bgm_url:
@@ -87,13 +87,13 @@ def script_source_router_node(
     # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
     return {
         "script_source": script_source,
-        "script_text": state.script_text or "",
-        "product_name": state.product_name or "",
+        "script_text": state.get("script_text", "") or "",
+        "product_name": state.get("product_name", "") or "",
         "core_selling_points": csp if isinstance(csp, list) else [],
-        "target_audience": state.target_audience or "",
-        "video_style": state.video_style or "",
-        "material_csv": state.material_csv or "",
-        "platform": state.platform or "",
+        "target_audience": state.get("target_audience", "") or "",
+        "video_style": state.get("video_style", "") or "",
+        "material_csv": state.get("material_csv", "") or "",
+        "platform": state.get("platform", "") or "",
         "bgm_url": bgm_url,
         "run_dir": run_dir,
     }

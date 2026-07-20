@@ -18,24 +18,24 @@ logger = logging.getLogger(__name__)
 
 
 def tts_generation_node(
-    state: TTSGenInput,
+    state: dict,
     config: RunnableConfig,
     runtime: Runtime[Context],
-) -> TTSGenOutput:
+) -> dict:
     """
     title: TTS生成
     desc: 将清洗后文案送入TTS，生成tts.wav并获取audio_duration
     integrations: 音频
     """
     ctx = runtime.context
-    cleaned_script = state.cleaned_script
-    run_dir = state.run_dir
+    cleaned_script = state.get("cleaned_script", "") or ""
+    run_dir = state.get("run_dir", "")
 
     logger.info("[Node2] TTS合成开始... cleaned_script_chars=%d", len(cleaned_script))
 
     # 防御性回退：如果 cleaned_script 为空，尝试从 original_script.txt 读取
     if not cleaned_script:
-        original_script_path = getattr(state, 'original_script_path', '') or ''
+        original_script_path = state.get("original_script_path", "") or ""
         if original_script_path and os.path.exists(original_script_path):
             with open(original_script_path, "r", encoding="utf-8") as f:
                 cleaned_script = f.read().strip()
@@ -43,7 +43,7 @@ def tts_generation_node(
 
     if not cleaned_script:
         logger.error("[Node2] 文案为空 (cleaned_script=0, original_script_path=%s)", 
-                     getattr(state, 'original_script_path', ''))
+                     state.get("original_script_path", ""))
         # 返回 dict 而非 Pydantic Model
         return {
             "tts_wav_path": "",
@@ -115,8 +115,8 @@ def tts_generation_node(
             "tts_duration": tts_duration,
             # 保留脚本文本防止被后续节点覆盖
             "cleaned_script": cleaned_script,
-            "raw_script": getattr(state, 'raw_script', '') or '',
-            "script_text": getattr(state, 'script_text', '') or '',
+            "raw_script": state.get("raw_script", "") or "",
+            "script_text": state.get("script_text", "") or "",
             "node_trace": ["tts_generation"],
         }
 
@@ -130,7 +130,7 @@ def tts_generation_node(
             "tts_duration": 0.0,
             # 即使失败也要保留脚本文本
             "cleaned_script": cleaned_script,
-            "raw_script": getattr(state, 'raw_script', '') or '',
-            "script_text": getattr(state, 'script_text', '') or '',
+            "raw_script": state.get("raw_script", "") or "",
+            "script_text": state.get("script_text", "") or "",
             "node_trace": ["tts_generation"],
         }
