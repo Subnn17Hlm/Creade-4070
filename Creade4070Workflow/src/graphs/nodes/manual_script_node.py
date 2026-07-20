@@ -61,16 +61,17 @@ def manual_script_node(
         "input_raw_script_chars": 0,
         "output_raw_script_chars": len(script_text),
         "output_script_text_chars": len(script_text),
-        "return_type": "ManualScriptOutput",
+        "return_type": "dict",
     }
     with open(trace_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
 
-    return ManualScriptOutput(
-        raw_script=script_text,
-        script_text=script_text,  # 保留 script_text 防止被覆盖为空
-        script_source="manual",
-        manual_script_path=manual_script_path,
-        original_script_path=original_script_path,
-        node_trace=["manual_script"],
-    )
+    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+    return {
+        "raw_script": script_text,
+        "script_text": script_text,
+        "script_source": "manual",
+        "manual_script_path": manual_script_path,
+        "original_script_path": original_script_path,
+        "node_trace": ["manual_script"],
+    }

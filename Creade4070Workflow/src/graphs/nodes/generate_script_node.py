@@ -191,9 +191,10 @@ def generate_script_node(
 
     logger.info("[Node0b] 完成: source=generated, chars=%d", len(raw_script))
 
-    return GenerateScriptOutput(
-        raw_script=raw_script,
-        script_source="generated",
-        generated_script_path=generated_script_path,
-        original_script_path=original_script_path,
-    )
+    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+    return {
+        "raw_script": raw_script,
+        "script_source": "generated",
+        "generated_script_path": generated_script_path,
+        "original_script_path": original_script_path,
+    }

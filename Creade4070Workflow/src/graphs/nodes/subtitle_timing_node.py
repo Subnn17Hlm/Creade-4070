@@ -223,19 +223,21 @@ def subtitle_timing_node(
 
     if tts_duration <= 0:
         logger.error("[Node3] TTS时长为0，无法分配 (cleaned_script_chars=%d)", len(cleaned_script))
-        return SubtitleTimingOutput(
-            sentences=[], timing=[], srt_path="",
-            timing_debug_path="", srt_no_overlap=False,
-            srt_coverage=0.0, final_chars=0,
-        )
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "sentences": [], "timing": [], "srt_path": "",
+            "timing_debug_path": "", "srt_no_overlap": False,
+            "srt_coverage": 0.0, "final_chars": 0,
+        }
 
     if not cleaned_script:
         logger.error("[Node3] 文案为空，无法生成字幕")
-        return SubtitleTimingOutput(
-            sentences=[], timing=[], srt_path="",
-            timing_debug_path="", srt_no_overlap=False,
-            srt_coverage=0.0, final_chars=0,
-        )
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "sentences": [], "timing": [], "srt_path": "",
+            "timing_debug_path": "", "srt_no_overlap": False,
+            "srt_coverage": 0.0, "final_chars": 0,
+        }
 
     # 1. 拆句
     sentences = _split_sentences(cleaned_script)
@@ -275,22 +277,23 @@ def subtitle_timing_node(
         "output_srt_coverage": coverage,
         "output_final_chars": final_chars,
         "output_cleaned_script_chars": len(cleaned_script),
-        "return_type": "SubtitleTimingOutput",
+        "return_type": "dict",
     }
     with open(trace_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
 
-    return SubtitleTimingOutput(
-        sentences=sentences,
-        timing=timing,
-        srt_path=srt_path,
-        timing_debug_path=timing_debug_path,
-        srt_no_overlap=no_overlap,
-        srt_coverage=coverage,
-        final_chars=final_chars,
+    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+    return {
+        "sentences": sentences,
+        "timing": timing,
+        "srt_path": srt_path,
+        "timing_debug_path": timing_debug_path,
+        "srt_no_overlap": no_overlap,
+        "srt_coverage": coverage,
+        "final_chars": final_chars,
         # 保留脚本文本防止被后续节点覆盖
-        cleaned_script=cleaned_script,
-        raw_script=getattr(state, 'raw_script', '') or '',
-        script_text=getattr(state, 'script_text', '') or '',
-        node_trace=["subtitle_timing"],
-    )
+        "cleaned_script": cleaned_script,
+        "raw_script": getattr(state, 'raw_script', '') or '',
+        "script_text": getattr(state, 'script_text', '') or '',
+        "node_trace": ["subtitle_timing"],
+    }

@@ -84,15 +84,16 @@ def script_source_router_node(
         if bgm_url:
             logger.info(f"未指定BGM，稳定选择: {bgm_url}")
 
-    return ScriptSourceRouterOutput(
-        script_source=script_source,
-        script_text=state.script_text or "",
-        product_name=state.product_name or "",
-        core_selling_points=csp if isinstance(csp, list) else [],
-        target_audience=state.target_audience or "",
-        video_style=state.video_style or "",
-        material_csv=state.material_csv or "",
-        platform=state.platform or "",
-        bgm_url=bgm_url,
-        run_dir=run_dir,
-    )
+    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+    return {
+        "script_source": script_source,
+        "script_text": state.script_text or "",
+        "product_name": state.product_name or "",
+        "core_selling_points": csp if isinstance(csp, list) else [],
+        "target_audience": state.target_audience or "",
+        "video_style": state.video_style or "",
+        "material_csv": state.material_csv or "",
+        "platform": state.platform or "",
+        "bgm_url": bgm_url,
+        "run_dir": run_dir,
+    }

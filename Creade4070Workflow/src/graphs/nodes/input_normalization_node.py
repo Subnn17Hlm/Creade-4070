@@ -80,15 +80,16 @@ def input_normalization_node(
     # 1. 校验：原始脚本不能为空
     if not raw_script or not raw_script.strip():
         logger.error("[Node1] raw_script为空 (script_text=%d chars)", len(script_text_fallback))
-        return InputNormOutput(
-            cleaned_script="",
-            run_dir=run_dir,
-            original_script_path="",
-            cleaned_script_path="",
-            input_meta_path="",
-            original_chars=0,
-            script_ok=False,
-        )
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "cleaned_script": "",
+            "run_dir": run_dir,
+            "original_script_path": "",
+            "cleaned_script_path": "",
+            "input_meta_path": "",
+            "original_chars": 0,
+            "script_ok": False,
+        }
 
     # 2. 保存原始文案（original_script.txt 必须保持原始字节内容，禁止strip或换行替换）
     script_path = os.path.join(run_dir, "original_script.txt")
@@ -102,15 +103,16 @@ def input_normalization_node(
     # 3. 截断检测
     if not _check_no_ellipsis(raw_script):
         logger.error("[Node1] 文案含截断标记(...)")
-        return InputNormOutput(
-            cleaned_script="",
-            run_dir=run_dir,
-            original_script_path=script_path,
-            cleaned_script_path="",
-            input_meta_path="",
-            original_chars=0,
-            script_ok=False,
-        )
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "cleaned_script": "",
+            "run_dir": run_dir,
+            "original_script_path": script_path,
+            "cleaned_script_path": "",
+            "input_meta_path": "",
+            "original_chars": 0,
+            "script_ok": False,
+        }
 
     # 4. 清洗文案（仅用于TTS和字幕，不影响original_script.txt）
     cleaned = _clean_script(raw_script)
@@ -163,20 +165,21 @@ def input_normalization_node(
         "output_cleaned_script_chars": len(cleaned),
         "output_raw_script_chars": len(raw_script),
         "output_script_text_chars": len(script_text_fallback or raw_script),
-        "return_type": "InputNormOutput",
+        "return_type": "dict",
     }
     with open(trace_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
 
-    return InputNormOutput(
-        cleaned_script=cleaned,
-        raw_script=raw_script,  # 保留 raw_script 防止被覆盖为空
-        script_text=script_text_fallback or raw_script,  # 保留 script_text
-        run_dir=run_dir,
-        original_script_path=script_path,
-        cleaned_script_path=cleaned_path,
-        input_meta_path=meta_path,
-        original_chars=raw_chars,
-        script_ok=True,
-        node_trace=["input_normalization"],
-    )
+    # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+    return {
+        "cleaned_script": cleaned,
+        "raw_script": raw_script,
+        "script_text": script_text_fallback or raw_script,
+        "run_dir": run_dir,
+        "original_script_path": script_path,
+        "cleaned_script_path": cleaned_path,
+        "input_meta_path": meta_path,
+        "original_chars": raw_chars,
+        "script_ok": True,
+        "node_trace": ["input_normalization"],
+    }

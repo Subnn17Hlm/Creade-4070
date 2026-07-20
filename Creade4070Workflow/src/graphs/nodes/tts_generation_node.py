@@ -44,10 +44,13 @@ def tts_generation_node(
     if not cleaned_script:
         logger.error("[Node2] 文案为空 (cleaned_script=0, original_script_path=%s)", 
                      getattr(state, 'original_script_path', ''))
-        return TTSGenOutput(
-            tts_wav_path="", tts_input_path="", tts_meta_path="",
-            tts_duration=0.0,
-        )
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "tts_wav_path": "",
+            "tts_input_path": "",
+            "tts_meta_path": "",
+            "tts_duration": 0.0,
+        }
 
     # 保存TTS输入文本
     tts_input_path = os.path.join(run_dir, "tts_input.txt")
@@ -99,31 +102,35 @@ def tts_generation_node(
             "input_cleaned_script_chars": len(cleaned_script),
             "output_tts_duration": tts_duration,
             "output_cleaned_script_chars": len(cleaned_script),
-            "return_type": "TTSGenOutput",
+            "return_type": "dict",
         }
         with open(trace_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
 
-        return TTSGenOutput(
-            tts_wav_path=tts_wav,
-            tts_input_path=tts_input_path,
-            tts_meta_path=tts_meta_path,
-            tts_duration=tts_duration,
+        # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
+        return {
+            "tts_wav_path": tts_wav,
+            "tts_input_path": tts_input_path,
+            "tts_meta_path": tts_meta_path,
+            "tts_duration": tts_duration,
             # 保留脚本文本防止被后续节点覆盖
-            cleaned_script=cleaned_script,
-            raw_script=getattr(state, 'raw_script', '') or '',
-            script_text=getattr(state, 'script_text', '') or '',
-            node_trace=["tts_generation"],
-        )
+            "cleaned_script": cleaned_script,
+            "raw_script": getattr(state, 'raw_script', '') or '',
+            "script_text": getattr(state, 'script_text', '') or '',
+            "node_trace": ["tts_generation"],
+        }
 
     except Exception as e:
         logger.error("[Node2] TTS失败: %s", e)
-        return TTSGenOutput(
-            tts_wav_path="", tts_input_path=tts_input_path,
-            tts_meta_path="", tts_duration=0.0,
+        # 返回 dict 而非 Pydantic Model
+        return {
+            "tts_wav_path": "",
+            "tts_input_path": tts_input_path,
+            "tts_meta_path": "",
+            "tts_duration": 0.0,
             # 即使失败也要保留脚本文本
-            cleaned_script=cleaned_script,
-            raw_script=getattr(state, 'raw_script', '') or '',
-            script_text=getattr(state, 'script_text', '') or '',
-            node_trace=["tts_generation"],
-        )
+            "cleaned_script": cleaned_script,
+            "raw_script": getattr(state, 'raw_script', '') or '',
+            "script_text": getattr(state, 'script_text', '') or '',
+            "node_trace": ["tts_generation"],
+        }
