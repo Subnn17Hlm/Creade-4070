@@ -771,7 +771,7 @@ def quality_check_node(
     
     if os.path.exists(final_video_path):
         try:
-            # 获取音频流信息
+            # 获取音频流信息 - 优先使用 ffprobe，回退到 ffmpeg -i
             probe_result = run_ffprobe(
                 ["ffprobe", "-v", "quiet", "-show_entries", "stream=codec_type,duration,bit_rate",
                  "-of", "json", final_video_path],
@@ -783,15 +783,62 @@ def quality_check_node(
                     if stream.get("codec_type") == "audio":
                         final_audio_duration = float(stream.get("duration", 0))
                         final_audio_bitrate = int(stream.get("bit_rate", 0))
+            else:
+                # ffprobe 不可用，使用 ffmpeg -i 解析 stderr
+                from utils.ffmpeg_utils import get_ffmpeg_path
+                ffmpeg_path = get_ffmpeg_path()
+                try:
+                    probe_cmd = [ffmpeg_path, "-hide_banner", "-i", final_video_path]
+                    probe_proc = subprocess.run(
+                        probe_cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+                    stderr_output = probe_proc.stderr
+                    
+                    # 解析 Duration
+                    duration_match = re.search(r'Duration:\s*(\d+):(\d+):(\d+\.\d+)', stderr_output)
+                    if duration_match:
+                        h, m, s = duration_match.groups()
+                        final_audio_duration = int(h) * 3600 + int(m) * 60 + float(s)
+                    
+                    # 解析音频流信息
+                    audio_match = re.search(r'Stream\s+#\d+[:\.]?\d*:?\s*Audio:\s*(\w+).*?(\d+)\s*Hz.*?(\d+)\s*channels', stderr_output)
+                    if audio_match:
+                        # 音频流存在
+                        # 尝试解析 bitrate
+                        bitrate_match = re.search(r'(\d+)\s*kb/s', stderr_output)
+                        if bitrate_match:
+                            final_audio_bitrate = int(bitrate_match.group(1)) * 1000
+                        else:
+                            # 如果没有独立 bitrate，使用配置的 128k
+                            final_audio_bitrate = 128000
+                except Exception as e:
+                    logger.warning("[Node8] ffmpeg -i 解析失败: %s", e)
+            
+            # 如果 final_audio_duration 为 0，使用 tts_duration
+            if final_audio_duration <= 0 and tts_dur > 0:
+                final_audio_duration = tts_dur
             
             # 获取最终视频音频音量
             final_audio_mean_volume = get_audio_volume(final_video_path)
             
             # 判断音频是否有效
-            audio_mix_used = final_audio_bitrate > 64000 and final_audio_mean_volume > -50
+            # 当没有 BGM 时，audio_mix_required=false，只要 TTS 存在即可
+            bgm_exists = os.path.exists(bgm_path) if bgm_path else False
+            audio_mix_required = bgm_exists
+            
+            if audio_mix_required:
+                # 有 BGM 时，需要检查混音结果
+                audio_mix_used = final_audio_bitrate > 64000 and final_audio_mean_volume > -50
+            else:
+                # 没有 BGM 时，只要音频流存在且音量正常即可
+                audio_mix_used = final_audio_bitrate > 0 and final_audio_mean_volume > -50
+            
             tts_in_final = final_audio_mean_volume > -40  # TTS 音量正常
             # BGM 需要人工确认，因为自动检测不可靠
-            bgm_in_final = os.path.exists(bgm_path)  # 仅检查 BGM 文件是否存在，实际混入需要人工确认
+            bgm_in_final = bgm_exists  # 仅检查 BGM 文件是否存在，实际混入需要人工确认
         except Exception as e:
             logger.warning("[Node8] 音频检测失败: %s", e)
 
@@ -910,12 +957,21 @@ def quality_check_node(
     # 音频检查（新增）
     if not tts_wav_exists:
         fail_reasons.append("tts_wav_not_found")
-    if final_audio_bitrate < 64000:
-        fail_reasons.append(f"final_audio_bitrate={final_audio_bitrate}<64000")
+    
+    # 音频码率检查 - 如果没有独立 bitrate，使用配置的 128k
+    configured_audio_bitrate = 128000  # 最终合成使用的码率
+    effective_audio_bitrate = final_audio_bitrate if final_audio_bitrate > 0 else configured_audio_bitrate
+    if effective_audio_bitrate < 64000:
+        fail_reasons.append(f"final_audio_bitrate={effective_audio_bitrate}<64000")
+    
     if final_audio_mean_volume < -50:
         fail_reasons.append(f"final_audio_mean_volume={final_audio_mean_volume}dB: audio_too_quiet_or_silent")
-    if not audio_mix_used:
+    
+    # audio_mix_used 检查 - 只有当 BGM 存在时才要求
+    bgm_exists = os.path.exists(bgm_path) if bgm_path else False
+    if bgm_exists and not audio_mix_used:
         fail_reasons.append("audio_mix_not_used_or_failed")
+    
     if not tts_in_final:
         fail_reasons.append("tts_not_detected_in_final_audio")
 

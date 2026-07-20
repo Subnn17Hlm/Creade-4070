@@ -84,9 +84,13 @@ def _find_chinese_font() -> str:
     """查找支持中文的字体"""
     # 优先使用项目字体
     workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
-    preferred_font = os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF")
-    if os.path.exists(preferred_font):
-        return preferred_font
+    preferred_fonts = [
+        os.path.join(workspace_path, "assets/fonts/NotoSansSC-Regular.otf"),
+        os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF"),
+    ]
+    for preferred_font in preferred_fonts:
+        if os.path.exists(preferred_font) and os.path.getsize(preferred_font) > 0:
+            return preferred_font
     
     # 扫描系统字体
     font_dirs = [
@@ -131,6 +135,227 @@ def _escape_srt_path(srt_path: str) -> str:
     escaped = escaped.replace(":", "\\:")
     escaped = escaped.replace("'", "\\'")
     return escaped
+
+
+def _parse_srt(srt_path: str) -> List[Dict[str, Any]]:
+    """解析 SRT 文件，返回 cue 列表"""
+    cues = []
+    if not os.path.exists(srt_path):
+        return cues
+    
+    with open(srt_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # 分割 cue 块
+    blocks = re.split(r'\n\n+', content.strip())
+    for block in blocks:
+        lines = block.strip().split('\n')
+        if len(lines) < 3:
+            continue
+        
+        # 解析时间戳
+        time_line = lines[1]
+        match = re.match(r'(\d+):(\d+):(\d+),(\d+)\s*-->\s*(\d+):(\d+):(\d+),(\d+)', time_line)
+        if not match:
+            continue
+        
+        start_h, start_m, start_s, start_ms = int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4))
+        end_h, end_m, end_s, end_ms = int(match.group(5)), int(match.group(6)), int(match.group(7)), int(match.group(8))
+        
+        start_time = start_h * 3600 + start_m * 60 + start_s + start_ms / 1000.0
+        end_time = end_h * 3600 + end_m * 60 + end_s + end_ms / 1000.0
+        
+        # 获取文本
+        text = '\n'.join(lines[2:])
+        
+        cues.append({
+            "start": start_time,
+            "end": end_time,
+            "text": text
+        })
+    
+    return cues
+
+
+def _render_subtitle_png(
+    text: str,
+    output_path: str,
+    font_path: str,
+    font_size: int = 38,
+    video_width: int = 720,
+    video_height: int = 1280,
+) -> bool:
+    """使用 Pillow 渲染透明 PNG 字幕图层"""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        
+        # 创建透明背景
+        img = Image.new('RGBA', (video_width, video_height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        
+        # 加载字体
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except Exception as e:
+            logger.warning("[Node7] 加载字体失败: %s, 使用默认字体", e)
+            font = ImageFont.load_default()
+        
+        # 计算文本位置（底部 82% 位置）
+        y_position = int(video_height * 0.82)
+        
+        # 处理多行文本
+        lines = text.split('\n')[:2]  # 最多两行
+        line_height = font_size + 10
+        
+        for i, line in enumerate(lines):
+            # 获取文本边界
+            bbox = draw.textbbox((0, 0), line, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            
+            # 居中
+            x = (video_width - text_width) // 2
+            y = y_position + i * line_height
+            
+            # 绘制黑色描边
+            outline_width = 3
+            for dx in range(-outline_width, outline_width + 1):
+                for dy in range(-outline_width, outline_width + 1):
+                    if dx != 0 or dy != 0:
+                        draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 255))
+            
+            # 绘制白色文字
+            draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+        
+        # 保存 PNG
+        img.save(output_path, 'PNG')
+        return os.path.exists(output_path) and os.path.getsize(output_path) > 0
+        
+    except Exception as e:
+        logger.error("[Node7] 渲染字幕 PNG 失败: %s", e)
+        return False
+
+
+def _burn_subtitles_with_overlay(
+    ffmpeg_path: str,
+    video_path: str,
+    audio_path: str,
+    srt_path: str,
+    font_path: str,
+    output_path: str,
+    temp_dir: str,
+    video_width: int = 720,
+    video_height: int = 1280,
+) -> Dict[str, Any]:
+    """使用 overlay 方式烧录字幕"""
+    result = {
+        "subtitle_burned": False,
+        "subtitle_strategy": "pillow_overlay",
+        "cue_count": 0,
+        "png_files": [],
+        "filter_complex": "",
+        "ffmpeg_returncode": -1,
+        "ffmpeg_stderr_tail": "",
+    }
+    
+    # 解析 SRT
+    cues = _parse_srt(srt_path)
+    if not cues:
+        result["error"] = "No cues in SRT"
+        return result
+    
+    result["cue_count"] = len(cues)
+    
+    # 渲染每个 cue 的 PNG
+    png_files = []
+    for i, cue in enumerate(cues):
+        png_path = os.path.join(temp_dir, f"subtitle_{i:03d}.png")
+        if _render_subtitle_png(
+            cue["text"],
+            png_path,
+            font_path,
+            font_size=38,
+            video_width=video_width,
+            video_height=video_height,
+        ):
+            png_files.append({
+                "path": png_path,
+                "start": cue["start"],
+                "end": cue["end"],
+                "size": os.path.getsize(png_path),
+            })
+    
+    result["png_files"] = png_files
+    
+    if not png_files:
+        result["error"] = "Failed to render any subtitle PNGs"
+        return result
+    
+    # 构建 filter_complex
+    # 输入: 0=video, 1=audio, 2..N=subtitle PNGs
+    filter_parts = []
+    current_video = "[0:v]"
+    
+    for i, png_info in enumerate(png_files):
+        input_idx = i + 2
+        start = png_info["start"]
+        end = png_info["end"]
+        output_label = f"[v{i}]"
+        
+        # 使用 overlay + enable 控制显示时间
+        filter_parts.append(
+            f"{current_video}[{input_idx}:v]overlay=0:0:enable='between(t,{start},{end})'{output_label}"
+        )
+        current_video = output_label
+    
+    filter_complex = ";".join(filter_parts)
+    result["filter_complex"] = filter_complex
+    
+    # 构建 FFmpeg 命令
+    cmd = [
+        ffmpeg_path, "-y",
+        "-threads", "1",
+        "-i", video_path,
+        "-i", audio_path,
+    ]
+    
+    # 添加字幕 PNG 输入
+    for png_info in png_files:
+        cmd.extend(["-loop", "1", "-i", png_info["path"]])
+    
+    cmd.extend([
+        "-filter_complex", filter_complex,
+        "-map", current_video,
+        "-map", "1:a",
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-crf", "23",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-shortest",
+        output_path,
+    ])
+    
+    # 执行 FFmpeg
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        result["ffmpeg_returncode"] = proc.returncode
+        result["ffmpeg_stderr_tail"] = proc.stderr[-3000:] if proc.stderr else ""
+        
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            result["subtitle_burned"] = True
+        else:
+            result["error"] = f"FFmpeg failed with code {proc.returncode}"
+            
+    except Exception as e:
+        result["error"] = str(e)
+    
+    return result
 
 
 def final_composition_node(
@@ -423,17 +648,51 @@ def final_composition_node(
                     subtitle_burned = False
                     logger.warning("[Node7] 回退到无字幕版本")
         else:
-            # 字幕滤镜不支持或字体不存在
+            # 字幕滤镜不支持或字体不存在，使用 Pillow overlay 方式
             if not subtitle_filter_supported:
-                logger.error("[Node7] FFmpeg 不支持 subtitles 滤镜")
+                logger.warning("[Node7] FFmpeg 不支持 subtitles 滤镜，尝试 Pillow overlay 方式")
             if not font_path:
                 logger.error("[Node7] 未找到中文字体")
             if not os.path.exists(actual_srt_path):
                 logger.error("[Node7] SRT 文件不存在: %s", actual_srt_path)
             
-            # 回退到无字幕版本
-            shutil.copy2(concat_path, subbed_path)
-            subtitle_burned = False
+            # 尝试使用 Pillow overlay 方式烧录字幕
+            if font_path and os.path.exists(actual_srt_path):
+                try:
+                    logger.info("[Node7] 使用 Pillow overlay 方式烧录字幕")
+                    overlay_result = _burn_subtitles_with_overlay(
+                        ffmpeg_path=ffmpeg_path,
+                        video_path=concat_path,
+                        audio_path=tts_wav_path,
+                        srt_path=actual_srt_path,
+                        font_path=font_path,
+                        output_path=subbed_path,
+                        temp_dir=temp_dir,
+                        video_width=1080,
+                        video_height=1920,
+                    )
+                    
+                    if overlay_result.get("subtitle_burned"):
+                        subtitle_burned = True
+                        subtitle_filter_used = "pillow_overlay"
+                        logger.info("[Node7] Pillow overlay 字幕烧录成功: cue_count=%d", overlay_result.get("cue_count", 0))
+                    else:
+                        error_msg = overlay_result.get("error", "Unknown error")
+                        logger.error("[Node7] Pillow overlay 字幕烧录失败: %s", error_msg)
+                        raise RuntimeError(f"字幕烧录失败: {error_msg}")
+                        
+                except Exception as e:
+                    logger.error("[Node7] Pillow overlay 字幕烧录异常: %s", e)
+                    raise RuntimeError(f"字幕烧录失败: {e}")
+            else:
+                # 字体或 SRT 不存在，无法烧录字幕
+                error_msg = "无法烧录字幕: 字体或SRT文件不存在"
+                if not font_path:
+                    error_msg = "无法烧录字幕: 未找到中文字体"
+                elif not os.path.exists(actual_srt_path):
+                    error_msg = f"无法烧录字幕: SRT文件不存在 {actual_srt_path}"
+                logger.error("[Node7] %s", error_msg)
+                raise RuntimeError(error_msg)
         
         subbed_duration = get_media_duration(subbed_path)
         video_duration = subbed_duration
