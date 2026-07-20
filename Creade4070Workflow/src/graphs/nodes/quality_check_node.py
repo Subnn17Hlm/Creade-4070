@@ -666,6 +666,21 @@ def quality_check_node(
         "executed_nodes": getattr(state, 'node_trace', []) or [],
     }
 
+    # 从 node_trace.jsonl 文件读取实际执行节点
+    node_trace_file = os.path.join(run_dir, "node_trace.jsonl")
+    if os.path.exists(node_trace_file):
+        try:
+            with open(node_trace_file, "r", encoding="utf-8") as f:
+                node_trace_entries = [json.loads(line) for line in f if line.strip()]
+            script_flow_diagnostics["node_trace_file"] = node_trace_file
+            script_flow_diagnostics["node_trace_entries"] = node_trace_entries
+            script_flow_diagnostics["executed_nodes_from_file"] = [e.get("node") for e in node_trace_entries]
+        except Exception as e:
+            script_flow_diagnostics["node_trace_file_error"] = str(e)
+    else:
+        script_flow_diagnostics["node_trace_file"] = ""
+        script_flow_diagnostics["node_trace_file_exists"] = False
+
     # === 2. 音视频同步 ===
     video_duration = get_media_duration(final_video_path) if os.path.exists(final_video_path) else 0.0
     audio_duration = tts_duration

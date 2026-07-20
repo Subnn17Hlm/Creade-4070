@@ -52,6 +52,20 @@ def manual_script_node(
 
     logger.info("[Node0c] 完成: source=manual, chars=%d, ok=true", len(script_text))
 
+    # 写入节点追踪文件
+    trace_path = os.path.join(run_dir, "node_trace.jsonl")
+    trace_entry = {
+        "node": "manual_script",
+        "input_script_text_chars": len(script_text),
+        "input_raw_script_chars": 0,
+        "output_raw_script_chars": len(script_text),
+        "output_script_text_chars": len(script_text),
+        "return_type": "ManualScriptOutput",
+    }
+    with open(trace_path, "a", encoding="utf-8") as f:
+        import json
+        f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
+
     return ManualScriptOutput(
         raw_script=script_text,
         script_text=script_text,  # 保留 script_text 防止被覆盖为空

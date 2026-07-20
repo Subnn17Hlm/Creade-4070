@@ -92,6 +92,18 @@ def tts_generation_node(
         with open(tts_meta_path, "w", encoding="utf-8") as f:
             json.dump(tts_meta, f, ensure_ascii=False, indent=2)
 
+        # 写入节点追踪文件
+        trace_path = os.path.join(run_dir, "node_trace.jsonl")
+        trace_entry = {
+            "node": "tts_generation",
+            "input_cleaned_script_chars": len(cleaned_script),
+            "output_tts_duration": tts_duration,
+            "output_cleaned_script_chars": len(cleaned_script),
+            "return_type": "TTSGenOutput",
+        }
+        with open(trace_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
+
         return TTSGenOutput(
             tts_wav_path=tts_wav,
             tts_input_path=tts_input_path,

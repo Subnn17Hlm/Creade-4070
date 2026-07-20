@@ -154,6 +154,21 @@ def input_normalization_node(
     logger.info("[Node1] 完成: raw_chars=%d, cleaned_chars=%d, changed=%s",
                 raw_chars, cleaned_chars, script_changed)
 
+    # 写入节点追踪文件
+    trace_path = os.path.join(run_dir, "node_trace.jsonl")
+    trace_entry = {
+        "node": "input_normalization",
+        "input_raw_script_chars": len(raw_script),
+        "input_script_text_chars": len(script_text_fallback),
+        "output_cleaned_script_chars": len(cleaned),
+        "output_raw_script_chars": len(raw_script),
+        "output_script_text_chars": len(script_text_fallback or raw_script),
+        "return_type": "InputNormOutput",
+    }
+    with open(trace_path, "a", encoding="utf-8") as f:
+        import json
+        f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
+
     return InputNormOutput(
         cleaned_script=cleaned,
         raw_script=raw_script,  # 保留 raw_script 防止被覆盖为空

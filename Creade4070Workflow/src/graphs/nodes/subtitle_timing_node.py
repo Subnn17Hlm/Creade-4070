@@ -267,6 +267,20 @@ def subtitle_timing_node(
 
     logger.info("[Node3] 字幕覆盖率: %.1f%%", coverage * 100)
 
+    # 写入节点追踪文件
+    trace_path = os.path.join(run_dir, "node_trace.jsonl")
+    trace_entry = {
+        "node": "subtitle_timing",
+        "input_cleaned_script_chars": len(cleaned_script),
+        "output_srt_coverage": coverage,
+        "output_final_chars": final_chars,
+        "output_cleaned_script_chars": len(cleaned_script),
+        "return_type": "SubtitleTimingOutput",
+    }
+    with open(trace_path, "a", encoding="utf-8") as f:
+        import json
+        f.write(json.dumps(trace_entry, ensure_ascii=False) + "\n")
+
     return SubtitleTimingOutput(
         sentences=sentences,
         timing=timing,
