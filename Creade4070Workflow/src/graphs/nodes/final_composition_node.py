@@ -81,18 +81,51 @@ def _check_subtitle_filter(ffmpeg_path: str) -> bool:
 
 
 def _find_chinese_font() -> str:
-    """查找支持中文的字体"""
-    # 优先使用项目字体
-    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
-    preferred_fonts = [
-        os.path.join(workspace_path, "assets/fonts/NotoSansSC-Regular.otf"),
-        os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF"),
-    ]
-    for preferred_font in preferred_fonts:
-        if os.path.exists(preferred_font) and os.path.getsize(preferred_font) > 0:
-            return preferred_font
+    """查找支持中文的字体 - 使用绝对路径定位"""
+    from pathlib import Path
     
-    # 扫描系统字体
+    # 获取当前文件绝对路径
+    current_file = Path(__file__).resolve()
+    logger.info("[Node7] 字体查找 - __file__: %s", current_file)
+    logger.info("[Node7] 字体查找 - cwd: %s", os.getcwd())
+    
+    # 从 src/graphs/nodes/final_composition_node.py 向上找到项目根目录
+    # 路径: src/graphs/nodes/ -> src/graphs/ -> src/ -> 项目根
+    project_root = current_file.parent.parent.parent.parent
+    logger.info("[Node7] 字体查找 - project_root (from __file__): %s", project_root)
+    
+    # 构建字体候选路径列表
+    font_candidates = []
+    
+    # 1. 基于 __file__ 推导的绝对路径
+    font_candidates.append(str(project_root / "assets" / "fonts" / "NotoSansSC-Regular.otf"))
+    font_candidates.append(str(project_root / "assets" / "Fonts" / "黑体" / "ALIBABA-PUHUITI-BOLD.TTF"))
+    
+    # 2. 生产部署目录
+    production_root = Path("/opt/bytefaas/Creade4070Workflow")
+    font_candidates.append(str(production_root / "assets" / "fonts" / "NotoSansSC-Regular.otf"))
+    font_candidates.append(str(production_root / "assets" / "Fonts" / "黑体" / "ALIBABA-PUHUITI-BOLD.TTF"))
+    
+    # 3. 环境变量
+    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
+    if workspace_path:
+        font_candidates.append(os.path.join(workspace_path, "assets/fonts/NotoSansSC-Regular.otf"))
+        font_candidates.append(os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF"))
+    
+    logger.info("[Node7] 字体查找 - font_candidates: %s", font_candidates)
+    
+    # 检查每个候选路径
+    for font_path in font_candidates:
+        if os.path.exists(font_path) and os.path.isfile(font_path):
+            size = os.path.getsize(font_path)
+            logger.info("[Node7] 字体查找 - %s: exists=True, is_file=True, size=%d", font_path, size)
+            if size > 0:
+                logger.info("[Node7] 字体查找 - selected_font_path: %s", font_path)
+                return font_path
+        else:
+            logger.info("[Node7] 字体查找 - %s: exists=%s", font_path, os.path.exists(font_path))
+    
+    # 扫描系统字体（作为最后手段）
     font_dirs = [
         "/usr/share/fonts",
         "/usr/local/share/fonts",
@@ -112,7 +145,9 @@ def _find_chinese_font() -> str:
                 if f.lower().endswith(('.ttf', '.ttc', '.otf')):
                     f_lower = f.lower()
                     if any(p in f_lower for p in chinese_font_patterns):
-                        return os.path.join(root, f)
+                        found_path = os.path.join(root, f)
+                        logger.info("[Node7] 字体查找 - 系统字体: %s", found_path)
+                        return found_path
     
     # 回退到常见中文字体路径
     fallback_fonts = [
@@ -123,8 +158,10 @@ def _find_chinese_font() -> str:
     ]
     for f in fallback_fonts:
         if os.path.exists(f):
+            logger.info("[Node7] 字体查找 - 回退字体: %s", f)
             return f
     
+    logger.error("[Node7] 字体查找 - 未找到中文字体")
     return ""
 
 
