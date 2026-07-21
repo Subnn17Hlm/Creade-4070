@@ -1107,7 +1107,7 @@ window.runWorkflow = async function() {
   await originalRunWorkflow();
   const resultDiv = document.getElementById('wf-result');
   const text = resultDiv.textContent;
-  const match = text.match(/run_id[:\s]+([a-f0-9-]{36})/i);
+  const match = text.match(/run_id[:\\s]+([a-f0-9-]{36})/i);
   if (match) {
     document.getElementById('wm-run-id').value = match[1];
     setTimeout(() => {
