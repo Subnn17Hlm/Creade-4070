@@ -886,24 +886,20 @@ async function runWorkflow() {
     <button id="wm-load-btn" class="wf-btn" onclick="loadWorkflowTrace()">加载运行记录</button>
   </div>
   <div id="wm-error" style="display:none; margin-top: 12px; padding: 12px; background: #4d1e1e; border: 1px solid #f44; border-radius: 6px; color: #f44; font-size: 0.9rem;"></div>
-  <div id="wm-container" style="display:none; margin-top: 16px;">
-    <div style="display: flex; gap: 16px; height: 500px;">
-      <div id="wm-flow" style="flex: 1; background: #1a1a1a; border-radius: 8px; overflow: hidden;"></div>
-      <div id="wm-detail" style="width: 300px; background: #1a1a1a; border-radius: 8px; padding: 16px; overflow-y: auto;">
-        <h3 style="margin: 0 0 12px 0; font-size: 1rem; color: #fff;">节点详情</h3>
-        <div id="wm-detail-content" style="font-size: 0.85rem; color: #ccc;">点击节点查看详情</div>
-      </div>
-    </div>
-  </div>
+  <div id="wm-root" style="margin-top: 16px;"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/reactflow@11/dist/umd/reactflow.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reactflow@11/dist/style.css">
 <style>
-  .wm-node { padding: 10px 14px; border-radius: 6px; font-size: 13px; min-width: 120px; text-align: center; border: 2px solid; }
+  .wm-flow-container { position: relative; width: 100%; height: 500px; overflow: auto; background: #1a1a1a; border-radius: 8px; }
+  .wm-flow-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .wm-flow-svg line { stroke: #555; stroke-width: 2; }
+  .wm-flow-svg line.running { stroke: #4a9eff; stroke-dasharray: 5,5; animation: dash 1s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -10; } }
+  .wm-node { position: absolute; padding: 10px 14px; border-radius: 6px; font-size: 13px; min-width: 140px; text-align: center; border: 2px solid; cursor: pointer; transition: all 0.2s; }
+  .wm-node:hover { transform: scale(1.05); }
   .wm-node.pending { background: #3a3a3a; border-color: #555; color: #999; }
   .wm-node.running { background: #1e3a5f; border-color: #4a9eff; color: #4a9eff; }
   .wm-node.success { background: #1e4d2e; border-color: #4caf50; color: #4caf50; }
@@ -912,22 +908,11 @@ async function runWorkflow() {
   .wm-node-label { font-weight: 600; }
   .wm-node-status { font-size: 11px; margin-top: 4px; opacity: 0.8; }
   .wm-node-duration { font-size: 10px; margin-top: 2px; opacity: 0.6; }
-  .react-flow__edge-path { stroke: #555; stroke-width: 2; }
-  .react-flow__edge.animated path { stroke: #4a9eff; }
+  .wm-detail-panel { margin-top: 16px; padding: 16px; background: #2a2a2a; border-radius: 8px; }
+  .wm-detail-panel pre { font-size: 11px; margin: 4px 0; white-space: pre-wrap; word-break: break-all; }
 </style>
 <script type="text/babel">
-const { useState, useEffect, useCallback } = React;
-// React Flow UMD exports to window.ReactFlow (default) and window.ReactFlow.* (named)
-const RF = window.ReactFlow || {};
-const ReactFlowComponent = RF.default || RF.ReactFlow || window.ReactFlow;
-const Background = RF.Background || window.ReactFlowBackground;
-const Controls = RF.Controls || window.ReactFlowControls;
-const MiniMap = RF.MiniMap || window.ReactFlowMiniMap;
-
-// Check if ReactFlow is available
-if (!ReactFlowComponent) {
-  console.error('ReactFlow not found in window');
-}
+const { useState, useEffect } = React;
 
 let topologyData = null;
 
@@ -938,168 +923,155 @@ async function fetchTopology() {
   return topologyData;
 }
 
-function WorkflowMonitor() {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [nodeStates, setNodeStates] = useState({});
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [containerVisible, setContainerVisible] = useState(false);
-
-  useEffect(() => {
-    fetchTopology().then(topo => {
-      const flowNodes = topo.nodes.map(n => ({
-        id: n.id,
-        type: 'default',
-        position: { x: 200, y: n.order * 70 },
-        data: { label: n.label, nodeId: n.id },
-        className: 'wm-node pending',
-      }));
-      const flowEdges = topo.edges.map((e, i) => ({
-        id: `e${i}`,
-        source: e.source,
-        target: e.target,
-        animated: false,
-      }));
-      setNodes(flowNodes);
-      setEdges(flowEdges);
-    });
-  }, []);
-
-  const onNodeClick = useCallback((event, node) => {
-    setSelectedNode(node.data.nodeId);
-    const state = nodeStates[node.data.nodeId] || { status: 'pending' };
-    const detail = document.getElementById('wm-detail-content');
-    detail.innerHTML = `
-      <div><strong>节点:</strong> ${node.data.label}</div>
-      <div><strong>状态:</strong> <span style="color: ${getStatusColor(state.status)}">${state.status}</span></div>
-      ${state.started_at ? `<div><strong>开始:</strong> ${new Date(state.started_at * 1000).toLocaleTimeString()}</div>` : ''}
-      ${state.completed_at ? `<div><strong>完成:</strong> ${new Date(state.completed_at * 1000).toLocaleTimeString()}</div>` : ''}
-      ${state.duration_ms ? `<div><strong>耗时:</strong> ${state.duration_ms}ms</div>` : ''}
-      ${state.error_message ? `<div style="color:#f44;margin-top:8px;"><strong>错误:</strong> ${state.error_message}</div>` : ''}
-      ${Object.keys(state.input_summary || {}).length > 0 ? `<div style="margin-top:8px;"><strong>输入:</strong><pre style="font-size:11px;margin:4px 0;">${JSON.stringify(state.input_summary, null, 2)}</pre></div>` : ''}
-      ${Object.keys(state.output_summary || {}).length > 0 ? `<div style="margin-top:8px;"><strong>输出:</strong><pre style="font-size:11px;margin:4px 0;">${JSON.stringify(state.output_summary, null, 2)}</pre></div>` : ''}
-    `;
-  }, [nodeStates]);
-
-  return (
-    <div style={{ width: '100%', height: '500px' }}>
-      {ReactFlowComponent ? (
-        <ReactFlowComponent
-          nodes={nodes}
-          edges={edges}
-          onNodeClick={onNodeClick}
-          fitView
-          nodesDraggable={false}
-          nodesConnectable={false}
-          minZoom={0.5}
-          maxZoom={1.5}
-        >
-          {Background && <Background />}
-          {Controls && <Controls />}
-          {MiniMap && <MiniMap />}
-        </ReactFlowComponent>
-      ) : (
-        <div style={{ padding: '20px', color: '#f44' }}>React Flow 未加载，请刷新页面重试</div>
-      )}
-    </div>
-  );
-}
-
 function getStatusColor(status) {
   const colors = { pending: '#999', running: '#4a9eff', success: '#4caf50', failed: '#f44', skipped: '#666' };
   return colors[status] || '#999';
 }
 
-async function loadWorkflowTrace() {
-  const runId = document.getElementById('wm-run-id').value.trim();
-  if (!runId) {
-    const errorDiv = document.getElementById('wm-error');
-    errorDiv.style.display = 'block';
-    errorDiv.textContent = '请输入 run_id';
-    return;
-  }
+function WorkflowTree({ nodes, edges, nodeStates, onNodeClick }) {
+  const nodeWidth = 160;
+  const nodeHeight = 70;
+  const verticalGap = 30;
+  const startX = 200;
+  const startY = 40;
 
-  const container = document.getElementById('wm-container');
-  container.style.display = 'block';
-  const errorDiv = document.getElementById('wm-error');
-  errorDiv.style.display = 'none';
+  const getNodePosition = (order) => ({
+    x: startX,
+    y: startY + (order - 1) * (nodeHeight + verticalGap)
+  });
 
-  try {
-    const res = await fetch(`/api/runs/${runId}/trace`);
-    const data = await res.json();
+  const totalHeight = startY + nodes.length * (nodeHeight + verticalGap);
 
-    if (data.error) {
-      const errorDiv = document.getElementById('wm-error');
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = '加载失败: ' + (data.message || data.error);
+  return (
+    <div className="wm-flow-container" style={{ height: `${totalHeight}px` }}>
+      <svg className="wm-flow-svg" style={{ height: `${totalHeight}px` }}>
+        {edges.map((edge, i) => {
+          const sourceNode = nodes.find(n => n.id === edge.source);
+          const targetNode = nodes.find(n => n.id === edge.target);
+          if (!sourceNode || !targetNode) return null;
+          const sourcePos = getNodePosition(sourceNode.order);
+          const targetPos = getNodePosition(targetNode.order);
+          const isRunning = nodeStates[edge.source]?.status === 'running';
+          return (
+            <line
+              key={i}
+              x1={sourcePos.x + nodeWidth / 2}
+              y1={sourcePos.y + nodeHeight}
+              x2={targetPos.x + nodeWidth / 2}
+              y2={targetPos.y}
+              className={isRunning ? 'running' : ''}
+            />
+          );
+        })}
+      </svg>
+      {nodes.map(node => {
+        const pos = getNodePosition(node.order);
+        const state = nodeStates[node.id] || { status: 'pending' };
+        return (
+          <div
+            key={node.id}
+            className={`wm-node ${state.status}`}
+            style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
+            onClick={() => onNodeClick(node)}
+          >
+            <div className="wm-node-label">{node.label}</div>
+            <div className="wm-node-status">{state.status}</div>
+            {state.duration_ms && <div className="wm-node-duration">{state.duration_ms}ms</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WorkflowMonitor() {
+  const [topology, setTopology] = useState(null);
+  const [nodeStates, setNodeStates] = useState({});
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTopology().then(setTopology);
+  }, []);
+
+  const loadTrace = async (runId) => {
+    if (!runId) {
+      setError('请输入 run_id');
       return;
     }
-
-    const topo = await fetchTopology();
-    const stateMap = {};
-    (data.node_states || []).forEach(ns => { stateMap[ns.node] = ns; });
-
-    const flowNodes = topo.nodes.map(n => {
-      const state = stateMap[n.id] || { status: 'pending' };
-      return {
-        id: n.id,
-        type: 'default',
-        position: { x: 200, y: n.order * 70 },
-        data: { label: n.label, nodeId: n.id, state },
-        className: `wm-node ${state.status}`,
-      };
-    });
-
-    const flowEdges = topo.edges.map((e, i) => ({
-      id: `e${i}`,
-      source: e.source,
-      target: e.target,
-      animated: stateMap[e.source]?.status === 'running',
-    }));
-
-    // Hide error message on success
-    document.getElementById('wm-error').style.display = 'none';
-
-    if (!ReactFlowComponent) {
-      document.getElementById('wm-flow').innerHTML = '<div style="padding:20px;color:#f44;">React Flow 未加载，请刷新页面重试</div>';
-      return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/runs/${runId}/trace`);
+      const data = await res.json();
+      if (data.error) {
+        setError('加载失败: ' + (data.message || data.error));
+        return;
+      }
+      const stateMap = {};
+      (data.node_states || []).forEach(ns => { stateMap[ns.node] = ns; });
+      setNodeStates(stateMap);
+      setError(null);
+    } catch (e) {
+      setError('加载失败: ' + e.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    ReactDOM.render(
-      <ReactFlowComponent
-        nodes={flowNodes}
-        edges={flowEdges}
-        onNodeClick={(event, node) => {
-          const state = node.data.state || { status: 'pending' };
-          const detail = document.getElementById('wm-detail-content');
-          detail.innerHTML = `
-            <div><strong>节点:</strong> ${node.data.label}</div>
-            <div><strong>状态:</strong> <span style="color: ${getStatusColor(state.status)}">${state.status}</span></div>
-            ${state.started_at ? `<div><strong>开始:</strong> ${new Date(state.started_at * 1000).toLocaleTimeString()}</div>` : ''}
-            ${state.completed_at ? `<div><strong>完成:</strong> ${new Date(state.completed_at * 1000).toLocaleTimeString()}</div>` : ''}
-            ${state.duration_ms ? `<div><strong>耗时:</strong> ${state.duration_ms}ms</div>` : ''}
-            ${state.error_message ? `<div style="color:#f44;margin-top:8px;"><strong>错误:</strong> ${state.error_message}</div>` : ''}
-            ${Object.keys(state.input_summary || {}).length > 0 ? `<div style="margin-top:8px;"><strong>输入:</strong><pre style="font-size:11px;margin:4px 0;">${JSON.stringify(state.input_summary, null, 2)}</pre></div>` : ''}
-            ${Object.keys(state.output_summary || {}).length > 0 ? `<div style="margin-top:8px;"><strong>输出:</strong><pre style="font-size:11px;margin:4px 0;">${JSON.stringify(state.output_summary, null, 2)}</pre></div>` : ''}
-          `;
-        }}
-        fitView
-        nodesDraggable={false}
-        nodesConnectable={false}
-        minZoom={0.5}
-        maxZoom={1.5}
-      >
-        {Background && <Background />}
-        {Controls && <Controls />}
-        {MiniMap && <MiniMap />}
-      </ReactFlowComponent>,
-      document.getElementById('wm-flow')
-    );
-  } catch (e) {
-    const errorDiv = document.getElementById('wm-error');
-    errorDiv.style.display = 'block';
-    errorDiv.textContent = '加载失败: ' + e.message;
+  const handleNodeClick = (node) => {
+    setSelectedNode(node);
+  };
+
+  if (!topology) {
+    return <div style={{ padding: '20px', color: '#999' }}>加载中...</div>;
   }
+
+  const selectedState = selectedNode ? (nodeStates[selectedNode.id] || { status: 'pending' }) : null;
+
+  return (
+    <div>
+      <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <input
+          id="wm-run-id"
+          type="text"
+          placeholder="输入 run_id"
+          style={{ flex: 1, padding: '8px', background: '#2a2a2a', border: '1px solid #444', borderRadius: '4px', color: '#fff' }}
+        />
+        <button
+          onClick={() => loadTrace(document.getElementById('wm-run-id').value.trim())}
+          disabled={loading}
+          style={{ padding: '8px 16px', background: '#4a9eff', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}
+        >
+          {loading ? '加载中...' : '加载运行记录'}
+        </button>
+      </div>
+      {error && <div style={{ padding: '12px', background: '#4d1e1e', border: '1px solid #f44', borderRadius: '4px', color: '#f44', marginBottom: '12px' }}>{error}</div>}
+      <WorkflowTree
+        nodes={topology.nodes}
+        edges={topology.edges}
+        nodeStates={nodeStates}
+        onNodeClick={handleNodeClick}
+      />
+      {selectedNode && selectedState && (
+        <div className="wm-detail-panel">
+          <div><strong>节点:</strong> {selectedNode.label}</div>
+          <div><strong>状态:</strong> <span style={{ color: getStatusColor(selectedState.status) }}>{selectedState.status}</span></div>
+          {selectedState.started_at && <div><strong>开始:</strong> {new Date(selectedState.started_at * 1000).toLocaleTimeString()}</div>}
+          {selectedState.completed_at && <div><strong>完成:</strong> {new Date(selectedState.completed_at * 1000).toLocaleTimeString()}</div>}
+          {selectedState.duration_ms && <div><strong>耗时:</strong> {selectedState.duration_ms}ms</div>}
+          {selectedState.error_message && <div style={{ color: '#f44', marginTop: '8px' }}><strong>错误:</strong> {selectedState.error_message}</div>}
+          {selectedState.input_summary && Object.keys(selectedState.input_summary).length > 0 && (
+            <div style={{ marginTop: '8px' }}><strong>输入:</strong><pre>{JSON.stringify(selectedState.input_summary, null, 2)}</pre></div>
+          )}
+          {selectedState.output_summary && Object.keys(selectedState.output_summary).length > 0 && (
+            <div style={{ marginTop: '8px' }}><strong>输出:</strong><pre>{JSON.stringify(selectedState.output_summary, null, 2)}</pre></div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Auto-load trace after workflow run
@@ -1111,9 +1083,17 @@ window.runWorkflow = async function() {
   const match = text.match(/run_id[:\s]+([a-f0-9-]{36})/i);
   if (match) {
     document.getElementById('wm-run-id').value = match[1];
-    setTimeout(() => loadWorkflowTrace(), 500);
+    setTimeout(() => {
+      const event = new Event('click');
+      document.querySelector('button[onclick*="loadWorkflowTrace"]')?.dispatchEvent(event) ||
+      document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.includes('加载')) btn.click();
+      });
+    }, 500);
   }
 };
+
+ReactDOM.render(<WorkflowMonitor />, document.getElementById('wm-root'));
 </script>
 </body>
 </html>"""

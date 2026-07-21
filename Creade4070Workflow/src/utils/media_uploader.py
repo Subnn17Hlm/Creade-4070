@@ -68,9 +68,26 @@ def upload_local_file(local_path: str, content_type: str = "application/octet-st
     try:
         url = storage.generate_presigned_url(key=object_key, expire_time=86400)  # 24小时有效期
         logger.info("生成签名URL成功")
+        # 清理可能的 Markdown 格式
+        url = _clean_url(url)
         return url
     except Exception as e:
         raise RuntimeError(f"生成签名URL失败: {e}") from e
+
+
+def _clean_url(url: str) -> str:
+    """
+    清理 URL，提取纯 URL。
+    如果 URL 是 Markdown 格式 [text](url)，提取括号中的 URL。
+    """
+    if not url:
+        return url
+    # 检查是否是 Markdown 格式 [text](url)
+    import re
+    match = re.match(r'^\[([^\]]*)\]\(([^)]+)\)$', url.strip())
+    if match:
+        return match.group(2)
+    return url
 
 
 def upload_bytes(data: bytes, file_name: str, content_type: str = "application/octet-stream") -> str:
@@ -103,6 +120,8 @@ def upload_bytes(data: bytes, file_name: str, content_type: str = "application/o
     try:
         url = storage.generate_presigned_url(key=object_key, expire_time=86400)
         logger.info("生成签名URL成功")
+        # 清理可能的 Markdown 格式
+        url = _clean_url(url)
         return url
     except Exception as e:
         raise RuntimeError(f"生成签名URL失败: {e}") from e

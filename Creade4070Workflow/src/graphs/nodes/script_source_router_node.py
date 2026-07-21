@@ -61,11 +61,16 @@ def script_source_router_node(
     ctx = runtime.context
     script_source = state.get("script_source", "")
     script_id = state.get("script_id", "")
+    run_id = state.get("run_id", "")
 
-    # 创建运行目录
-    run_dir = ensure_dir(os.path.join(RUNS_BASE, script_id))
+    # 创建运行目录 - 使用 run_id 隔离每次运行
+    if run_id:
+        run_dir = ensure_dir(os.path.join(RUNS_BASE, run_id))
+    else:
+        # 回退到 script_id（兼容旧版本）
+        run_dir = ensure_dir(os.path.join(RUNS_BASE, script_id))
 
-    logger.info("[Node0a] script_source=%s, script_id=%s, run_dir=%s", script_source, script_id, run_dir)
+    logger.info("[Node0a] script_source=%s, script_id=%s, run_id=%s, run_dir=%s", script_source, script_id, run_id, run_dir)
 
     # 校验：必须指定有效的来源
     if script_source not in ("generated", "manual"):
