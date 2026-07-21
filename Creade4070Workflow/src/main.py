@@ -541,7 +541,10 @@ async def http_run(request: Request) -> Dict[str, Any]:
                     executed_nodes = result.get("executed_nodes") or []
                 
                 # 持久化追踪
-                persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status, executed_nodes)
+                trace_result = persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status, executed_nodes)
+                # 将持久化诊断信息添加到 result
+                if isinstance(result, dict) and trace_result:
+                    result["trace_persistence"] = trace_result.get("trace_persistence", {})
         except Exception as e:
             logger.warning("Failed to persist run trace: %s", e)
         

@@ -18,6 +18,16 @@ LOCAL_CACHE_DIR = "/tmp/run_traces"
 _run_mapping: dict[str, dict] = {}
 
 
+def _get_storage():
+    """获取 S3 存储客户端（复用项目已验证的存储）"""
+    try:
+        from utils.storage_helper import _get_storage as get_storage
+        return get_storage()
+    except Exception as e:
+        logger.error(f"获取存储客户端失败: {e}")
+        return None
+
+
 def register_run(run_id: str, script_id: str, trace_file_path: str) -> None:
     """注册运行映射"""
     _run_mapping[run_id] = {
@@ -192,40 +202,56 @@ def persist_trace_to_local(run_id: str, summary: dict) -> Optional[str]:
         return None
 
 
-def persist_trace_to_tos(run_id: str, summary: dict) -> Optional[str]:
-    """持久化追踪到 TOS"""
+def persist_trace_to_tos(run_id: str, summary: dict) -> dict:
+    """
+    持久化追踪到 TOS（使用项目已验证的 S3 存储）
+    返回持久化诊断信息
+    """
+    result = {
+        "tos_upload_attempted": False,
+        "tos_uploaded": False,
+        "tos_object_key": f"run_traces/{run_id}.json",
+        "tos_verified": False,
+        "tos_error": "",
+    }
+    
     try:
-        from storage.tos.tos_client import TOSClient
-        from config import config
+        from utils.storage_helper import _get_storage as get_storage
+        storage = get_storage()
+        if not storage:
+            result["tos_error"] = "无法获取存储客户端"
+            return result
         
-        tos_config = config.tos
-        if not tos_config or not tos_config.access_key or not tos_config.secret_key:
-            logger.warning("TOS not configured, skipping trace persistence")
-            return None
-        
-        client = TOSClient(
-            ak=tos_config.access_key.strip(),
-            sk=tos_config.secret_key.strip(),
-            region=tos_config.region,
-            endpoint=tos_config.endpoint,
-        )
-        
-        object_key = f"run_traces/{run_id}.json"
+        object_key = result["tos_object_key"]
         sanitized = _sanitize_trace_data(summary)
         content = json.dumps(sanitized, ensure_ascii=False, indent=2).encode("utf-8")
         
-        client.put_object(
-            bucket=tos_config.bucket,
-            object_key=object_key,
-            content=content,
+        result["tos_upload_attempted"] = True
+        
+        # 上传
+        storage.upload_file(
+            file_content=content,
+            file_name=object_key,
             content_type="application/json",
         )
-        
         logger.info("Persisted trace to TOS: %s", object_key)
-        return object_key
+        result["tos_uploaded"] = True
+        
+        # 立即读回验证
+        read_data = storage.read_file(file_key=object_key)
+        read_json = json.loads(read_data.decode("utf-8"))
+        if read_json.get("run_id") != run_id:
+            result["tos_error"] = f"读回验证失败: run_id 不匹配，期望 {run_id}，实际 {read_json.get('run_id')}"
+            return result
+        
+        result["tos_verified"] = True
+        logger.info("Trace read-back verification succeeded: %s", object_key)
+        
     except Exception as e:
+        result["tos_error"] = str(e)
         logger.warning("Failed to persist trace to TOS: %s", e)
-        return None
+    
+    return result
 
 
 def load_trace_from_local(run_id: str) -> Optional[dict]:
@@ -241,47 +267,56 @@ def load_trace_from_local(run_id: str) -> Optional[dict]:
         return None
 
 
-def load_trace_from_tos(run_id: str) -> Optional[dict]:
-    """从 TOS 加载追踪"""
+def load_trace_from_tos(run_id: str) -> tuple[Optional[dict], str]:
+    """
+    从 TOS 加载追踪（使用项目已验证的 S3 存储）
+    返回 (追踪数据, 错误类型)
+    错误类型: "" (成功), "object_not_found", "storage_read_error"
+    """
     try:
-        from storage.tos.tos_client import TOSClient
-        from config import config
-        
-        tos_config = config.tos
-        if not tos_config or not tos_config.access_key or not tos_config.secret_key:
-            return None
-        
-        client = TOSClient(
-            ak=tos_config.access_key.strip(),
-            sk=tos_config.secret_key.strip(),
-            region=tos_config.region,
-            endpoint=tos_config.endpoint,
-        )
+        from utils.storage_helper import _get_storage as get_storage
+        storage = get_storage()
+        if not storage:
+            return None, "storage_read_error"
         
         object_key = f"run_traces/{run_id}.json"
-        result = client.get_object(bucket=tos_config.bucket, object_key=object_key)
-        
-        if result and result.get("content"):
-            return json.loads(result["content"].decode("utf-8"))
+        data = storage.read_file(file_key=object_key)
+        trace_data = json.loads(data.decode("utf-8"))
+        logger.info("Loaded trace from TOS: %s", object_key)
+        return trace_data, ""
     except Exception as e:
+        error_str = str(e).lower()
+        # 区分 object_not_found 和 storage_read_error
+        if "not found" in error_str or "nosuchkey" in error_str or "404" in error_str:
+            return None, "object_not_found"
         logger.warning("Failed to load trace from TOS: %s", e)
-    return None
+        return None, "storage_read_error"
 
 
 def persist_run_trace(run_id: str, script_id: str, trace_entries: list[dict],
                       status: str, quality_status: Optional[str] = None,
                       executed_nodes: Optional[list[str]] = None) -> dict:
-    """持久化运行追踪"""
+    """持久化运行追踪，返回包含诊断信息的摘要"""
     summary = _build_trace_summary(run_id, script_id, trace_entries, status, quality_status, executed_nodes)
     
     # 持久化到本地
     local_path = persist_trace_to_local(run_id, summary)
+    local_saved = local_path is not None and os.path.isfile(local_path)
     
     # 持久化到 TOS
-    tos_key = persist_trace_to_tos(run_id, summary)
+    tos_key = f"run_traces/{run_id}.json"
+    tos_uploaded, tos_error = persist_trace_to_tos(run_id, summary)
     
+    # 添加诊断信息
     summary["local_cache_path"] = local_path
     summary["tos_object_key"] = tos_key
+    summary["trace_persistence"] = {
+        "local_saved": local_saved,
+        "tos_uploaded": tos_uploaded,
+        "object_key": tos_key,
+        "verified": tos_uploaded,  # persist_trace_to_tos 已验证
+        "error": tos_error or ""
+    }
     
     return summary
 
@@ -313,8 +348,17 @@ def get_trace(run_id: str) -> Optional[dict]:
         return local_data
     
     # 3. TOS
-    tos_data = load_trace_from_tos(run_id)
+    tos_data, tos_error = load_trace_from_tos(run_id)
     if tos_data:
+        # 回填本地缓存
+        try:
+            save_trace_to_local(run_id, tos_data)
+        except Exception as e:
+            logger.warning("Failed to cache trace locally: %s", e)
         return tos_data
+    
+    # 如果 TOS 读取失败但不是 object_not_found，记录错误
+    if tos_error and tos_error != "object_not_found":
+        logger.warning("TOS read error for run_id %s: %s", run_id, tos_error)
     
     return None
