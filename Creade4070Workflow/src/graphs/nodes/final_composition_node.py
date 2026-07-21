@@ -63,6 +63,65 @@ def _download_bgm(bgm_url: str, temp_dir: str) -> str:
     return local_bgm
 
 
+def _sanitize_cmd_for_log(cmd: list) -> str:
+    """对命令进行脱敏处理，URL只保留域名和文件名"""
+    sanitized = []
+    for arg in cmd:
+        if arg.startswith("http://") or arg.startswith("https://"):
+            # URL: 只保留域名和文件名
+            from urllib.parse import urlparse
+            parsed = urlparse(arg)
+            filename = os.path.basename(parsed.path)
+            sanitized.append(f"{parsed.scheme}://{parsed.netloc}/.../{filename}")
+        elif len(arg) > 100:
+            # 长路径：只保留文件名
+            sanitized.append(f".../{os.path.basename(arg)}")
+        else:
+            sanitized.append(arg)
+    return " ".join(sanitized)
+
+
+def _log_ffmpeg_diagnostics(cmd: list, run_id: str, node_name: str):
+    """记录 ffmpeg 调用前的诊断信息"""
+    # 提取输入文件
+    input_files = []
+    for i, arg in enumerate(cmd):
+        if arg == "-i" and i + 1 < len(cmd):
+            input_files.append(cmd[i + 1])
+    
+    # 提取输出文件（通常是最后一个参数）
+    output_file = cmd[-1] if cmd else None
+    
+    # 记录输入文件状态
+    for f in input_files:
+        if os.path.exists(f):
+            size = os.path.getsize(f)
+            logger.info("[ffmpeg-diag] run_id=%s node=%s 输入文件存在: %s (size=%d bytes)", 
+                       run_id, node_name, f, size)
+        else:
+            logger.error("[ffmpeg-diag] run_id=%s node=%s 输入文件不存在: %s", 
+                        run_id, node_name, f)
+    
+    # 记录输出目录空间
+    if output_file:
+        output_dir = os.path.dirname(output_file) or "."
+        if os.path.exists(output_dir):
+            try:
+                stat = os.statvfs(output_dir)
+                free_bytes = stat.f_bavail * stat.f_frsize
+                free_gb = free_bytes / (1024**3)
+                logger.info("[ffmpeg-diag] run_id=%s node=%s 输出目录剩余空间: %.2f GB (%s)", 
+                           run_id, node_name, free_gb, output_dir)
+            except Exception as e:
+                logger.warning("[ffmpeg-diag] run_id=%s node=%s 无法获取目录空间: %s", 
+                              run_id, node_name, e)
+    
+    # 记录脱敏后的命令
+    sanitized_cmd = _sanitize_cmd_for_log(cmd)
+    logger.info("[ffmpeg-diag] run_id=%s node=%s 执行命令: %s", 
+               run_id, node_name, sanitized_cmd)
+
+
 def _check_subtitle_filter(ffmpeg_path: str) -> bool:
     """检查 FFmpeg 是否支持 subtitles 滤镜"""
     try:
@@ -584,6 +643,7 @@ def final_composition_node(
                 "-movflags", "+faststart",
                 concat_path
             ]
+            _log_ffmpeg_diagnostics(cmd, run_dir, "Node7-concat-single")
             run_ffmpeg(cmd, timeout=120)
         else:
             # 多个clip：先scale每个视频，再concat
@@ -609,6 +669,7 @@ def final_composition_node(
                 "-movflags", "+faststart",
                 concat_path
             ])
+            _log_ffmpeg_diagnostics(cmd, run_dir, "Node7-concat-multi")
             run_ffmpeg(cmd, timeout=300)
 
         concat_duration = get_media_duration(concat_path)
@@ -619,7 +680,7 @@ def final_composition_node(
         if concat_duration > tts_duration + trim_tolerance:
             trimmed_path = os.path.join(temp_dir, "trimmed.mp4")
             logger.info("[Node7] 精确Trim: %.2fs -> %.2fs", concat_duration, tts_duration)
-            run_ffmpeg([
+            trim_cmd = [
                 ffmpeg_path, "-y", "-i", concat_path,
                 "-t", str(tts_duration),
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
@@ -627,7 +688,9 @@ def final_composition_node(
                 "-c:a", "copy",
                 "-movflags", "+faststart",
                 trimmed_path
-            ], timeout=120)
+            ]
+            _log_ffmpeg_diagnostics(trim_cmd, run_dir, "Node7-trim")
+            run_ffmpeg(trim_cmd, timeout=120)
             concat_path = trimmed_path
             concat_duration = get_media_duration(concat_path)
             logger.info("[Node7] Trim完成: %.2fs", concat_duration)
@@ -639,7 +702,7 @@ def final_composition_node(
         if end_hold_sec > 0:
             tpad_path = os.path.join(temp_dir, "tpad.mp4")
             logger.info("[Node7] End Hold: 延长最后一帧 %.1fs...", end_hold_sec)
-            run_ffmpeg([
+            tpad_cmd = [
                 ffmpeg_path, "-y", "-i", concat_path,
                 "-vf", f"tpad=stop_mode=clone:stop_duration={end_hold_sec}",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "22",
@@ -647,7 +710,9 @@ def final_composition_node(
                 "-c:a", "copy",
                 "-movflags", "+faststart",
                 tpad_path
-            ], timeout=120)
+            ]
+            _log_ffmpeg_diagnostics(tpad_cmd, run_dir, "Node7-tpad")
+            run_ffmpeg(tpad_cmd, timeout=120)
             tpad_duration = get_media_duration(tpad_path)
             logger.info("[Node7] End Hold完成: %.2fs (原 %.2fs + %.1fs)", tpad_duration, concat_duration, end_hold_sec)
             concat_path = tpad_path
@@ -743,7 +808,7 @@ def final_composition_node(
                 
                 # 混合 TTS + BGM
                 bgm_volume = 0.40
-                run_ffmpeg([
+                bgm_mix_cmd = [
                     ffmpeg_path, "-y",
                     "-i", subbed_path,
                     "-i", tts_wav_path,
@@ -757,7 +822,9 @@ def final_composition_node(
                     "-movflags", "+faststart",
                     "-t", str(video_duration),
                     mixed_path
-                ], timeout=180)
+                ]
+                _log_ffmpeg_diagnostics(bgm_mix_cmd, run_dir, "Node7-bgm-mix")
+                run_ffmpeg(bgm_mix_cmd, timeout=180)
                 bgm_used = True
                 logger.info("[Node7] TTS+BGM 混音完成")
                 
@@ -767,7 +834,7 @@ def final_composition_node(
         
         if not bgm_used:
             # 仅使用 TTS
-            run_ffmpeg([
+            tts_only_cmd = [
                 ffmpeg_path, "-y",
                 "-i", subbed_path,
                 "-i", tts_wav_path,
@@ -778,7 +845,9 @@ def final_composition_node(
                 "-movflags", "+faststart",
                 "-t", str(video_duration),
                 mixed_path
-            ], timeout=120)
+            ]
+            _log_ffmpeg_diagnostics(tts_only_cmd, run_dir, "Node7-tts-only")
+            run_ffmpeg(tts_only_cmd, timeout=120)
             logger.info("[Node7] 仅使用 TTS 音轨")
 
         # 4. 复制到最终输出

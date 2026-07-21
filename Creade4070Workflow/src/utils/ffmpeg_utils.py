@@ -225,8 +225,14 @@ def run_ffmpeg(cmd: list, timeout: int = 300) -> subprocess.CompletedProcess:
     )
     
     if result.returncode != 0:
-        stderr_preview = result.stderr[:1000] if result.stderr else ""
-        raise RuntimeError(f"ffmpeg 执行失败 (code={result.returncode}): {stderr_preview}")
+        # 保留 stderr 的最后 8000 字符（真正错误信息通常在末尾）
+        stderr_tail = result.stderr[-8000:] if result.stderr else ""
+        # 处理负数返回码（信号导致的终止）
+        if result.returncode < 0:
+            error_msg = f"ffmpeg 被信号 {-result.returncode} 终止 (code={result.returncode})"
+        else:
+            error_msg = f"ffmpeg 执行失败 (code={result.returncode})"
+        raise RuntimeError(f"{error_msg}: {stderr_tail}")
     
     return result
 
