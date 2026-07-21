@@ -27,6 +27,10 @@ from coze_coding_utils.helper.stream_runner import AgentStreamRunner, WorkflowSt
 from storage.database.db import get_session, get_engine
 from storage.memory.memory_saver import get_memory_saver
 from storage.database.shared.model import Base
+from graphs.run_trace_persistence import (
+    register_run, update_run_status, get_trace, get_latest_run_by_script,
+    persist_run_trace
+)
 from coze_coding_utils.async_tasks import (
     AsyncTaskRuntime,
     AsyncTaskStorageError,
@@ -434,8 +438,19 @@ async def http_run(request: Request) -> Dict[str, Any]:
         f"body={body_text}"
     )
 
+    # 变量初始化，用于 finally 块
+    script_id = None
+    trace_file_path = None
+    run_status = "failed"
+    quality_status = None
+
     try:
         payload = await request.json()
+        
+        # 提取 script_id 并注册运行映射
+        script_id = payload.get("script_id") or payload.get("run_id") or run_id
+        trace_file_path = f"/tmp/runs/{script_id}/node_trace.jsonl"
+        register_run(run_id, script_id, trace_file_path)
 
         # 创建任务并记录 - 这是关键，让我们可以通过run_id取消任务
         task = asyncio.create_task(service.run(payload, ctx))
@@ -449,6 +464,7 @@ async def http_run(request: Request) -> Dict[str, Any]:
             try:
                 result = await task
             except asyncio.CancelledError:
+                run_status = "timeout"
                 return {
                     "status": "timeout",
                     "run_id": run_id,
@@ -459,6 +475,11 @@ async def http_run(request: Request) -> Dict[str, Any]:
             result = {}
         if isinstance(result, dict):
             result["run_id"] = run_id
+            # 提取质量状态
+            quality_report = result.get("quality_report") or {}
+            if isinstance(quality_report, dict):
+                quality_status = quality_report.get("status")
+            run_status = "success" if result.get("status") == "success" else "failed"
         return result
 
     except json.JSONDecodeError as e:
@@ -467,6 +488,7 @@ async def http_run(request: Request) -> Dict[str, Any]:
 
     except asyncio.CancelledError:
         logger.info(f"Request cancelled for run_id: {run_id}")
+        run_status = "cancelled"
         result = {"status": "cancelled", "run_id": run_id, "message": "Execution was cancelled"}
         return result
 
@@ -486,6 +508,17 @@ async def http_run(request: Request) -> Dict[str, Any]:
             }
         )
     finally:
+        # 持久化运行追踪
+        try:
+            if script_id and trace_file_path:
+                from graphs.node_trace_utils import read_node_trace
+                import os
+                run_dir = os.path.dirname(trace_file_path)
+                trace_entries = read_node_trace(run_dir)
+                persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status)
+        except Exception as e:
+            logger.warning("Failed to persist run trace: %s", e)
+        
         cozeloop.flush()
 
 
@@ -1360,109 +1393,49 @@ def _sanitize_trace_entry(entry: dict) -> dict:
 @app.get("/api/runs/{run_id}/trace")
 async def get_run_trace(run_id: str):
     """返回指定运行的追踪信息。"""
-    import re
-    from pathlib import Path
-
-    # 查找 node_trace.jsonl 文件
-    runs_dir = Path("/tmp/runs")
-    trace_file = None
-
-    if runs_dir.exists():
-        for run_dir in runs_dir.iterdir():
-            if run_dir.is_dir() and run_id in run_dir.name:
-                candidate = run_dir / "node_trace.jsonl"
-                if candidate.exists():
-                    trace_file = candidate
-                    break
-
-    if not trace_file:
-        # 尝试直接路径
-        candidate = runs_dir / run_id / "node_trace.jsonl"
-        if candidate.exists():
-            trace_file = candidate
-
-    if not trace_file:
-        return {"error": "trace_not_found", "run_id": run_id, "entries": []}
-
-    # 读取追踪文件
-    entries = []
-    try:
-        with open(trace_file, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        entry = json.loads(line)
-                        entries.append(_sanitize_trace_entry(entry))
-                    except json.JSONDecodeError:
-                        continue
-    except Exception as e:
-        return {"error": "trace_read_failed", "run_id": run_id, "message": str(e)}
-
-    # 解析节点状态
-    node_states = {}
-    for entry in entries:
-        node = entry.get("node", "")
-        phase = entry.get("phase", "")
-
-        if node not in node_states:
-            node_states[node] = {
-                "node": node,
-                "status": "pending",
-                "phase": "",
-                "started_at": None,
-                "completed_at": None,
-                "duration_ms": None,
-                "input_summary": {},
-                "output_summary": {},
-                "error_message": None,
+    # 使用持久化模块查询
+    trace_data = get_trace(run_id)
+    
+    if not trace_data:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "trace_not_found",
+                "run_id": run_id,
+                "message": "未找到该运行记录，可能是旧版本运行或记录尚未持久化"
             }
+        )
+    
+    # 清理敏感信息
+    if "nodes" in trace_data:
+        for node in trace_data["nodes"]:
+            if "input_summary" in node:
+                node["input_summary"] = _sanitize_trace_entry(node["input_summary"])
+            if "output_summary" in node:
+                node["output_summary"] = _sanitize_trace_entry(node["output_summary"])
+    
+    return trace_data
 
-        state = node_states[node]
 
-        if phase == "entered":
-            state["status"] = "running"
-            state["phase"] = "entered"
-            state["started_at"] = entry.get("timestamp")
-            # 收集输入摘要
-            for key in ["input_chars", "input_path", "material_count"]:
-                if key in entry:
-                    state["input_summary"][key] = entry[key]
-
-        elif phase == "completed":
-            state["status"] = "success"
-            state["phase"] = "completed"
-            state["completed_at"] = entry.get("timestamp")
-            if state["started_at"]:
-                try:
-                    start = float(state["started_at"])
-                    end = float(entry.get("timestamp", 0))
-                    state["duration_ms"] = int((end - start) * 1000)
-                except (ValueError, TypeError):
-                    pass
-            # 收集输出摘要
-            for key in ["output_size", "duration", "clip_count", "status"]:
-                if key in entry:
-                    state["output_summary"][key] = entry[key]
-
-        elif phase == "error":
-            state["status"] = "failed"
-            state["phase"] = "error"
-            state["completed_at"] = entry.get("timestamp")
-            state["error_message"] = entry.get("error_message") or entry.get("error")
-
-    # 对于 quality_check，如果没有 completed 但有 entered，检查最终状态
-    if "quality_check" in node_states:
-        qc_state = node_states["quality_check"]
-        if qc_state["status"] == "running":
-            # 尝试从运行记录中获取最终状态
-            qc_state["status"] = "success"  # 假设成功，实际应该从运行结果获取
-
+@app.get("/api/runs/by-script/{script_id}/latest")
+async def get_latest_run_by_script_id(script_id: str):
+    """获取指定 script_id 的最新 run_id。"""
+    latest_run_id = get_latest_run_by_script(script_id)
+    
+    if not latest_run_id:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "no_runs_found",
+                "script_id": script_id,
+                "message": "未找到该脚本的运行记录"
+            }
+        )
+    
     return {
-        "run_id": run_id,
-        "trace_file": str(trace_file),
-        "entries": entries,
-        "node_states": list(node_states.values()),
+        "script_id": script_id,
+        "latest_run_id": latest_run_id,
+        "mapping": get_run_mapping(latest_run_id)
     }
 
 

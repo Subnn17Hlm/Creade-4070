@@ -1,0 +1,295 @@
+"""
+运行追踪持久化模块
+提供 run_id 到 script_id 的映射和追踪数据持久化
+"""
+import json
+import os
+import logging
+from datetime import datetime
+from typing import Any, Optional
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# 本地缓存目录
+LOCAL_CACHE_DIR = "/tmp/run_traces"
+
+# 进程内映射：run_id -> {script_id, trace_file_path, status, ...}
+_run_mapping: dict[str, dict] = {}
+
+
+def register_run(run_id: str, script_id: str, trace_file_path: str) -> None:
+    """注册运行映射"""
+    _run_mapping[run_id] = {
+        "run_id": run_id,
+        "script_id": script_id,
+        "trace_file_path": trace_file_path,
+        "status": "running",
+        "created_at": datetime.now().isoformat(),
+    }
+
+
+def update_run_status(run_id: str, status: str, **kwargs) -> None:
+    """更新运行状态"""
+    if run_id in _run_mapping:
+        _run_mapping[run_id]["status"] = status
+        _run_mapping[run_id]["completed_at"] = datetime.now().isoformat()
+        _run_mapping[run_id].update(kwargs)
+
+
+def get_run_mapping(run_id: str) -> Optional[dict]:
+    """获取运行映射"""
+    return _run_mapping.get(run_id)
+
+
+def get_latest_run_by_script(script_id: str) -> Optional[str]:
+    """获取指定 script_id 的最新 run_id"""
+    latest = None
+    latest_time = None
+    for run_id, mapping in _run_mapping.items():
+        if mapping.get("script_id") == script_id:
+            created_at = mapping.get("created_at")
+            if created_at and (latest_time is None or created_at > latest_time):
+                latest = run_id
+                latest_time = created_at
+    return latest
+
+
+def _sanitize_trace_data(data: dict) -> dict:
+    """清理追踪数据，移除敏感信息"""
+    def sanitize_value(v):
+        if isinstance(v, str):
+            # 移除签名 URL 的 query 参数
+            if "X-Tos-Algorithm" in v or "X-Amz-Credential" in v:
+                # 只保留 URL 路径部分
+                if "?" in v:
+                    return v.split("?")[0]
+            # 移除可能的密钥
+            if "Authorization" in v or "Bearer " in v:
+                return "[REDACTED]"
+        elif isinstance(v, dict):
+            return {k: sanitize_value(val) for k, val in v.items()}
+        elif isinstance(v, list):
+            return [sanitize_value(item) for item in v]
+        return v
+    
+    return sanitize_value(data)
+
+
+def _build_trace_summary(run_id: str, script_id: str, trace_entries: list[dict], 
+                         status: str, quality_status: Optional[str] = None) -> dict:
+    """构建追踪摘要"""
+    # 提取节点信息
+    nodes = []
+    node_status = {}
+    
+    for entry in trace_entries:
+        node = entry.get("node")
+        phase = entry.get("phase")
+        if not node:
+            continue
+        
+        if node not in node_status:
+            node_status[node] = {
+                "node": node,
+                "status": "pending",
+                "started_at": None,
+                "completed_at": None,
+                "duration_ms": None,
+                "input_summary": {},
+                "output_summary": {},
+                "error_message": None,
+            }
+        
+        ns = node_status[node]
+        
+        if phase == "entered":
+            ns["status"] = "running"
+            ns["started_at"] = entry.get("timestamp") or datetime.now().isoformat()
+            # 收集输入摘要
+            for key in ["input_chars", "input_path", "cleaned_script_chars"]:
+                if key in entry:
+                    ns["input_summary"][key] = entry[key]
+        
+        elif phase == "completed":
+            ns["status"] = "success"
+            ns["completed_at"] = entry.get("timestamp") or datetime.now().isoformat()
+            # 计算耗时
+            if ns["started_at"]:
+                try:
+                    start = datetime.fromisoformat(ns["started_at"].replace("Z", "+00:00"))
+                    end = datetime.fromisoformat(ns["completed_at"].replace("Z", "+00:00"))
+                    ns["duration_ms"] = int((end - start).total_seconds() * 1000)
+                except:
+                    pass
+            # 收集输出摘要
+            for key in ["tts_duration", "srt_path", "clip_count", "timeline_duration", 
+                       "final_video_path", "final_video_duration", "subtitle_burned"]:
+                if key in entry:
+                    ns["output_summary"][key] = entry[key]
+        
+        elif phase == "error":
+            ns["status"] = "failed"
+            ns["completed_at"] = entry.get("timestamp") or datetime.now().isoformat()
+            ns["error_message"] = f"{entry.get('error_type', 'Unknown')}: {entry.get('error_message', '')}"
+    
+    # 将节点状态转换为列表
+    nodes = list(node_status.values())
+    
+    # 对于 quality_check，根据 quality_report.status 判断最终状态
+    for node in nodes:
+        if node["node"] == "quality_check" and node["status"] == "running":
+            if quality_status == "success":
+                node["status"] = "success"
+            elif quality_status:
+                node["status"] = "failed"
+    
+    return {
+        "run_id": run_id,
+        "script_id": script_id,
+        "status": status,
+        "created_at": _run_mapping.get(run_id, {}).get("created_at"),
+        "completed_at": datetime.now().isoformat() if status != "running" else None,
+        "quality_status": quality_status,
+        "nodes": nodes,
+    }
+
+
+def persist_trace_to_local(run_id: str, summary: dict) -> Optional[str]:
+    """持久化追踪到本地缓存"""
+    try:
+        os.makedirs(LOCAL_CACHE_DIR, exist_ok=True)
+        local_path = os.path.join(LOCAL_CACHE_DIR, f"{run_id}.json")
+        sanitized = _sanitize_trace_data(summary)
+        with open(local_path, "w", encoding="utf-8") as f:
+            json.dump(sanitized, f, ensure_ascii=False, indent=2)
+        return local_path
+    except Exception as e:
+        logger.warning("Failed to persist trace to local: %s", e)
+        return None
+
+
+def persist_trace_to_tos(run_id: str, summary: dict) -> Optional[str]:
+    """持久化追踪到 TOS"""
+    try:
+        from storage.tos.tos_client import TOSClient
+        from config import config
+        
+        tos_config = config.tos
+        if not tos_config or not tos_config.access_key or not tos_config.secret_key:
+            logger.warning("TOS not configured, skipping trace persistence")
+            return None
+        
+        client = TOSClient(
+            ak=tos_config.access_key.strip(),
+            sk=tos_config.secret_key.strip(),
+            region=tos_config.region,
+            endpoint=tos_config.endpoint,
+        )
+        
+        object_key = f"run_traces/{run_id}.json"
+        sanitized = _sanitize_trace_data(summary)
+        content = json.dumps(sanitized, ensure_ascii=False, indent=2).encode("utf-8")
+        
+        client.put_object(
+            bucket=tos_config.bucket,
+            object_key=object_key,
+            content=content,
+            content_type="application/json",
+        )
+        
+        logger.info("Persisted trace to TOS: %s", object_key)
+        return object_key
+    except Exception as e:
+        logger.warning("Failed to persist trace to TOS: %s", e)
+        return None
+
+
+def load_trace_from_local(run_id: str) -> Optional[dict]:
+    """从本地缓存加载追踪"""
+    local_path = os.path.join(LOCAL_CACHE_DIR, f"{run_id}.json")
+    if not os.path.exists(local_path):
+        return None
+    try:
+        with open(local_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load trace from local: %s", e)
+        return None
+
+
+def load_trace_from_tos(run_id: str) -> Optional[dict]:
+    """从 TOS 加载追踪"""
+    try:
+        from storage.tos.tos_client import TOSClient
+        from config import config
+        
+        tos_config = config.tos
+        if not tos_config or not tos_config.access_key or not tos_config.secret_key:
+            return None
+        
+        client = TOSClient(
+            ak=tos_config.access_key.strip(),
+            sk=tos_config.secret_key.strip(),
+            region=tos_config.region,
+            endpoint=tos_config.endpoint,
+        )
+        
+        object_key = f"run_traces/{run_id}.json"
+        result = client.get_object(bucket=tos_config.bucket, object_key=object_key)
+        
+        if result and result.get("content"):
+            return json.loads(result["content"].decode("utf-8"))
+    except Exception as e:
+        logger.warning("Failed to load trace from TOS: %s", e)
+    return None
+
+
+def persist_run_trace(run_id: str, script_id: str, trace_entries: list[dict],
+                      status: str, quality_status: Optional[str] = None) -> dict:
+    """持久化运行追踪"""
+    summary = _build_trace_summary(run_id, script_id, trace_entries, status, quality_status)
+    
+    # 持久化到本地
+    local_path = persist_trace_to_local(run_id, summary)
+    
+    # 持久化到 TOS
+    tos_key = persist_trace_to_tos(run_id, summary)
+    
+    summary["local_cache_path"] = local_path
+    summary["tos_object_key"] = tos_key
+    
+    return summary
+
+
+def get_trace(run_id: str) -> Optional[dict]:
+    """获取追踪数据，按优先级查询"""
+    # 1. 进程内映射
+    mapping = get_run_mapping(run_id)
+    if mapping and mapping.get("status") != "running":
+        # 如果有完整的映射，从 trace 文件构建
+        trace_file = mapping.get("trace_file_path")
+        if trace_file:
+            run_dir = os.path.dirname(trace_file)
+            from graphs.node_trace_utils import read_node_trace
+            entries = read_node_trace(run_dir)
+            if entries:
+                return _build_trace_summary(
+                    run_id, 
+                    mapping.get("script_id", ""),
+                    entries,
+                    mapping.get("status", "unknown"),
+                    mapping.get("quality_status"),
+                )
+    
+    # 2. 本地缓存
+    local_data = load_trace_from_local(run_id)
+    if local_data:
+        return local_data
+    
+    # 3. TOS
+    tos_data = load_trace_from_tos(run_id)
+    if tos_data:
+        return tos_data
+    
+    return None
