@@ -111,13 +111,6 @@ step_end "Step 4 completed"
 
 # Step 5: Run database migrations
 step_start "Step 5: Running database migrations..."
-export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH:-}"
-
-# Check if alembic is available
-if ! command -v alembic &> /dev/null; then
-  echo "[setup] ERROR: alembic command not found, cannot run migrations"
-  exit 1
-fi
 
 # Check if PGDATABASE_URL is configured
 if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
@@ -126,14 +119,22 @@ if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
-# Run migrations (idempotent - only applies pending migrations)
-echo "[setup] Running database migrations..."
-
-# Use python -m alembic to ensure it works even when alembic executable is not in PATH
 # Set PYTHONPATH to include PIP_TARGET and project src directory
 MIGRATION_PYTHONPATH="${PIP_TARGET}:${PROJECT_DIR}/src:${PYTHONPATH:-}"
+export PYTHONPATH="${MIGRATION_PYTHONPATH}"
 
-if PYTHONPATH="${MIGRATION_PYTHONPATH}" python -m alembic -c "${PROJECT_DIR}/alembic.ini" upgrade head; then
+# Verify alembic module is available (not command, but Python module)
+echo "[setup] Verifying alembic module..."
+if ! python -c "import alembic; print(f'[setup] alembic module loaded from: {alembic.__file__}')" 2>&1; then
+  echo "[setup] ERROR: Failed to import alembic module"
+  echo "[setup] PIP_TARGET=${PIP_TARGET}"
+  echo "[setup] PYTHONPATH=${PYTHONPATH}"
+  exit 1
+fi
+
+# Run migrations (idempotent - only applies pending migrations)
+echo "[setup] Running database migrations..."
+if python -m alembic -c "${PROJECT_DIR}/alembic.ini" upgrade head; then
   echo "[setup] ✓ Database migrations completed successfully"
 else
   MIGRATION_EXIT_CODE=$?
