@@ -334,6 +334,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# 批量任务 API
+from api.batch_routes import router as batch_router
+app.include_router(batch_router)
+
 # OpenAI 兼容接口处理器
 openai_handler = OpenAIChatHandler(service)
 
