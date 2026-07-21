@@ -1,5 +1,6 @@
 """Batch API routes."""
 import uuid
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, Form, Header, HTTPException, Query, Depends
@@ -12,6 +13,7 @@ from api.batch_csv import validate_csv, MAX_BATCH_SIZE
 from api.batch_service import BatchService
 from api.batch_executor import BatchExecutor
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/batches', tags=['batches'])
 
 
@@ -64,9 +66,10 @@ async def create_batch(
             source_filename=file.filename,
         )
     except Exception as e:
+        logger.error(f"Failed to create batch: {type(e).__name__}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={'error': f'创建批次失败: {str(e)}'},
+            detail={'error': f'创建批次失败: {str(e)}', 'type': type(e).__name__},
         )
     
     return {

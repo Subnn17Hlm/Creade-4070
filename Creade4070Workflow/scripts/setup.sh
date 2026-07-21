@@ -109,4 +109,22 @@ if [ ${#MISSING_FILES[@]} -gt 0 ]; then
 fi
 step_end "Step 4 completed"
 
+# Step 5: Run database migrations
+step_start "Step 5: Running database migrations..."
+export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH:-}"
+
+# Check if alembic is available
+if ! command -v alembic &> /dev/null; then
+  echo "[setup] WARNING: alembic command not found, skipping migrations"
+else
+  # Run migrations (idempotent - only applies pending migrations)
+  if alembic upgrade head; then
+    echo "[setup] Database migrations completed successfully"
+  else
+    echo "[setup] WARNING: Database migration failed (exit code: $?)"
+    echo "[setup] This may be expected on first deployment or if database is not yet configured"
+  fi
+fi
+step_end "Step 5 completed"
+
 echo "[setup] $(date '+%H:%M:%S') All validation passed"

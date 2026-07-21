@@ -94,13 +94,24 @@ def get_async_db_url() -> str:
     """Convert sync DB URL to async URL for PostgreSQL."""
     sync_url = get_db_url()
     if not sync_url:
+        logger.error("get_db_url() returned empty string")
         return ""
+    
     # Convert postgresql:// to postgresql+asyncpg://
     if sync_url.startswith("postgresql://"):
-        return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        async_url = sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif sync_url.startswith("postgres://"):
-        return sync_url.replace("postgres://", "postgresql+asyncpg://", 1)
-    return sync_url
+        async_url = sync_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif sync_url.startswith("postgresql+asyncpg://"):
+        # Already async URL
+        async_url = sync_url
+    else:
+        # Unknown format, log and try to use as-is
+        logger.warning(f"Unknown database URL format: {sync_url[:50]}...")
+        async_url = sync_url
+    
+    logger.info(f"Async database URL configured (length: {len(async_url)})")
+    return async_url
 
 def get_async_engine():
     global _async_engine

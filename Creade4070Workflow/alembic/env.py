@@ -38,7 +38,11 @@ target_metadata = Base.metadata
 
 def get_url():
     """Get database URL from environment or config."""
-    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    # Try PGDATABASE_URL first (used by the application), then DATABASE_URL
+    url = os.getenv("PGDATABASE_URL") or os.getenv("DATABASE_URL")
+    if url:
+        return url
+    return config.get_main_option("sqlalchemy.url")
 
 
 def run_migrations_offline() -> None:
