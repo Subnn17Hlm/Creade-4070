@@ -196,6 +196,25 @@ def run_ffmpeg(cmd: list, timeout: int = 300) -> subprocess.CompletedProcess:
     if cmd and cmd[0] == "ffmpeg":
         cmd[0] = get_ffmpeg_path()
     
+    # 限制线程数以防止并发资源耗尽（批量任务场景）
+    # 如果命令中没有 -threads 参数，则添加 -threads 2
+    if "-threads" not in cmd:
+        # 在 -y 之后插入 -threads 2（如果存在 -y）
+        if "-y" in cmd:
+            y_idx = cmd.index("-y")
+            cmd.insert(y_idx + 1, "-threads")
+            cmd.insert(y_idx + 2, "2")
+        else:
+            # 在输入文件之后插入 -threads 2
+            # 找到第一个 -i 参数之后的位置
+            insert_idx = 1  # 默认在 ffmpeg 之后
+            for i, arg in enumerate(cmd):
+                if arg == "-i" and i + 1 < len(cmd):
+                    insert_idx = i + 2
+                    break
+            cmd.insert(insert_idx, "-threads")
+            cmd.insert(insert_idx + 1, "2")
+    
     logger.debug("[ffmpeg_utils] 执行命令: %s", " ".join(cmd[:5]) + "..." if len(cmd) > 5 else " ".join(cmd))
     
     result = subprocess.run(
@@ -206,7 +225,7 @@ def run_ffmpeg(cmd: list, timeout: int = 300) -> subprocess.CompletedProcess:
     )
     
     if result.returncode != 0:
-        stderr_preview = result.stderr[:500] if result.stderr else ""
+        stderr_preview = result.stderr[:1000] if result.stderr else ""
         raise RuntimeError(f"ffmpeg 执行失败 (code={result.returncode}): {stderr_preview}")
     
     return result
