@@ -93,7 +93,7 @@ _async_engine = None
 _AsyncSessionLocal = None
 
 def get_async_db_url() -> str:
-    """Convert sync DB URL to async URL for PostgreSQL."""
+    """Convert sync DB URL to async URL for PostgreSQL, removing sslmode parameter."""
     sync_url = get_db_url()
     print(f"[DB-ASYNC] get_db_url() returned (length: {len(sync_url)})", flush=True)
     if not sync_url:
@@ -116,14 +116,30 @@ def get_async_db_url() -> str:
         print(f"[DB-ASYNC] WARNING: Unknown database URL format: {sync_url[:50]}... (length: {len(sync_url)})", flush=True)
         async_url = sync_url
     
+    # Remove sslmode parameter (psycopg2 format, not supported by asyncpg)
+    if "?sslmode=" in async_url:
+        async_url = async_url.split("?sslmode=")[0]
+        print(f"[DB-ASYNC] Removed ?sslmode= parameter (length: {len(async_url)})", flush=True)
+    elif "&sslmode=" in async_url:
+        async_url = async_url.replace("&sslmode=", "")
+        print(f"[DB-ASYNC] Removed &sslmode= parameter (length: {len(async_url)})", flush=True)
+    
     return async_url
 
 def get_async_engine():
     global _async_engine
     if _async_engine is None:
+        sync_url = get_db_url()
         url = get_async_db_url()
         if not url:
             raise ValueError("PGDATABASE_URL is not set")
+        
+        # Check if original URL had sslmode=require and add connect_args for asyncpg
+        connect_args = {}
+        if sync_url and ("sslmode=require" in sync_url or "sslmode=Require" in sync_url):
+            connect_args["ssl"] = "require"
+            print("[DB-ASYNC] Adding connect_args={'ssl': 'require'} for asyncpg", flush=True)
+        
         _async_engine = create_async_engine(
             url,
             pool_size=50,
@@ -131,6 +147,7 @@ def get_async_engine():
             pool_pre_ping=True,
             pool_recycle=1800,
             pool_timeout=30,
+            connect_args=connect_args if connect_args else None,
         )
     return _async_engine
 
