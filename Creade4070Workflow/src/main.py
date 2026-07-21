@@ -905,12 +905,6 @@ async function runWorkflow() {
 
 <h2>工作流监控</h2>
 <div class="wf-section">
-  <div class="wf-row">
-    <label for="wm-run-id">run_id</label>
-    <input id="wm-run-id" type="text" placeholder="输入 run_id 查看运行追踪">
-    <button id="wm-load-btn" class="wf-btn" onclick="loadWorkflowTrace()">加载运行记录</button>
-  </div>
-  <div id="wm-error" style="display:none; margin-top: 12px; padding: 12px; background: #4d1e1e; border: 1px solid #f44; border-radius: 6px; color: #f44; font-size: 0.9rem;"></div>
   <div id="wm-root" style="margin-top: 16px;"></div>
 </div>
 
@@ -1035,7 +1029,7 @@ function WorkflowMonitor() {
         return;
       }
       const stateMap = {};
-      (data.node_states || []).forEach(ns => { stateMap[ns.node] = ns; });
+      (data.nodes || []).forEach(ns => { stateMap[ns.id] = ns; });
       setNodeStates(stateMap);
       setError(null);
     } catch (e) {
