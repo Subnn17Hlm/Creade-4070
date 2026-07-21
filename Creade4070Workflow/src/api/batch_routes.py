@@ -10,6 +10,7 @@ from storage.database.db import get_db_session
 from storage.database.batch_models import BatchJob, BatchTask
 from api.batch_csv import validate_csv, MAX_BATCH_SIZE
 from api.batch_service import BatchService
+from api.batch_executor import BatchExecutor
 
 router = APIRouter(prefix='/api/batches', tags=['batches'])
 
@@ -198,6 +199,177 @@ async def get_batch_tasks(
             'total_pages': (total_count + page_size - 1) // page_size,
         },
     }
+
+
+@router.post('/{batch_id}/start')
+async def start_batch(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Start executing a batch job.
+    
+    Args:
+        batch_id: Batch job ID
+        
+    Returns:
+        Batch execution result
+    """
+    try:
+        batch_uuid = uuid.UUID(batch_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': '无效的 batch_id 格式'},
+        )
+    
+    # Check batch exists
+    batch = await BatchService.get_batch(db, batch_uuid)
+    if not batch:
+        raise HTTPException(
+            status_code=404,
+            detail={'error': '批次不存在'},
+        )
+    
+    # Get graph service from app state
+    from main import service
+    executor = BatchExecutor(service)
+    
+    try:
+        result = await executor.start_batch(db, batch_uuid)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': str(e)},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={'error': f'启动批次失败: {str(e)}'},
+        )
+
+
+@router.post('/{batch_id}/tasks/{task_id}/retry')
+async def retry_task(
+    batch_id: str,
+    task_id: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Retry a failed task.
+    
+    Args:
+        batch_id: Batch job ID
+        task_id: Task ID to retry
+        
+    Returns:
+        Task retry result
+    """
+    try:
+        batch_uuid = uuid.UUID(batch_id)
+        task_uuid = uuid.UUID(task_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': '无效的 ID 格式'},
+        )
+    
+    # Check batch exists
+    batch = await BatchService.get_batch(db, batch_uuid)
+    if not batch:
+        raise HTTPException(
+            status_code=404,
+            detail={'error': '批次不存在'},
+        )
+    
+    # Get graph service from app state
+    from main import service
+    executor = BatchExecutor(service)
+    
+    try:
+        result = await executor.retry_task(db, batch_uuid, task_uuid)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': str(e)},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={'error': f'重试任务失败: {str(e)}'},
+        )
+
+
+@router.post('/{batch_id}/retry-failed')
+async def retry_failed_tasks(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Retry all failed tasks in a batch.
+    
+    Args:
+        batch_id: Batch job ID
+        
+    Returns:
+        Retry result
+    """
+    try:
+        batch_uuid = uuid.UUID(batch_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': '无效的 batch_id 格式'},
+        )
+    
+    # Check batch exists
+    batch = await BatchService.get_batch(db, batch_uuid)
+    if not batch:
+        raise HTTPException(
+            status_code=404,
+            detail={'error': '批次不存在'},
+        )
+    
+    # Get graph service from app state
+    from main import service
+    executor = BatchExecutor(service)
+    
+    try:
+        result = await executor.retry_failed_tasks(db, batch_uuid)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': str(e)},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={'error': f'重试失败任务失败: {str(e)}'},
+        )
+
+
+@router.post('/recover-stuck')
+async def recover_stuck_tasks(
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Recover tasks stuck in running state.
+    
+    Returns:
+        Recovery result
+    """
+    # Get graph service from app state
+    from main import service
+    executor = BatchExecutor(service)
+    
+    try:
+        result = await executor.recover_stuck_tasks(db)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={'error': f'恢复卡住任务失败: {str(e)}'},
+        )
+
 
 
 @router.get('')

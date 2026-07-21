@@ -3,6 +3,8 @@ import time
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker as async_sessionmaker_cls
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,9 +86,59 @@ def get_sessionmaker():
 def get_session():
     return get_sessionmaker()()
 
+# Async engine and session for batch operations
+_async_engine = None
+_AsyncSessionLocal = None
+
+def get_async_db_url() -> str:
+    """Convert sync DB URL to async URL for PostgreSQL."""
+    sync_url = get_db_url()
+    if not sync_url:
+        return ""
+    # Convert postgresql:// to postgresql+asyncpg://
+    if sync_url.startswith("postgresql://"):
+        return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif sync_url.startswith("postgres://"):
+        return sync_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    return sync_url
+
+def get_async_engine():
+    global _async_engine
+    if _async_engine is None:
+        url = get_async_db_url()
+        if not url:
+            raise ValueError("PGDATABASE_URL is not set")
+        _async_engine = create_async_engine(
+            url,
+            pool_size=50,
+            max_overflow=50,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+            pool_timeout=30,
+        )
+    return _async_engine
+
+def get_async_sessionmaker():
+    global _AsyncSessionLocal
+    if _AsyncSessionLocal is None:
+        _AsyncSessionLocal = async_sessionmaker_cls(
+            bind=get_async_engine(),
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+    return _AsyncSessionLocal
+
+async def get_db_session():
+    """FastAPI dependency for async database sessions."""
+    async with get_async_sessionmaker()() as session:
+        yield session
+
 __all__ = [
     "get_db_url",
     "get_engine",
     "get_sessionmaker",
     "get_session",
+    "get_async_engine",
+    "get_async_sessionmaker",
+    "get_db_session",
 ]

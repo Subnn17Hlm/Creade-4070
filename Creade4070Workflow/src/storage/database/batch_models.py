@@ -7,6 +7,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
+from enum import Enum
 
 from sqlalchemy import (
     Column, String, Integer, DateTime, ForeignKey, Index, Text, JSON,
@@ -19,6 +20,23 @@ from sqlalchemy.orm import relationship, DeclarativeBase
 class Base(DeclarativeBase):
     """SQLAlchemy 2.0 声明式基类"""
     pass
+
+
+class BatchJobStatus(str, Enum):
+    """批次任务状态"""
+    CREATED = "created"
+    RUNNING = "running"
+    SUCCESS = "success"
+    PARTIAL_FAILED = "partial_failed"
+    FAILED = "failed"
+
+
+class BatchTaskStatus(str, Enum):
+    """批次任务项状态"""
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class BatchJob(Base):
