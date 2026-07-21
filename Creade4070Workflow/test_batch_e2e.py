@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 
 # 配置
-BASE_URL = "http://localhost:5000"  # 替换为实际生产 URL
+BASE_URL = "https://pvw8k2kt7t.coze.site"  # 生产环境 URL
 CSV_FILE = "test_batch_smoke.csv"
 IDEMPOTENCY_KEY = f"smoke-test-{int(time.time())}"
 
