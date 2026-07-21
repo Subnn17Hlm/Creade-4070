@@ -885,6 +885,7 @@ async function runWorkflow() {
     <input id="wm-run-id" type="text" placeholder="输入 run_id 查看运行追踪">
     <button id="wm-load-btn" class="wf-btn" onclick="loadWorkflowTrace()">加载运行记录</button>
   </div>
+  <div id="wm-error" style="display:none; margin-top: 12px; padding: 12px; background: #4d1e1e; border: 1px solid #f44; border-radius: 6px; color: #f44; font-size: 0.9rem;"></div>
   <div id="wm-container" style="display:none; margin-top: 16px;">
     <div style="display: flex; gap: 16px; height: 500px;">
       <div id="wm-flow" style="flex: 1; background: #1a1a1a; border-radius: 8px; overflow: hidden;"></div>
@@ -916,7 +917,17 @@ async function runWorkflow() {
 </style>
 <script type="text/babel">
 const { useState, useEffect, useCallback } = React;
-const ReactFlow = window.ReactFlow;
+// React Flow UMD exports to window.ReactFlow (default) and window.ReactFlow.* (named)
+const RF = window.ReactFlow || {};
+const ReactFlowComponent = RF.default || RF.ReactFlow || window.ReactFlow;
+const Background = RF.Background || window.ReactFlowBackground;
+const Controls = RF.Controls || window.ReactFlowControls;
+const MiniMap = RF.MiniMap || window.ReactFlowMiniMap;
+
+// Check if ReactFlow is available
+if (!ReactFlowComponent) {
+  console.error('ReactFlow not found in window');
+}
 
 let topologyData = null;
 
@@ -972,16 +983,24 @@ function WorkflowMonitor() {
 
   return (
     <div style={{ width: '100%', height: '500px' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodeClick={onNodeClick}
-        fitView
-        nodesDraggable={false}
-        nodesConnectable={false}
-        minZoom={0.5}
-        maxZoom={1.5}
-      />
+      {ReactFlowComponent ? (
+        <ReactFlowComponent
+          nodes={nodes}
+          edges={edges}
+          onNodeClick={onNodeClick}
+          fitView
+          nodesDraggable={false}
+          nodesConnectable={false}
+          minZoom={0.5}
+          maxZoom={1.5}
+        >
+          {Background && <Background />}
+          {Controls && <Controls />}
+          {MiniMap && <MiniMap />}
+        </ReactFlowComponent>
+      ) : (
+        <div style={{ padding: '20px', color: '#f44' }}>React Flow 未加载，请刷新页面重试</div>
+      )}
     </div>
   );
 }
@@ -993,17 +1012,26 @@ function getStatusColor(status) {
 
 async function loadWorkflowTrace() {
   const runId = document.getElementById('wm-run-id').value.trim();
-  if (!runId) { alert('请输入 run_id'); return; }
+  if (!runId) {
+    const errorDiv = document.getElementById('wm-error');
+    errorDiv.style.display = 'block';
+    errorDiv.textContent = '请输入 run_id';
+    return;
+  }
 
   const container = document.getElementById('wm-container');
   container.style.display = 'block';
+  const errorDiv = document.getElementById('wm-error');
+  errorDiv.style.display = 'none';
 
   try {
     const res = await fetch(`/api/runs/${runId}/trace`);
     const data = await res.json();
 
     if (data.error) {
-      alert('加载失败: ' + data.error);
+      const errorDiv = document.getElementById('wm-error');
+      errorDiv.style.display = 'block';
+      errorDiv.textContent = '加载失败: ' + (data.message || data.error);
       return;
     }
 
@@ -1029,8 +1057,16 @@ async function loadWorkflowTrace() {
       animated: stateMap[e.source]?.status === 'running',
     }));
 
+    // Hide error message on success
+    document.getElementById('wm-error').style.display = 'none';
+
+    if (!ReactFlowComponent) {
+      document.getElementById('wm-flow').innerHTML = '<div style="padding:20px;color:#f44;">React Flow 未加载，请刷新页面重试</div>';
+      return;
+    }
+
     ReactDOM.render(
-      <ReactFlow
+      <ReactFlowComponent
         nodes={flowNodes}
         edges={flowEdges}
         onNodeClick={(event, node) => {
@@ -1052,11 +1088,17 @@ async function loadWorkflowTrace() {
         nodesConnectable={false}
         minZoom={0.5}
         maxZoom={1.5}
-      />,
+      >
+        {Background && <Background />}
+        {Controls && <Controls />}
+        {MiniMap && <MiniMap />}
+      </ReactFlowComponent>,
       document.getElementById('wm-flow')
     );
   } catch (e) {
-    alert('加载失败: ' + e.message);
+    const errorDiv = document.getElementById('wm-error');
+    errorDiv.style.display = 'block';
+    errorDiv.textContent = '加载失败: ' + e.message;
   }
 }
 
