@@ -20,7 +20,7 @@ def get_db_url() -> str:
     """Build database URL from environment. Returns empty string if not configured."""
     url = os.getenv("PGDATABASE_URL") or ""
     if url is not None and url != "":
-        logger.info(f"Got PGDATABASE_URL from environment (length: {len(url)})")
+        print(f"[DB] Got PGDATABASE_URL from environment (length: {len(url)})", flush=True)
         return url
     # Try to load from workload identity
     try:
@@ -31,11 +31,11 @@ def get_db_url() -> str:
         for env_var in env_vars:
             if env_var.key == "PGDATABASE_URL":
                 url = env_var.value.replace("'", "'\\''")
-                logger.info(f"Got PGDATABASE_URL from workload identity (length: {len(url)})")
+                print(f"[DB] Got PGDATABASE_URL from workload identity (length: {len(url)})", flush=True)
                 return url
     except Exception as e:
-        logger.warning(f"Failed to get PGDATABASE_URL from workload identity: {e}")
-    logger.error("PGDATABASE_URL not found in environment or workload identity")
+        print(f"[DB] Failed to get PGDATABASE_URL from workload identity: {e}", flush=True)
+    print("[DB] ERROR: PGDATABASE_URL not found in environment or workload identity", flush=True)
     return ""
 _engine = None
 _SessionLocal = None
@@ -95,24 +95,27 @@ _AsyncSessionLocal = None
 def get_async_db_url() -> str:
     """Convert sync DB URL to async URL for PostgreSQL."""
     sync_url = get_db_url()
+    print(f"[DB-ASYNC] get_db_url() returned (length: {len(sync_url)})", flush=True)
     if not sync_url:
-        logger.error("get_db_url() returned empty string - PGDATABASE_URL not set")
+        print("[DB-ASYNC] ERROR: sync_url is empty", flush=True)
         return ""
     
     # Convert postgresql:// to postgresql+asyncpg://
     if sync_url.startswith("postgresql://"):
         async_url = sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        print(f"[DB-ASYNC] Converted postgresql:// to postgresql+asyncpg:// (length: {len(async_url)})", flush=True)
     elif sync_url.startswith("postgres://"):
         async_url = sync_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        print(f"[DB-ASYNC] Converted postgres:// to postgresql+asyncpg:// (length: {len(async_url)})", flush=True)
     elif sync_url.startswith("postgresql+asyncpg://"):
         # Already async URL
         async_url = sync_url
+        print(f"[DB-ASYNC] URL already in asyncpg format (length: {len(async_url)})", flush=True)
     else:
         # Unknown format, log and try to use as-is
-        logger.warning(f"Unknown database URL format: {sync_url[:50]}...")
+        print(f"[DB-ASYNC] WARNING: Unknown database URL format: {sync_url[:50]}... (length: {len(sync_url)})", flush=True)
         async_url = sync_url
     
-    logger.info(f"Async database URL configured successfully (length: {len(async_url)})")
     return async_url
 
 def get_async_engine():
