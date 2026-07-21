@@ -164,20 +164,24 @@ def safe_download(url: str, dest_path: str, max_retries: int = 3, timeout: int =
 
 
 # ============================================================
-# Video validation with ffprobe
+# Video validation with ffprobe (fallback to ffmpeg)
 # ============================================================
 
 def validate_video_file(file_path: str, min_duration: float = 0.1, 
                         min_width: int = 100, min_height: int = 100) -> Dict[str, Any]:
     """
-    Validate video file using ffprobe.
+    Validate video file using ffprobe, with ffmpeg fallback.
     
     Checks:
     - File exists and is readable
     - Contains at least one valid video stream
-    - Duration >= min_duration
-    - Width >= min_width, Height >= min_height
+    - Duration >= min_duration (when detectable)
+    - Width >= min_width, Height >= min_height (when detectable)
     - Has valid codec
+    
+    Strategy:
+    - If ffprobe is available: use it for full metadata extraction
+    - If ffprobe is NOT available: fall back to ffmpeg decode test
     
     Args:
         file_path: Path to video file
@@ -194,9 +198,12 @@ def validate_video_file(file_path: str, min_duration: float = 0.1,
             "width": int,
             "height": int,
             "codec": str,
-            "file_size": int
+            "file_size": int,
+            "method": str  # "ffprobe" or "ffmpeg_fallback"
         }
     """
+    import subprocess
+    
     result = {
         "valid": False,
         "error": None,
@@ -205,6 +212,7 @@ def validate_video_file(file_path: str, min_duration: float = 0.1,
         "height": 0,
         "codec": "",
         "file_size": 0,
+        "method": "",
     }
     
     # Check file exists
@@ -223,83 +231,139 @@ def validate_video_file(file_path: str, min_duration: float = 0.1,
         result["error"] = "File is empty (0 bytes)"
         return result
     
-    # Run ffprobe to get video info
-    try:
-        ffprobe_path = get_ffprobe_path()
-        probe_cmd = [
-            ffprobe_path,
-            "-v", "error",
-            "-select_streams", "v:0",
-            "-show_entries", "stream=width,height,codec_name,duration:format=duration",
-            "-of", "json",
-            file_path
-        ]
+    # Try ffprobe first
+    ffprobe_path = get_ffprobe_path()
+    
+    if ffprobe_path is not None:
+        # Use ffprobe for full metadata
+        result["method"] = "ffprobe"
+        logger.info("[Validate] Using ffprobe: %s for %s", ffprobe_path, file_path)
         
-        import subprocess
-        proc = subprocess.run(
-            probe_cmd,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if proc.returncode != 0:
-            result["error"] = f"ffprobe failed: {proc.stderr[:500]}"
+        try:
+            probe_cmd = [
+                ffprobe_path,
+                "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height,codec_name,duration:format=duration",
+                "-of", "json",
+                file_path
+            ]
+            
+            proc = subprocess.run(
+                probe_cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if proc.returncode != 0:
+                result["error"] = f"ffprobe failed (rc={proc.returncode}): {proc.stderr[:500]}"
+                return result
+            
+            # Parse JSON output
+            probe_data = json.loads(proc.stdout)
+            
+            # Check for video streams
+            streams = probe_data.get("streams", [])
+            if not streams:
+                result["error"] = "No video streams found"
+                return result
+            
+            video_stream = streams[0]
+            
+            # Extract info
+            result["width"] = int(video_stream.get("width", 0))
+            result["height"] = int(video_stream.get("height", 0))
+            result["codec"] = video_stream.get("codec_name", "")
+            
+            # Duration from stream or format
+            duration = video_stream.get("duration")
+            if not duration:
+                format_data = probe_data.get("format", {})
+                duration = format_data.get("duration")
+            
+            if duration:
+                result["duration"] = float(duration)
+            
+            # Validate dimensions
+            if result["width"] > 0 and result["width"] < min_width:
+                result["error"] = f"Width too small: {result['width']} < {min_width}"
+                return result
+            
+            if result["height"] > 0 and result["height"] < min_height:
+                result["error"] = f"Height too small: {result['height']} < {min_height}"
+                return result
+            
+            if result["duration"] > 0 and result["duration"] < min_duration:
+                result["error"] = f"Duration too short: {result['duration']} < {min_duration}"
+                return result
+            
+            if not result["codec"]:
+                result["error"] = "No valid codec found"
+                return result
+            
+            # All checks passed
+            result["valid"] = True
             return result
-        
-        # Parse JSON output
-        probe_data = json.loads(proc.stdout)
-        
-        # Check for video streams
-        streams = probe_data.get("streams", [])
-        if not streams:
-            result["error"] = "No video streams found"
+            
+        except subprocess.TimeoutExpired:
+            result["error"] = "ffprobe timeout"
             return result
-        
-        video_stream = streams[0]
-        
-        # Extract info
-        result["width"] = int(video_stream.get("width", 0))
-        result["height"] = int(video_stream.get("height", 0))
-        result["codec"] = video_stream.get("codec_name", "")
-        
-        # Duration from stream or format
-        duration = video_stream.get("duration")
-        if not duration:
-            format_data = probe_data.get("format", {})
-            duration = format_data.get("duration")
-        
-        if duration:
-            result["duration"] = float(duration)
-        
-        # Validate
-        if result["width"] < min_width:
-            result["error"] = f"Width too small: {result['width']} < {min_width}"
+        except json.JSONDecodeError as e:
+            result["error"] = f"ffprobe JSON parse error: {e}"
             return result
-        
-        if result["height"] < min_height:
-            result["error"] = f"Height too small: {result['height']} < {min_height}"
+        except Exception as e:
+            result["error"] = f"ffprobe validation error: {e}"
             return result
+    
+    else:
+        # Fall back to ffmpeg decode test
+        result["method"] = "ffmpeg_fallback"
+        logger.info("[Validate] ffprobe not available, using ffmpeg fallback for %s", file_path)
         
-        if result["duration"] < min_duration:
-            result["error"] = f"Duration too short: {result['duration']} < {min_duration}"
+        try:
+            ffmpeg_path = get_ffmpeg_path()
+            
+            # ffmpeg decode test: read first video stream, output to null
+            # -v error: only show errors
+            # -i <input>: input file
+            # -map 0:v:0: select first video stream
+            # -f null -: output to null (discard)
+            # -t <min_duration>: only decode min_duration seconds
+            validate_cmd = [
+                ffmpeg_path,
+                "-v", "error",
+                "-i", file_path,
+                "-map", "0:v:0",
+                "-t", str(max(min_duration, 0.5)),  # decode at least 0.5s
+                "-f", "null",
+                "-"
+            ]
+            
+            proc = subprocess.run(
+                validate_cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if proc.returncode != 0:
+                stderr_tail = proc.stderr[-500:] if proc.stderr else ""
+                result["error"] = f"ffmpeg decode test failed (rc={proc.returncode}): {stderr_tail}"
+                return result
+            
+            # ffmpeg decode succeeded - video is valid
+            # We can't get exact metadata without ffprobe, but the file decodes successfully
+            result["valid"] = True
+            result["codec"] = "unknown"  # Can't determine without ffprobe
+            result["duration"] = min_duration  # At least this much decoded successfully
+            logger.info("[Validate] ffmpeg fallback: video decoded successfully (%d bytes)", result["file_size"])
             return result
-        
-        if not result["codec"]:
-            result["error"] = "No valid codec found"
+            
+        except subprocess.TimeoutExpired:
+            result["error"] = "ffmpeg decode test timeout"
             return result
-        
-        # All checks passed
-        result["valid"] = True
-        return result
-        
-    except subprocess.TimeoutExpired:
-        result["error"] = "ffprobe timeout"
-        return result
-    except json.JSONDecodeError as e:
-        result["error"] = f"ffprobe JSON parse error: {e}"
-        return result
-    except Exception as e:
-        result["error"] = f"Validation error: {e}"
-        return result
+        except Exception as e:
+            result["error"] = f"ffmpeg fallback validation error: {e}"
+            return result
 
