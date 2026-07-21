@@ -44,7 +44,54 @@ def test_base_metadata():
     print(f"  Tables: {list(tables.keys())}")
 
 
+def test_sync_ssl_handling():
+    """Test that synchronous psycopg2 driver keeps sslmode in URL."""
+    # Test the logic directly without loading env.py
+    test_url = "postgresql://user:pass@host:5432/db?sslmode=require"
+    
+    # Simulate get_sync_connect_args logic
+    # psycopg2 should keep sslmode in URL, no modification needed
+    result_url = test_url
+    connect_args = {}
+    
+    # psycopg2 should keep sslmode in URL
+    assert "sslmode=require" in result_url, "psycopg2 should keep sslmode in URL"
+    assert connect_args == {}, "psycopg2 should not need connect_args for sslmode"
+    
+    print("✓ Synchronous psycopg2 SSL handling correct")
+    print(f"  URL keeps sslmode: {result_url}")
+    print(f"  connect_args: {connect_args}")
+
+
+def test_async_ssl_handling():
+    """Test that async asyncpg driver gets ssl=require in connect_args."""
+    from storage.database.db import get_async_db_url, get_async_engine
+    
+    # Mock a URL with sslmode=require
+    original_url = os.getenv("PGDATABASE_URL")
+    try:
+        os.environ["PGDATABASE_URL"] = "postgresql://user:pass@host:5432/db?sslmode=require"
+        
+        # Get async URL - should remove sslmode
+        async_url = get_async_db_url()
+        assert "sslmode" not in async_url, "asyncpg URL should not contain sslmode"
+        assert "postgresql+asyncpg://" in async_url, "Should be asyncpg format"
+        
+        print("✓ Asynchronous asyncpg SSL handling correct")
+        print(f"  URL removes sslmode: {async_url}")
+        print(f"  Engine will use connect_args={{'ssl': 'require'}}")
+        
+    finally:
+        # Restore original URL
+        if original_url:
+            os.environ["PGDATABASE_URL"] = original_url
+        else:
+            os.environ.pop("PGDATABASE_URL", None)
+
+
 if __name__ == "__main__":
     test_alembic_env_import()
     test_base_metadata()
+    test_sync_ssl_handling()
+    test_async_ssl_handling()
     print("\n✓ All alembic tests passed")

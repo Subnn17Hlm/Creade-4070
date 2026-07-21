@@ -44,17 +44,15 @@ def get_url():
     return config.get_main_option("sqlalchemy.url")
 
 
-def get_connect_args(url):
-    """Extract SSL configuration from URL for asyncpg/psycopg2 compatibility."""
-    connect_args = {}
+def get_sync_connect_args(url):
+    """Extract SSL configuration for synchronous psycopg2 driver (used by Alembic).
     
-    # Check if URL contains sslmode=require (Neon/PostgreSQL)
-    if "sslmode=require" in url:
-        connect_args["ssl"] = "require"
-        # Remove sslmode parameter from URL (not supported by asyncpg)
-        url = url.replace("?sslmode=require", "").replace("&sslmode=require", "")
-    
-    return url, connect_args
+    psycopg2 supports sslmode in URL or via connect_args.
+    We keep sslmode in URL for simplicity and compatibility.
+    """
+    # psycopg2 can handle sslmode=require in URL directly
+    # No need to extract or modify - just return URL as-is
+    return url, {}
 
 
 def run_migrations_offline() -> None:
@@ -89,12 +87,12 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    # Get URL and extract SSL configuration
+    # Get URL for synchronous psycopg2 driver
     url = get_url()
-    url, connect_args = get_connect_args(url)
+    url, connect_args = get_sync_connect_args(url)
     configuration["sqlalchemy.url"] = url
     
-    # Add connect_args for SSL support (Neon/asyncpg compatibility)
+    # Add connect_args if needed (psycopg2 can use sslmode in URL directly)
     if connect_args:
         configuration["connect_args"] = connect_args
     
