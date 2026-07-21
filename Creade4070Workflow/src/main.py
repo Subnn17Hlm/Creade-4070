@@ -480,6 +480,25 @@ async def http_run(request: Request) -> Dict[str, Any]:
             if isinstance(quality_report, dict):
                 quality_status = quality_report.get("status")
             run_status = "success" if result.get("status") == "success" else "failed"
+            
+            # 清洗 URL - 在返回前递归清洗整个响应对象
+            from utils.media_uploader import _clean_url
+            def clean_urls_recursive(obj):
+                if isinstance(obj, str):
+                    return _clean_url(obj)
+                elif isinstance(obj, dict):
+                    return {k: clean_urls_recursive(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [clean_urls_recursive(item) for item in obj]
+                return obj
+            result = clean_urls_recursive(result)
+            
+            # 断言 final_video_url 格式正确
+            final_video_url = result.get("final_video_url")
+            if final_video_url:
+                assert not final_video_url.startswith("["), f"final_video_url should not start with '[': {final_video_url}"
+                assert "](" not in final_video_url, f"final_video_url should not contain '](': {final_video_url}"
+        
         return result
 
     except json.JSONDecodeError as e:
@@ -508,13 +527,19 @@ async def http_run(request: Request) -> Dict[str, Any]:
             }
         )
     finally:
-        # 持久化运行追踪
+        # 持久化运行追踪 - 使用 result 中的数据而不是从文件读取
         try:
-            if script_id and trace_file_path:
-                from graphs.node_trace_utils import read_node_trace
-                import os
-                run_dir = os.path.dirname(trace_file_path)
-                trace_entries = read_node_trace(run_dir)
+            if script_id:
+                # 从 result 中提取 node_trace_entries
+                trace_entries = []
+                if isinstance(result, dict):
+                    quality_report = result.get("quality_report") or {}
+                    if isinstance(quality_report, dict):
+                        diagnostics = quality_report.get("script_flow_diagnostics") or {}
+                        if isinstance(diagnostics, dict):
+                            trace_entries = diagnostics.get("node_trace_entries") or []
+                
+                # 持久化追踪
                 persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status)
         except Exception as e:
             logger.warning("Failed to persist run trace: %s", e)
