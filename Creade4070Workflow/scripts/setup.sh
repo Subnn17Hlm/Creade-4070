@@ -127,8 +127,13 @@ if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
 fi
 
 # Run migrations (idempotent - only applies pending migrations)
-echo "[setup] Running alembic upgrade head..."
-if alembic upgrade head; then
+echo "[setup] Running database migrations..."
+
+# Use python -m alembic to ensure it works even when alembic executable is not in PATH
+# Set PYTHONPATH to include PIP_TARGET and project src directory
+MIGRATION_PYTHONPATH="${PIP_TARGET}:${PROJECT_DIR}/src:${PYTHONPATH:-}"
+
+if PYTHONPATH="${MIGRATION_PYTHONPATH}" python -m alembic -c "${PROJECT_DIR}/alembic.ini" upgrade head; then
   echo "[setup] ✓ Database migrations completed successfully"
 else
   MIGRATION_EXIT_CODE=$?
