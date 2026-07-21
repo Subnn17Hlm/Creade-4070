@@ -77,7 +77,8 @@ def _sanitize_trace_data(data: dict) -> dict:
 
 
 def _build_trace_summary(run_id: str, script_id: str, trace_entries: list[dict], 
-                         status: str, quality_status: Optional[str] = None) -> dict:
+                         status: str, quality_status: Optional[str] = None,
+                         executed_nodes: Optional[list[str]] = None) -> dict:
     """构建追踪摘要"""
     # 提取节点信息
     nodes = []
@@ -132,15 +133,37 @@ def _build_trace_summary(run_id: str, script_id: str, trace_entries: list[dict],
             ns["status"] = "failed"
             ns["completed_at"] = entry.get("timestamp") or datetime.now().isoformat()
             ns["error_message"] = f"{entry.get('error_type', 'Unknown')}: {entry.get('error_message', '')}"
+        
+        elif not phase:
+            # 没有 phase 字段的记录，如果存在且无错误，判定为 success
+            if ns["status"] == "pending" and not ns.get("error_message"):
+                ns["status"] = "success"
+                ns["completed_at"] = entry.get("timestamp") or datetime.now().isoformat()
+    
+    # 对于 executed_nodes 中存在但 trace_entries 中没有的节点，补充 success 状态
+    if executed_nodes and status == "success":
+        for node_name in executed_nodes:
+            if node_name not in node_status:
+                node_status[node_name] = {
+                    "node": node_name,
+                    "status": "success",
+                    "started_at": None,
+                    "completed_at": None,
+                    "duration_ms": None,
+                    "input_summary": {},
+                    "output_summary": {},
+                    "error_message": None,
+                }
     
     # 将节点状态转换为列表
     nodes = list(node_status.values())
     
     # 对于 quality_check，根据 quality_report.status 判断最终状态
     for node in nodes:
-        if node["node"] == "quality_check" and node["status"] == "running":
+        if node["node"] == "quality_check" and node["status"] in ("running", "pending"):
             if quality_status == "success":
                 node["status"] = "success"
+                node["completed_at"] = node["completed_at"] or datetime.now().isoformat()
             elif quality_status:
                 node["status"] = "failed"
     
@@ -246,9 +269,10 @@ def load_trace_from_tos(run_id: str) -> Optional[dict]:
 
 
 def persist_run_trace(run_id: str, script_id: str, trace_entries: list[dict],
-                      status: str, quality_status: Optional[str] = None) -> dict:
+                      status: str, quality_status: Optional[str] = None,
+                      executed_nodes: Optional[list[str]] = None) -> dict:
     """持久化运行追踪"""
-    summary = _build_trace_summary(run_id, script_id, trace_entries, status, quality_status)
+    summary = _build_trace_summary(run_id, script_id, trace_entries, status, quality_status, executed_nodes)
     
     # 持久化到本地
     local_path = persist_trace_to_local(run_id, summary)
@@ -280,6 +304,7 @@ def get_trace(run_id: str) -> Optional[dict]:
                     entries,
                     mapping.get("status", "unknown"),
                     mapping.get("quality_status"),
+                    mapping.get("executed_nodes"),
                 )
     
     # 2. 本地缓存

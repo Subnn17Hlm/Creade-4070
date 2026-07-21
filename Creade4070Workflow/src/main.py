@@ -538,9 +538,10 @@ async def http_run(request: Request) -> Dict[str, Any]:
                         diagnostics = quality_report.get("script_flow_diagnostics") or {}
                         if isinstance(diagnostics, dict):
                             trace_entries = diagnostics.get("node_trace_entries") or []
+                    executed_nodes = result.get("executed_nodes") or []
                 
                 # 持久化追踪
-                persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status)
+                persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status, executed_nodes)
         except Exception as e:
             logger.warning("Failed to persist run trace: %s", e)
         
@@ -1029,7 +1030,7 @@ function WorkflowMonitor() {
         return;
       }
       const stateMap = {};
-      (data.nodes || []).forEach(ns => { stateMap[ns.id] = ns; });
+      (data.nodes || []).forEach(ns => { stateMap[ns.node || ns.id] = ns; });
       setNodeStates(stateMap);
       setError(null);
     } catch (e) {
