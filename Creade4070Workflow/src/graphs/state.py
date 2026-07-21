@@ -33,6 +33,7 @@ class GlobalState(TypedDict, total=False):
     platform: str
     bgm_url: str
     material_csv: str
+    run_id: str
     run_dir: str
 
     # Node0 - 文案来源选择

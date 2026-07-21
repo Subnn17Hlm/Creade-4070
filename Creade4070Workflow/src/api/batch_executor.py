@@ -204,9 +204,11 @@ class BatchExecutor:
                     locked_task.run_id = run_id
                     await task_db.commit()
 
-                    # Prepare input for workflow
+                    # Prepare input for workflow - include run_id for directory isolation
                     workflow_input = {
                         "script_text": task.input_data.get("script_text", ""),
+                        "run_id": str(run_id),  # Pass run_id to workflow for directory isolation
+                        "script_source": "manual",  # Batch tasks use manual script mode
                     }
 
                     # Create context for this run

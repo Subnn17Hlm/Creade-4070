@@ -28,6 +28,8 @@ from graphs.shared_utils import (
     generate_contact_sheet,
     get_media_duration,
     run_ffmpeg,
+    safe_download,
+    validate_video_file,
 )
 from utils.ffmpeg_utils import get_ffmpeg_path, get_ffprobe_path
 from utils.media_uploader import upload_local_file
@@ -37,8 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def _download_bgm(bgm_url: str, temp_dir: str) -> str:
-    """下载BGM到本地，支持URL和本地路径"""
-    import requests
+    """下载BGM到本地，支持URL和本地路径。使用安全下载（.part文件 + 校验）"""
     local_bgm = os.path.join(temp_dir, "bgm.mp3")
     
     # 检查是否是本地路径
@@ -55,11 +56,8 @@ def _download_bgm(bgm_url: str, temp_dir: str) -> str:
         shutil.copy2(workspace_path, local_bgm)
         return local_bgm
     
-    # URL路径，下载
-    resp = requests.get(bgm_url, timeout=30)
-    resp.raise_for_status()
-    with open(local_bgm, "wb") as f:
-        f.write(resp.content)
+    # URL路径，使用安全下载
+    safe_download(bgm_url, local_bgm, max_retries=3, timeout=30)
     return local_bgm
 
 
@@ -612,20 +610,37 @@ def final_composition_node(
 
     try:
         # 获取clip文件列表 - 只包含active clips（跳过visual continuation）
+        # 同时验证每个clip文件的有效性
         clip_files = []
+        invalid_clips = []
         for s in timeline:
             clip_path = s.get("clip_path", "")
             is_visual_continuation = s.get("visual_continuation", False)
             # 只包含有clip_path且不是visual continuation的条目
-            if clip_path and not is_visual_continuation and os.path.exists(clip_path):
+            if clip_path and not is_visual_continuation:
+                if not os.path.exists(clip_path):
+                    logger.warning("[Node7] clip文件不存在: %s", clip_path)
+                    invalid_clips.append({"path": clip_path, "error": "file_not_found"})
+                    continue
+                
+                # 使用ffprobe验证clip文件有效性
+                clip_validation = validate_video_file(clip_path, min_duration=0.1)
+                if not clip_validation["valid"]:
+                    error_msg = f"clip文件无效: {clip_validation['error']}"
+                    logger.error("[Node7] %s: %s", clip_path, error_msg)
+                    invalid_clips.append({"path": clip_path, "error": error_msg})
+                    continue
+                
                 clip_files.append(clip_path)
-            elif clip_path and not is_visual_continuation:
-                logger.warning("[Node7] clip文件不存在: %s", clip_path)
 
         if not clip_files:
-            raise RuntimeError("无可用clip文件")
+            error_detail = f"无效clip数: {len(invalid_clips)}, 详情: {invalid_clips[:3]}"
+            raise RuntimeError(f"无可用clip文件 ({error_detail})")
         
-        logger.info("[Node7] 活跃clip数: %d/%d", len(clip_files), len(timeline))
+        if invalid_clips:
+            logger.warning("[Node7] 跳过 %d 个无效clip: %s", len(invalid_clips), invalid_clips[:3])
+        
+        logger.info("[Node7] 活跃clip数: %d/%d (跳过 %d 个无效clip)", len(clip_files), len(timeline), len(invalid_clips))
 
         # 1. 拼接素材片段（concat filter）- 统一缩放到1080x1920
         concat_path = os.path.join(temp_dir, "concat.mp4")

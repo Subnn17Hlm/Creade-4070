@@ -61,14 +61,23 @@ def script_source_router_node(
     ctx = runtime.context
     script_source = state.get("script_source", "")
     script_id = state.get("script_id", "")
-    run_id = state.get("run_id", "")
-
-    # 创建运行目录 - 使用 run_id 隔离每次运行
+    
+    # Read run_id from state first, then fallback to ctx.run_id
+    # This ensures batch tasks (which pass run_id in state) and HTTP requests (which use ctx.run_id) both work
+    run_id = state.get("run_id", "") or getattr(ctx, "run_id", "") or ""
+    
+    # Create run directory - use run_id for isolation between runs
+    # Fallback to script_id for backward compatibility
     if run_id:
         run_dir = ensure_dir(os.path.join(RUNS_BASE, run_id))
-    else:
-        # 回退到 script_id（兼容旧版本）
+    elif script_id:
         run_dir = ensure_dir(os.path.join(RUNS_BASE, script_id))
+    else:
+        # Last resort: generate a unique ID to prevent shared directory
+        import uuid
+        fallback_id = str(uuid.uuid4())[:8]
+        run_dir = ensure_dir(os.path.join(RUNS_BASE, f"unknown_{fallback_id}"))
+        logger.warning("[Node0a] No run_id or script_id, using fallback: %s", run_dir)
 
     logger.info("[Node0a] script_source=%s, script_id=%s, run_id=%s, run_dir=%s", script_source, script_id, run_id, run_dir)
 
@@ -101,4 +110,5 @@ def script_source_router_node(
         "platform": state.get("platform", "") or "",
         "bgm_url": bgm_url,
         "run_dir": run_dir,
+        "run_id": run_id,  # Pass run_id to state for downstream nodes
     }

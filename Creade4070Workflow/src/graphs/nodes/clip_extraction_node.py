@@ -14,7 +14,7 @@ from langgraph.runtime import Runtime
 from coze_coding_utils.runtime_ctx.context import Context
 
 from graphs.state import ClipExtractionInput, ClipExtractionOutput
-from graphs.shared_utils import ensure_dir, get_media_duration, run_ffmpeg
+from graphs.shared_utils import ensure_dir, get_media_duration, run_ffmpeg, safe_download, validate_video_file
 from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
@@ -232,7 +232,7 @@ def clip_extraction_node(
         effective_end = float(effective_end_raw) if effective_end_raw is not None else None
         full_play_required = material_config.get("full_play_required", False)
         
-        # 先下载素材到本地文件
+        # 先下载素材到本地文件（使用安全下载：.part文件 + 校验）
         materials_dir = ensure_dir(os.path.join(run_dir, "materials"))
         local_material_path = os.path.join(materials_dir, f"{material_id or f'material_{i+1}'}.mp4")
         
@@ -241,19 +241,11 @@ def clip_extraction_node(
         download_error = ""
         
         try:
-            import httpx
             logger.info("[Node5] 片段%d: 下载素材到本地: %s", i + 1, material_url[:100])
-            with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-                response = client.get(material_url)
-                download_status = response.status_code
-                if download_status == 200:
-                    with open(local_material_path, 'wb') as f:
-                        f.write(response.content)
-                    downloaded_size = len(response.content)
-                    logger.info("[Node5] 片段%d: 下载成功, size=%d", i + 1, downloaded_size)
-                else:
-                    download_error = f"HTTP {download_status}: {response.text[:500]}"
-                    logger.error("[Node5] 片段%d: 下载失败: %s", i + 1, download_error)
+            safe_download(material_url, local_material_path, max_retries=3, timeout=60)
+            download_status = 200
+            downloaded_size = os.path.getsize(local_material_path)
+            logger.info("[Node5] 片段%d: 下载成功, size=%d", i + 1, downloaded_size)
         except Exception as e:
             download_error = str(e)
             logger.error("[Node5] 片段%d: 下载异常: %s", i + 1, download_error)
@@ -266,6 +258,33 @@ def clip_extraction_node(
                 "sentence_id": sentence_id,
                 "material_id": material_id,
                 "status": "download_failed",
+                "error": error_msg,
+                "bucket": bucket,
+                "object_key": object_key,
+                "source_url": material_url,
+                "signed_url_generated": signed_url_generated,
+                "download_status": download_status,
+                "downloaded_size": downloaded_size,
+                "source_duration": 0,
+                "source_start": 0,
+                "source_end": 0,
+                "ffmpeg_returncode": None,
+                "ffmpeg_stderr": "",
+                "clip_path": "",
+                "visual_continuation": False,
+                "burned_in_text": burned_info,
+            })
+            continue
+        
+        # 验证下载的视频文件有效性（使用ffprobe）
+        video_validation = validate_video_file(local_material_path, min_duration=0.1)
+        if not video_validation["valid"]:
+            error_msg = f"下载的视频文件无效: {video_validation['error']}"
+            logger.error("[Node5] 片段%d: %s", i + 1, error_msg)
+            clip_records.append({
+                "sentence_id": sentence_id,
+                "material_id": material_id,
+                "status": "invalid_video",
                 "error": error_msg,
                 "bucket": bucket,
                 "object_key": object_key,
@@ -395,6 +414,34 @@ def clip_extraction_node(
             ])
             
             run_ffmpeg(cmd, timeout=120)
+
+            # 验证生成的clip文件有效性（使用ffprobe）
+            clip_validation = validate_video_file(clip_path, min_duration=0.1)
+            if not clip_validation["valid"]:
+                error_msg = f"生成的clip文件无效: {clip_validation['error']}"
+                logger.error("[Node5] 片段%d: %s", i + 1, error_msg)
+                clip_records.append({
+                    "sentence_id": sentence_id,
+                    "material_id": material_id,
+                    "status": "invalid_clip",
+                    "error": error_msg,
+                    "bucket": bucket,
+                    "object_key": object_key,
+                    "source_url": material_url,
+                    "signed_url_generated": signed_url_generated,
+                    "download_status": download_status,
+                    "downloaded_size": downloaded_size,
+                    "source_duration": round(source_duration, 2),
+                    "source_start": round(clip_start, 2),
+                    "source_end": round(clip_end, 2),
+                    "ffmpeg_returncode": None,
+                    "ffmpeg_stderr": "",
+                    "clip_path": "",
+                    "visual_continuation": False,
+                    "burned_in_text": burned_info,
+                })
+                has_issues = True
+                continue
 
             actual_dur = get_media_duration(clip_path)
             clip_paths.append(clip_path)
