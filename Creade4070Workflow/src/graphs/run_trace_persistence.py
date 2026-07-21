@@ -151,7 +151,8 @@ def _build_trace_summary(run_id: str, script_id: str, trace_entries: list[dict],
                 ns["completed_at"] = entry.get("timestamp") or datetime.now().isoformat()
     
     # 对于 executed_nodes 中存在但 trace_entries 中没有的节点，补充 success 状态
-    if executed_nodes and status == "success":
+    # 无论 status 是什么，只要 executed_nodes 中有该节点，就补充
+    if executed_nodes:
         for node_name in executed_nodes:
             if node_name not in node_status:
                 node_status[node_name] = {
@@ -165,8 +166,29 @@ def _build_trace_summary(run_id: str, script_id: str, trace_entries: list[dict],
                     "error_message": None,
                 }
     
-    # 将节点状态转换为列表
-    nodes = list(node_status.values())
+    # 固定拓扑顺序
+    TOPOLOGY_ORDER = [
+        "manual_script",
+        "input_normalization",
+        "tts_generation",
+        "subtitle_timing",
+        "material_source_audit",
+        "material_matching",
+        "clip_extraction",
+        "timeline_assembly",
+        "final_composition",
+        "quality_check",
+    ]
+    
+    # 按固定拓扑顺序排序节点
+    def get_node_order(node_dict):
+        node_name = node_dict.get("node", "")
+        try:
+            return TOPOLOGY_ORDER.index(node_name)
+        except ValueError:
+            return len(TOPOLOGY_ORDER)  # 未知节点排在最后
+    
+    nodes = sorted(node_status.values(), key=get_node_order)
     
     # 对于 quality_check，根据 quality_report.status 判断最终状态
     for node in nodes:
