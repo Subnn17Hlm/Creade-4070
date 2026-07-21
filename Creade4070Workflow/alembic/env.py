@@ -12,8 +12,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Import base and models
-from storage.database.db import Base
-from storage.database.batch_models import BatchJob, BatchTask
+from storage.database.batch_models import Base, BatchJob, BatchTask
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
