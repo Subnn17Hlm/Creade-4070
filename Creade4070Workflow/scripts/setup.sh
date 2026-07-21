@@ -109,15 +109,8 @@ if [ ${#MISSING_FILES[@]} -gt 0 ]; then
 fi
 step_end "Step 4 completed"
 
-# Step 5: Run database migrations
-step_start "Step 5: Running database migrations..."
-
-# Check if PGDATABASE_URL is configured
-if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
-  echo "[setup] ERROR: Neither PGDATABASE_URL nor DATABASE_URL is configured"
-  echo "[setup] Database migrations cannot run without database configuration"
-  exit 1
-fi
+# Step 5: Run database migrations (if database URL is available)
+step_start "Step 5: Database migrations..."
 
 # Set PYTHONPATH to include PIP_TARGET and project src directory
 MIGRATION_PYTHONPATH="${PIP_TARGET}:${PROJECT_DIR}/src:${PYTHONPATH:-}"
@@ -132,16 +125,24 @@ if ! python -c "import alembic; print(f'[setup] alembic module loaded from: {ale
   exit 1
 fi
 
-# Run migrations (idempotent - only applies pending migrations)
-echo "[setup] Running database migrations..."
-if python -m alembic -c "${PROJECT_DIR}/alembic.ini" upgrade head; then
-  echo "[setup] ✓ Database migrations completed successfully"
+# Check if database URL is available at build time
+if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
+  echo "[setup] Database URL not available at build time"
+  echo "[setup] Migration deferred to runtime (http_run.sh)"
+  step_end "Step 5 completed (deferred to runtime)"
 else
-  MIGRATION_EXIT_CODE=$?
-  echo "[setup] ERROR: Database migration failed (exit code: $MIGRATION_EXIT_CODE)"
-  echo "[setup] Deployment cannot continue without successful migrations"
-  exit $MIGRATION_EXIT_CODE
+  echo "[setup] Database URL detected at build time"
+  # Run migrations (idempotent - only applies pending migrations)
+  echo "[setup] Running database migrations..."
+  if python -m alembic -c "${PROJECT_DIR}/alembic.ini" upgrade head; then
+    echo "[setup] ✓ Database migrations completed successfully"
+  else
+    MIGRATION_EXIT_CODE=$?
+    echo "[setup] ERROR: Database migration failed (exit code: $MIGRATION_EXIT_CODE)"
+    echo "[setup] Deployment cannot continue without successful migrations"
+    exit $MIGRATION_EXIT_CODE
+  fi
+  step_end "Step 5 completed"
 fi
-step_end "Step 5 completed"
 
 echo "[setup] $(date '+%H:%M:%S') All validation passed"
