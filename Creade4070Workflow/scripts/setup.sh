@@ -115,15 +115,26 @@ export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH:-}"
 
 # Check if alembic is available
 if ! command -v alembic &> /dev/null; then
-  echo "[setup] WARNING: alembic command not found, skipping migrations"
+  echo "[setup] ERROR: alembic command not found, cannot run migrations"
+  exit 1
+fi
+
+# Check if PGDATABASE_URL is configured
+if [ -z "$PGDATABASE_URL" ] && [ -z "$DATABASE_URL" ]; then
+  echo "[setup] ERROR: Neither PGDATABASE_URL nor DATABASE_URL is configured"
+  echo "[setup] Database migrations cannot run without database configuration"
+  exit 1
+fi
+
+# Run migrations (idempotent - only applies pending migrations)
+echo "[setup] Running alembic upgrade head..."
+if alembic upgrade head; then
+  echo "[setup] ✓ Database migrations completed successfully"
 else
-  # Run migrations (idempotent - only applies pending migrations)
-  if alembic upgrade head; then
-    echo "[setup] Database migrations completed successfully"
-  else
-    echo "[setup] WARNING: Database migration failed (exit code: $?)"
-    echo "[setup] This may be expected on first deployment or if database is not yet configured"
-  fi
+  MIGRATION_EXIT_CODE=$?
+  echo "[setup] ERROR: Database migration failed (exit code: $MIGRATION_EXIT_CODE)"
+  echo "[setup] Deployment cannot continue without successful migrations"
+  exit $MIGRATION_EXIT_CODE
 fi
 step_end "Step 5 completed"
 

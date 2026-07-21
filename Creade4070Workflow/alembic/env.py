@@ -45,6 +45,19 @@ def get_url():
     return config.get_main_option("sqlalchemy.url")
 
 
+def get_connect_args(url):
+    """Extract SSL configuration from URL for asyncpg/psycopg2 compatibility."""
+    connect_args = {}
+    
+    # Check if URL contains sslmode=require (Neon/PostgreSQL)
+    if "sslmode=require" in url:
+        connect_args["ssl"] = "require"
+        # Remove sslmode parameter from URL (not supported by asyncpg)
+        url = url.replace("?sslmode=require", "").replace("&sslmode=require", "")
+    
+    return url, connect_args
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -77,7 +90,15 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = get_url()
+    # Get URL and extract SSL configuration
+    url = get_url()
+    url, connect_args = get_connect_args(url)
+    configuration["sqlalchemy.url"] = url
+    
+    # Add connect_args for SSL support (Neon/asyncpg compatibility)
+    if connect_args:
+        configuration["connect_args"] = connect_args
+    
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
