@@ -989,6 +989,9 @@ def quality_check_node(
     # 最终状态
     failure_category = "fully_successful"
     status = "success"
+    review_required = False
+    warnings = []
+    
     if len(fail_reasons) > 0:
         if not subtitle_visible_in_final_video:
             failure_category = "subtitle_not_visible"
@@ -997,8 +1000,15 @@ def quality_check_node(
             failure_category = "needs_review"
             status = "failed"
         elif low_conf_segments >= 3:
+            # 低置信度段 >= 3 属于质量告警，不是执行失败
+            # 如果视频已成功生成，标记为 success + review_required
             failure_category = "needs_review"
-            status = "failed"
+            if final_video_path and os.path.exists(final_video_path):
+                status = "success"
+                review_required = True
+                warnings.append(f"low_confidence_segments={low_conf_segments}>=3, needs_manual_review")
+            else:
+                status = "failed"
         elif low_conf_segments > 0:
             failure_category = "low_confidence"
             status = "failed"
@@ -1250,6 +1260,8 @@ def quality_check_node(
         "quality_report": quality_report,
         "total_duration": round(video_duration, 3),
         "status": status,
+        "review_required": review_required,
+        "warnings": warnings,
         "fail_reason": "; ".join(fail_reasons) if fail_reasons else "",
         "failure_category": failure_category,
         "node_trace": ["quality_check"],

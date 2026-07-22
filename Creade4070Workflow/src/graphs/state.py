@@ -109,6 +109,8 @@ class GlobalState(TypedDict, total=False):
     # Node8 - 质量验收
     quality_report: Dict[str, Any]
     status: str
+    review_required: bool
+    warnings: List[str]
     fail_reason: str
     failure_category: str
     final_video_url: str
@@ -144,6 +146,8 @@ class GraphOutput(BaseModel):
     final_video_url: str = Field(default="", description="最终视频URL")
     total_duration: float = Field(default=0.0, description="视频总时长")
     status: str = Field(default="", description="状态：success/failed/needs_review")
+    review_required: bool = Field(default=False, description="是否需要人工复核")
+    warnings: List[str] = Field(default=[], description="质量告警列表")
     fail_reason: str = Field(default="", description="失败原因")
     run_id: str = Field(default="", description="运行ID")
     quality_report: Dict[str, Any] = Field(default={}, description="质量报告JSON")
@@ -441,6 +445,8 @@ class QualityCheckOutput(BaseModel):
     """质量验收节点输出"""
     quality_report: Dict[str, Any] = Field(..., description="质量报告")
     status: str = Field(..., description="最终状态")
+    review_required: bool = Field(default=False, description="是否需要人工复核")
+    warnings: List[str] = Field(default=[], description="质量告警列表")
     fail_reason: str = Field(default="", description="失败原因")
     failure_category: str = Field(default="", description="失败分类")
     final_video_url: str = Field(default="", description="最终视频URL")
