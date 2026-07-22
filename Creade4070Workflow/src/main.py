@@ -419,9 +419,11 @@ HEADER_X_RUN_ID = "x-run-id"
 @app.post("/run")
 async def http_run(request: Request) -> Dict[str, Any]:
     """
-    异步提交单任务运行。
-    立即返回 run_id 和 status="submitted"，工作流在后台执行。
-    前端通过 GET /api/run/{run_id}/status 轮询结果。
+    异步提交单任务运行（基于持久化批次执行机制）。
+    
+    创建仅含 1 个任务的内部批次记录，持久化 run_id 和 queued 状态后返回。
+    由 BatchExecutor 执行，前端通过 GET /api/run/{run_id}/status 轮询结果。
+    禁止依赖 HTTP 请求生命周期内的临时后台协程。
     """
     raw_body = await request.body()
     try:
@@ -452,97 +454,75 @@ async def http_run(request: Request) -> Dict[str, Any]:
         logger.error(f"JSON decode error in http_run: {e}, traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=f"Invalid JSON format, {extract_core_stack()}")
 
-    # 提取 script_id 并注册运行映射
-    script_id = payload.get("script_id") or payload.get("run_id") or run_id
-    trace_file_path = f"/tmp/runs/{script_id}/node_trace.jsonl"
-    register_run(run_id, script_id, trace_file_path)
+    # 提取 script_text
+    script_text = payload.get("script_text", "")
+    if not script_text:
+        raise HTTPException(status_code=400, detail="script_text is required")
 
-    # 创建后台任务，不等待完成
-    async def _run_workflow_background():
-        """后台运行工作流，结果存入 _run_mapping"""
-        from graphs.run_trace_persistence import update_run_status
-        bg_run_status = "failed"
-        bg_quality_status = None
-        bg_result = {}
-        try:
-            bg_result = await asyncio.wait_for(
-                service.run(payload, ctx),
-                timeout=float(TIMEOUT_SECONDS),
+    # 创建内部批次任务（持久化到数据库）
+    from storage.database.db import get_async_sessionmaker
+    from storage.database.batch_models import BatchJob, BatchTask, BatchJobStatus, BatchTaskStatus
+    from api.batch_executor import BatchExecutor
+
+    try:
+        async_session_maker = get_async_sessionmaker()
+        async with async_session_maker() as db:
+            # 创建批次任务（仅含 1 个任务）
+            batch_id = uuid.uuid4()
+            batch = BatchJob(
+                batch_id=batch_id,
+                status=BatchJobStatus.CREATED,
+                total_count=1,
+                pending_count=1,
+                running_count=0,
+                success_count=0,
+                failed_count=0,
+                concurrency=1,
+                idempotency_key=f"single-run-{run_id}",  # 幂等键
+                source_filename="single-task",
             )
-            if not bg_result:
-                bg_result = {}
-            if isinstance(bg_result, dict):
-                bg_result["run_id"] = run_id
-                quality_report = bg_result.get("quality_report") or {}
-                if isinstance(quality_report, dict):
-                    bg_quality_status = quality_report.get("status")
-                bg_run_status = "success" if bg_result.get("status") == "success" else "failed"
+            db.add(batch)
 
-                # 清洗 URL
-                from utils.media_uploader import _clean_url
-                def clean_urls_recursive(obj):
-                    if isinstance(obj, str):
-                        return _clean_url(obj)
-                    elif isinstance(obj, dict):
-                        return {k: clean_urls_recursive(v) for k, v in obj.items()}
-                    elif isinstance(obj, list):
-                        return [clean_urls_recursive(item) for item in obj]
-                    return obj
-                bg_result = clean_urls_recursive(bg_result)
-        except asyncio.TimeoutError:
-            logger.error(f"Run execution timeout after {TIMEOUT_SECONDS}s for run_id: {run_id}")
-            bg_run_status = "timeout"
-            bg_result = {"status": "timeout", "run_id": run_id,
-                         "message": f"Execution timeout: exceeded {TIMEOUT_SECONDS} seconds"}
-        except asyncio.CancelledError:
-            logger.info(f"Request cancelled for run_id: {run_id}")
-            bg_run_status = "cancelled"
-            bg_result = {"status": "cancelled", "run_id": run_id, "message": "Execution was cancelled"}
-        except Exception as e:
-            error_response = service.error_classifier.get_error_response(
-                e, {"node_name": "http_run", "run_id": run_id})
-            logger.error(
-                f"Unexpected error in http_run: [{error_response['error_code']}] "
-                f"{error_response['error_message']}, traceback: {traceback.format_exc()}",
-                exc_info=True,
+            # 创建任务项
+            task_id = uuid.uuid4()
+            task = BatchTask(
+                task_id=task_id,
+                batch_id=batch_id,
+                row_number=1,
+                external_task_id=run_id,  # 使用 run_id 作为 external_task_id
+                status=BatchTaskStatus.PENDING,
+                input_data={"script_text": script_text},
             )
-            bg_run_status = "failed"
-            bg_result = {
-                "status": "failed",
-                "run_id": run_id,
-                "error_code": error_response["error_code"],
-                "error_message": error_response["error_message"],
-            }
-        finally:
-            # 更新运行状态和结果
-            update_run_status(run_id, bg_run_status, result=bg_result,
-                              quality_status=bg_quality_status)
-            service.running_tasks.pop(run_id, None)
+            db.add(task)
+            await db.commit()
 
-            # 持久化运行追踪
-            try:
-                trace_entries = []
-                executed_nodes = []
-                if isinstance(bg_result, dict):
-                    quality_report = bg_result.get("quality_report") or {}
-                    if isinstance(quality_report, dict):
-                        diagnostics = quality_report.get("script_flow_diagnostics") or {}
-                        if isinstance(diagnostics, dict):
-                            trace_entries = diagnostics.get("node_trace_entries") or []
-                    executed_nodes = bg_result.get("executed_nodes") or []
-                persist_run_trace(run_id, script_id, trace_entries,
-                                  bg_run_status, bg_quality_status, executed_nodes)
-            except Exception as e:
-                logger.warning("Failed to persist run trace: %s", e)
-            cozeloop.flush()
+            logger.info(f"Created single-task batch: batch_id={batch_id}, task_id={task_id}, run_id={run_id}")
 
-    task = asyncio.create_task(_run_workflow_background())
-    service.running_tasks[run_id] = task
+            # 启动批次执行器（后台运行）
+            executor = BatchExecutor(service)
+
+            async def _execute_batch_background():
+                """后台执行批次任务"""
+                try:
+                    async with async_session_maker() as exec_db:
+                        await executor.start_batch(exec_db, batch_id)
+                except Exception as e:
+                    logger.error(f"Background batch execution failed: {e}", exc_info=True)
+
+            # 创建后台任务执行批次
+            bg_task = asyncio.create_task(_execute_batch_background())
+            service.running_tasks[run_id] = bg_task
+
+    except Exception as e:
+        logger.error(f"Failed to create single-task batch: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
 
     # 立即返回，不等待工作流完成
     return {
         "status": "submitted",
         "run_id": run_id,
+        "batch_id": str(batch_id),
+        "task_id": str(task_id),
         "message": "Workflow submitted successfully. Poll GET /api/run/{run_id}/status for result.",
     }
 
@@ -550,39 +530,78 @@ async def http_run(request: Request) -> Dict[str, Any]:
 @app.get("/api/run/{run_id}/status")
 async def http_get_run_status(run_id: str) -> Dict[str, Any]:
     """
-    查询单任务运行状态。
-    返回 status: submitted / running / success / failed / timeout / cancelled
+    查询单任务运行状态（从持久化数据库读取）。
+    
+    返回 status: queued / running / success / failed / timeout
     以及完成后的完整 result（包含 final_video_url 等）。
     """
-    from graphs.run_trace_persistence import get_run_mapping
-    mapping = get_run_mapping(run_id)
+    from storage.database.db import get_async_sessionmaker
+    from storage.database.batch_models import BatchTask, BatchTaskStatus
+    from sqlalchemy import select
 
-    if mapping is None:
-        raise HTTPException(status_code=404, detail=f"run_id {run_id} not found")
+    try:
+        async_session_maker = get_async_sessionmaker()
+        async with async_session_maker() as db:
+            # 通过 external_task_id (即 run_id) 查找任务
+            result = await db.execute(
+                select(BatchTask).where(BatchTask.external_task_id == run_id)
+            )
+            task = result.scalar_one_or_none()
 
-    status = mapping.get("status", "unknown")
-    response = {
-        "run_id": run_id,
-        "status": status,
-        "created_at": mapping.get("created_at"),
-    }
+            if task is None:
+                raise HTTPException(status_code=404, detail=f"run_id {run_id} not found")
 
-    # 如果已完成，返回完整结果
-    if status in ("success", "failed", "timeout", "cancelled"):
-        result = mapping.get("result") or {}
-        response["result"] = result
-        response["completed_at"] = mapping.get("completed_at")
-        if mapping.get("quality_status"):
-            response["quality_status"] = mapping["quality_status"]
-    elif status == "running":
-        # 检查任务是否仍在运行
-        task = service.running_tasks.get(run_id)
-        if task is None or task.done():
-            # 任务已结束但状态未更新（异常情况）
-            response["status"] = "unknown"
-            response["message"] = "Task completed but status not updated"
+            # 映射数据库状态到 API 状态
+            status_map = {
+                BatchTaskStatus.PENDING: "queued",
+                BatchTaskStatus.RUNNING: "running",
+                BatchTaskStatus.SUCCESS: "success",
+                BatchTaskStatus.FAILED: "failed",
+            }
+            status = status_map.get(task.status, "unknown")
 
-    return response
+            response = {
+                "run_id": run_id,
+                "status": status,
+                "task_id": str(task.task_id),
+                "created_at": task.created_at.isoformat() if task.created_at else None,
+            }
+
+            # 如果已完成，返回完整结果
+            if status in ("success", "failed", "timeout"):
+                result_data = task.output_data or {}
+                response["result"] = result_data
+                response["completed_at"] = task.completed_at.isoformat() if task.completed_at else None
+                if task.final_video_url:
+                    response["final_video_url"] = task.final_video_url
+                if task.error_message:
+                    response["error"] = task.error_message
+                    response["error_code"] = task.error_code
+
+                # 检查是否超时（running 状态超过 30 分钟）
+                if task.status == BatchTaskStatus.RUNNING and task.started_at:
+                    from datetime import datetime, timedelta
+                    running_duration = datetime.utcnow() - task.started_at
+                    if running_duration > timedelta(minutes=30):
+                        response["status"] = "timeout"
+                        response["message"] = "Task exceeded 30 minutes running time"
+
+            elif status == "running":
+                # 检查是否超时
+                if task.started_at:
+                    from datetime import datetime, timedelta
+                    running_duration = datetime.utcnow() - task.started_at
+                    if running_duration > timedelta(minutes=30):
+                        response["status"] = "timeout"
+                        response["message"] = "Task exceeded 30 minutes running time"
+
+            return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get run status for {run_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
 
 
 HEADER_X_WORKFLOW_STREAM_MODE = "x-workflow-stream-mode"
