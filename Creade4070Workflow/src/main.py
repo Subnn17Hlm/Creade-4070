@@ -1595,6 +1595,24 @@ async def health_check():
         raise HTTPException(status_code=503, detail=str(e))
 
 
+# 批量管理页面静态文件
+from fastapi.staticfiles import StaticFiles
+import os
+
+# 挂载 web 目录用于静态文件服务
+web_dir = os.path.join(os.path.dirname(__file__), "..", "web")
+if os.path.exists(web_dir):
+    app.mount("/web", StaticFiles(directory=web_dir, html=True), name="web")
+
+
+@app.get("/batch")
+async def batch_page():
+    """批量视频生成管理页面。"""
+    from fastapi.responses import FileResponse
+    web_dir = os.path.join(os.path.dirname(__file__), "..", "web")
+    return FileResponse(os.path.join(web_dir, "index.html"))
+
+
 @app.get("/internal/tos-health")
 async def tos_health_check():
     """TOS 素材存储连接健康检查。

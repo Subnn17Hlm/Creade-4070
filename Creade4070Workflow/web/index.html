@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>批量视频生成管理</title>
+  <link rel="stylesheet" href="/web/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>批量视频生成管理</h1>
+      <nav>
+        <a href="/">← 返回首页</a>
+      </nav>
+    </header>
+
+    <!-- 模式切换 -->
+    <div class="mode-switcher">
+      <button id="mode-single" class="mode-btn active">单条模式</button>
+      <button id="mode-batch" class="mode-btn">批量模式</button>
+    </div>
+
+    <!-- 单条模式 -->
+    <div id="single-mode" class="mode-content active">
+      <div class="card">
+        <h2>单条视频生成</h2>
+        <form id="single-form">
+          <div class="form-group">
+            <label for="single-script-id">script_id</label>
+            <input type="text" id="single-script-id" placeholder="可选，留空自动生成">
+          </div>
+          <div class="form-group">
+            <label for="single-script-text">文案内容 *</label>
+            <textarea id="single-script-text" required placeholder="请输入视频文案..."></textarea>
+          </div>
+          <button type="submit" id="single-submit-btn" class="btn btn-primary">提交任务</button>
+        </form>
+        <div id="single-result" class="result-panel" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- 批量模式 -->
+    <div id="batch-mode" class="mode-content">
+      <div class="card">
+        <h2>批量任务管理</h2>
+        
+        <!-- CSV 上传 -->
+        <div class="upload-section">
+          <h3>上传 CSV 文件</h3>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="csv-file" accept=".csv" style="display:none">
+            <p>点击选择 CSV 文件或拖拽到此处</p>
+            <p class="hint">必填列：script_text | 可选列：script_id, title</p>
+          </div>
+          <div class="form-group">
+            <label for="concurrency">并发数</label>
+            <select id="concurrency">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 文案预览和编辑 -->
+        <div id="csv-preview" class="csv-preview" style="display:none">
+          <h3>文案预览 (<span id="csv-count">0</span> 条)</h3>
+          <div class="csv-table-wrapper">
+            <table id="csv-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>script_id</th>
+                  <th>文案内容</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="csv-tbody"></tbody>
+            </table>
+          </div>
+          <div class="csv-actions">
+            <button id="csv-clear-btn" class="btn btn-secondary">清空</button>
+            <button id="csv-submit-btn" class="btn btn-primary">提交批次</button>
+          </div>
+        </div>
+
+        <!-- 批次监控 -->
+        <div id="batch-monitor" class="batch-monitor" style="display:none">
+          <h3>批次监控</h3>
+          <div id="batch-summary" class="batch-summary"></div>
+          <div id="batch-tasks" class="batch-tasks"></div>
+          <div class="batch-actions">
+            <button id="batch-refresh-btn" class="btn btn-secondary">刷新</button>
+            <button id="batch-export-btn" class="btn btn-secondary">导出 CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/web/app.js"></script>
+</body>
+</html>
