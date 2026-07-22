@@ -287,8 +287,21 @@ function initCsvActions() {
       if (res.ok) {
         currentBatchId = data.batch_id;
         saveToLocalStorage(data.batch_id);
-        showBatchMonitor(data.batch_id);
-        startBatchPolling(data.batch_id);
+        
+        // 自动启动批次
+        const startRes = await fetch(`/api/batches/${data.batch_id}/start`, {
+          method: 'POST',
+        });
+        
+        if (startRes.ok) {
+          showBatchMonitor(data.batch_id);
+          startBatchPolling(data.batch_id);
+        } else {
+          const startData = await startRes.json();
+          alert(`批次创建成功，但启动失败: ${startData.error || startData.detail || '未知错误'}`);
+          showBatchMonitor(data.batch_id);
+          startBatchPolling(data.batch_id);
+        }
       } else {
         alert(`提交失败: ${data.error || data.detail || '未知错误'}`);
       }
@@ -326,6 +339,7 @@ function buildCsvContent(rows) {
 function initBatchMonitor() {
   const refreshBtn = document.getElementById('batch-refresh-btn');
   const exportBtn = document.getElementById('batch-export-btn');
+  const startBtn = document.getElementById('batch-start-btn');
 
   refreshBtn.addEventListener('click', () => {
     if (currentBatchId) {
@@ -336,6 +350,36 @@ function initBatchMonitor() {
   exportBtn.addEventListener('click', () => {
     if (currentBatchId) {
       exportBatchCsv(currentBatchId);
+    }
+  });
+
+  startBtn.addEventListener('click', async () => {
+    if (!currentBatchId) return;
+    
+    // 禁用按钮防止重复点击
+    startBtn.disabled = true;
+    startBtn.textContent = '启动中...';
+    
+    try {
+      const res = await fetch(`/api/batches/${currentBatchId}/start`, {
+        method: 'POST',
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('批次已启动');
+        startBtn.style.display = 'none';
+        loadBatchStatus(currentBatchId);
+      } else {
+        alert(`启动失败: ${data.error || data.detail || '未知错误'}`);
+        startBtn.disabled = false;
+        startBtn.textContent = '启动批次';
+      }
+    } catch (e) {
+      alert(`请求失败: ${e.message}`);
+      startBtn.disabled = false;
+      startBtn.textContent = '启动批次';
     }
   });
 }
@@ -369,6 +413,16 @@ async function loadBatchStatus(batchId) {
 
     renderBatchSummary(data);
     await renderBatchTasks(batchId);
+    
+    // 显示/隐藏启动按钮
+    const startBtn = document.getElementById('batch-start-btn');
+    if (data.status === 'pending') {
+      startBtn.style.display = 'inline-block';
+      startBtn.disabled = false;
+      startBtn.textContent = '启动批次';
+    } else {
+      startBtn.style.display = 'none';
+    }
 
     // 如果批次已完成，停止轮询
     if (['success', 'failed', 'cancelled'].includes(data.status)) {
