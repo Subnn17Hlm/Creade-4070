@@ -580,20 +580,27 @@ async def http_run(request: Request) -> Dict[str, Any]:
 
 
 @app.get("/api/run/{run_id}/status")
-async def http_get_run_status(run_id: str) -> Dict[str, Any]:
+async def http_get_run_status(
+    run_id: str,
+    batch_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     查询单任务运行状态（从持久化数据库读取）。
     
     返回 status: queued / running / success / failed / timeout
     以及完成后的完整 result（包含 final_video_url 等）。
     
-    支持三种查询方式（按优先级）：
-    1. 通过 external_task_id (即 run_id) 查找
-    2. 通过 task_id 查找
-    3. 通过 batch_id 查找该批次下的所有任务
+    查询优先级：
+    1. 通过真实 task_id 查询 BatchTask.task_id
+    2. 再校验真实 batch_id（如果提供）
+    3. external_task_id 仅用真实 run_id 兼容查询
+    
+    前端必须携带 POST /run 返回的真实 batch_id 和 task_id。
     """
     from storage.database.db import get_async_sessionmaker
     from storage.database.batch_models import BatchTask, BatchTaskStatus, BatchJob
+    import uuid
 
     try:
         async_session_maker = get_async_sessionmaker()
@@ -601,48 +608,50 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
             task = None
             query_method = None
             
-            # 方式1: 通过 external_task_id (run_id) 查找
-            logger.info(f"[GET /status] Querying by external_task_id={run_id} (type={type(run_id).__name__})")
-            result = await db.execute(
-                select(BatchTask).where(BatchTask.external_task_id == run_id)
-            )
-            task = result.scalar_one_or_none()
-            if task:
-                query_method = "external_task_id"
-            
-            # 方式2: 如果未找到，尝试通过 task_id 查找
-            if task is None:
+            # 方式1: 通过真实 task_id 查询（最高优先级）
+            if task_id:
+                logger.info(f"[GET /status] Querying by task_id={task_id}")
                 try:
-                    import uuid
-                    task_uuid = uuid.UUID(run_id)
+                    task_uuid = uuid.UUID(task_id)
                     result = await db.execute(
                         select(BatchTask).where(BatchTask.task_id == task_uuid)
                     )
                     task = result.scalar_one_or_none()
                     if task:
                         query_method = "task_id"
-                        logger.info(f"[GET /status] Found by task_id={run_id}")
-                except (ValueError, AttributeError):
-                    pass  # run_id 不是有效的 UUID
+                        # 如果提供了 batch_id，校验是否匹配
+                        if batch_id:
+                            try:
+                                batch_uuid = uuid.UUID(batch_id)
+                                if task.batch_id != batch_uuid:
+                                    logger.warning(
+                                        f"[GET /status] batch_id mismatch: "
+                                        f"expected={batch_id}, actual={task.batch_id}"
+                                    )
+                                    raise HTTPException(
+                                        status_code=404,
+                                        detail=f"batch_id {batch_id} does not match task_id {task_id}"
+                                    )
+                            except ValueError:
+                                pass  # batch_id 不是有效的 UUID
+                        logger.info(f"[GET /status] Found by task_id={task_id}")
+                except ValueError:
+                    logger.warning(f"[GET /status] Invalid task_id format: {task_id}")
             
-            # 方式3: 如果仍未找到，尝试通过 batch_id 查找
+            # 方式2: 通过 external_task_id (run_id) 兼容查询
             if task is None:
-                try:
-                    import uuid
-                    batch_uuid = uuid.UUID(run_id)
-                    result = await db.execute(
-                        select(BatchTask).where(BatchTask.batch_id == batch_uuid).limit(1)
-                    )
-                    task = result.scalar_one_or_none()
-                    if task:
-                        query_method = "batch_id"
-                        logger.info(f"[GET /status] Found by batch_id={run_id}")
-                except (ValueError, AttributeError):
-                    pass  # run_id 不是有效的 UUID
+                logger.info(f"[GET /status] Querying by external_task_id={run_id}")
+                result = await db.execute(
+                    select(BatchTask).where(BatchTask.external_task_id == run_id)
+                )
+                task = result.scalar_one_or_none()
+                if task:
+                    query_method = "external_task_id"
+                    logger.info(f"[GET /status] Found by external_task_id={run_id}")
             
             if task is None:
                 # 诊断：查询所有任务，查看实际存储的值
-                logger.warning(f"[GET /status] Task not found by any method for id={run_id}, checking all tasks...")
+                logger.warning(f"[GET /status] Task not found. run_id={run_id}, batch_id={batch_id}, task_id={task_id}")
                 all_result = await db.execute(select(BatchTask).limit(10))
                 all_tasks = all_result.scalars().all()
                 for t in all_tasks:

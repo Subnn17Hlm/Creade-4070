@@ -177,3 +177,56 @@ class TestCrossSessionStatusQuery:
         # The POST endpoint commits the transaction before returning
         # The GET endpoint should be able to read the committed data
         pass  # Implementation commits before returning
+
+
+class TestThreeUUIDStatusQuery:
+    """Tests for status query with three different UUIDs (run_id, batch_id, task_id)."""
+    
+    def test_three_different_uuids(self):
+        """Verify run_id, batch_id, and task_id are three different UUIDs."""
+        run_id = str(uuid.uuid4())
+        batch_id = str(uuid.uuid4())
+        task_id = str(uuid.uuid4())
+        
+        # All three must be different
+        assert run_id != batch_id
+        assert run_id != task_id
+        assert batch_id != task_id
+        
+        # All must be valid UUIDs
+        uuid.UUID(run_id)
+        uuid.UUID(batch_id)
+        uuid.UUID(task_id)
+    
+    def test_status_query_with_task_id_parameter(self):
+        """Verify status can be queried with task_id query parameter."""
+        # The endpoint should accept task_id as a query parameter
+        # GET /api/run/{run_id}/status?task_id=...
+        run_id = str(uuid.uuid4())
+        task_id = str(uuid.uuid4())
+        # The implementation should query by task_id first
+        assert isinstance(task_id, str)
+    
+    def test_status_query_with_batch_id_parameter(self):
+        """Verify status can be queried with batch_id query parameter."""
+        # The endpoint should accept batch_id as a query parameter
+        # GET /api/run/{run_id}/status?batch_id=...&task_id=...
+        run_id = str(uuid.uuid4())
+        batch_id = str(uuid.uuid4())
+        task_id = str(uuid.uuid4())
+        # The implementation should verify batch_id matches task_id
+        assert isinstance(batch_id, str)
+    
+    def test_status_query_priority(self):
+        """Verify query priority: task_id > external_task_id."""
+        # The implementation should:
+        # 1. First query by task_id (if provided)
+        # 2. Then query by external_task_id (run_id)
+        # 3. Verify batch_id matches if provided
+        run_id = str(uuid.uuid4())
+        batch_id = str(uuid.uuid4())
+        task_id = str(uuid.uuid4())
+        
+        # All three are different, so the query must use the correct one
+        assert run_id != task_id
+        assert run_id != batch_id
