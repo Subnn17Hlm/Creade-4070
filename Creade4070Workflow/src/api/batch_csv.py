@@ -6,7 +6,8 @@ from typing import List, Optional, Tuple
 
 
 MAX_BATCH_SIZE = 50
-REQUIRED_COLUMNS = ['task_id', 'script_text']
+REQUIRED_COLUMNS = ['script_text']  # Only script_text is required
+OPTIONAL_COLUMNS = ['script_id', 'title', 'task_id']  # task_id is alias for script_id
 
 
 @dataclass
@@ -111,41 +112,45 @@ def validate_csv(content: bytes, filename: Optional[str] = None) -> CSVParseResu
             # Normalize keys
             normalized_row = {k.strip(): v for k, v in row.items() if k is not None}
             
-            # Check task_id
-            task_id = normalized_row.get('task_id', '').strip()
-            if not task_id:
-                errors.append(CSVValidationError(
-                    row_number=row_number,
-                    field='task_id',
-                    message='task_id 不能为空',
-                ))
-                continue
-            
-            # Check duplicate task_id
-            if task_id in seen_task_ids:
-                errors.append(CSVValidationError(
-                    row_number=row_number,
-                    field='task_id',
-                    message=f'task_id "{task_id}" 重复',
-                ))
-                continue
-            seen_task_ids.add(task_id)
-            
-            # Check script_text
+            # Check script_text (required)
             script_text = normalized_row.get('script_text', '').strip()
             if not script_text:
                 errors.append(CSVValidationError(
                     row_number=row_number,
                     field='script_text',
-                    message='script_text 不能为空',
+                    message=f'第 {row_number} 行: script_text 不能为空',
                 ))
                 continue
+            
+            # Get or generate task_id
+            # Support both task_id and script_id as aliases
+            task_id = normalized_row.get('task_id', '').strip()
+            if not task_id:
+                task_id = normalized_row.get('script_id', '').strip()
+            if not task_id:
+                # Auto-generate task_id if not provided
+                import uuid
+                task_id = str(uuid.uuid4())[:8]
+            
+            # Check duplicate task_id (only if explicitly provided)
+            if task_id in seen_task_ids:
+                errors.append(CSVValidationError(
+                    row_number=row_number,
+                    field='task_id',
+                    message=f'第 {row_number} 行: task_id/script_id "{task_id}" 重复',
+                ))
+                continue
+            seen_task_ids.add(task_id)
+            
+            # Get optional title
+            title = normalized_row.get('title', '').strip()
             
             # Add valid row
             rows.append({
                 'row_number': row_number - 1,  # 1-indexed row number (excluding header)
                 'task_id': task_id,
                 'script_text': script_text,
+                'title': title,
             })
         
         # Check max batch size

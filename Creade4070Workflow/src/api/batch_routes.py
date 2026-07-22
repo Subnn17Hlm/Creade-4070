@@ -48,11 +48,22 @@ async def create_batch(
     result = validate_csv(content, filename=file.filename)
     
     if not result.success:
+        # Build detailed error message
+        error_details = []
+        for e in result.errors:
+            if e.row_number:
+                error_details.append(f"第 {e.row_number} 行: {e.message}")
+            else:
+                error_details.append(e.message)
+        
+        error_summary = '; '.join(error_details)
+        
         return JSONResponse(
             status_code=400,
             content={
-                'error': 'CSV 校验失败',
+                'error': f'CSV 校验失败: {error_summary}',
                 'errors': [e.to_dict() for e in result.errors],
+                'missing_columns': [col for col in ['script_text'] if col not in [h.strip() for h in (content.decode('utf-8').split('\n')[0].split(',') if content else [])]],
             },
         )
     
