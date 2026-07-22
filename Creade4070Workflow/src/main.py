@@ -498,6 +498,56 @@ async def http_run(request: Request) -> Dict[str, Any]:
             db.add(task)
             await db.commit()
 
+            logger.info(
+                f"[POST /run] Committed: batch_id={batch_id} (type={type(batch_id).__name__}), "
+                f"task_id={task_id} (type={type(task_id).__name__}), "
+                f"run_id={run_id} (type={type(run_id).__name__}), "
+                f"external_task_id={task.external_task_id} (type={type(task.external_task_id).__name__})"
+            )
+
+            # 提交后立即验证：使用新 session 查询刚写入的记录
+            async with async_session_maker() as verify_db:
+                verify_result = await verify_db.execute(
+                    select(BatchTask).where(BatchTask.external_task_id == run_id)
+                )
+                verify_task = verify_result.scalar_one_or_none()
+                if verify_task is None:
+                    logger.error(
+                        f"[POST /run] CRITICAL: Post-commit verification failed! "
+                        f"run_id={run_id} not found in database after commit. "
+                        f"Checking by task_id={task_id}..."
+                    )
+                    # 尝试按 task_id 查询
+                    verify_result2 = await verify_db.execute(
+                        select(BatchTask).where(BatchTask.task_id == task_id)
+                    )
+                    verify_task2 = verify_result2.scalar_one_or_none()
+                    if verify_task2 is not None:
+                        logger.error(
+                            f"[POST /run] Found by task_id but not by external_task_id! "
+                            f"Stored external_task_id={verify_task2.external_task_id} "
+                            f"(type={type(verify_task2.external_task_id).__name__}), "
+                            f"queried run_id={run_id} (type={type(run_id).__name__})"
+                        )
+                        # 修正 external_task_id
+                        verify_task2.external_task_id = run_id
+                        await verify_db.commit()
+                        logger.info(f"[POST /run] Fixed external_task_id to {run_id}")
+                    else:
+                        logger.error(
+                            f"[POST /run] CRITICAL: Record not found by task_id either! "
+                            f"Transaction may not have been committed properly."
+                        )
+                        raise HTTPException(
+                            status_code=500,
+                            detail="Database write verification failed: record not visible after commit"
+                        )
+                else:
+                    logger.info(
+                        f"[POST /run] Post-commit verification passed: "
+                        f"found task with external_task_id={verify_task.external_task_id}"
+                    )
+
             logger.info(f"Created single-task batch: batch_id={batch_id}, task_id={task_id}, run_id={run_id}")
 
             # 启动批次执行器（后台运行）
@@ -545,12 +595,23 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
         async_session_maker = get_async_sessionmaker()
         async with async_session_maker() as db:
             # 通过 external_task_id (即 run_id) 查找任务
+            logger.info(f"[GET /status] Querying by external_task_id={run_id} (type={type(run_id).__name__})")
             result = await db.execute(
                 select(BatchTask).where(BatchTask.external_task_id == run_id)
             )
             task = result.scalar_one_or_none()
 
             if task is None:
+                # 诊断：查询所有任务，查看实际存储的 external_task_id 值
+                logger.warning(f"[GET /status] Task not found by external_task_id={run_id}, checking all tasks...")
+                all_result = await db.execute(select(BatchTask).limit(10))
+                all_tasks = all_result.scalars().all()
+                for t in all_tasks:
+                    logger.warning(
+                        f"[GET /status] Found task: task_id={t.task_id}, "
+                        f"external_task_id={t.external_task_id} (type={type(t.external_task_id).__name__}), "
+                        f"status={t.status}"
+                    )
                 raise HTTPException(status_code=404, detail=f"run_id {run_id} not found")
 
             # 映射数据库状态到 API 状态
