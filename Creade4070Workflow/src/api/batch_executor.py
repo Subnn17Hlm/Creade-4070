@@ -1,41 +1,52 @@
 """
-Batch task executor
-===================
-Handles batch task scheduling, execution, and state management.
-Designed for serverless environment with database-based coordination.
+Batch task executor for video generation workflow.
+
+This module provides the BatchExecutor class that manages the execution of batch tasks,
+including concurrency control, state management, and error handling.
 """
 
 import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-
-from sqlalchemy import select, update, and_, or_, func
+from typing import Dict, Any, List, Optional
+from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from storage.database.batch_models import (
-    BatchJob, BatchTask, BatchJobStatus, BatchTaskStatus,
-)
 from storage.database.db import get_async_sessionmaker
+from storage.database.batch_models import (
+    BatchJob,
+    BatchTask,
+    BatchJobStatus,
+    BatchTaskStatus,
+)
 
+# Configuration
+MAX_CONCURRENT_TASKS = 4  # Default concurrency limit
+TASK_RUNNING_TIMEOUT_MINUTES = 30  # Timeout for running tasks
+
+# Logger
 logger = logging.getLogger(__name__)
-
-# Timeout for tasks stuck in running state (minutes)
-TASK_RUNNING_TIMEOUT_MINUTES = 30
 
 
 class BatchExecutor:
-    """Executor for batch job tasks."""
+    """
+    Executes batch tasks with concurrency control and state management.
+    """
 
-    def __init__(self, graph_service):
+    def __init__(self, graph_service: "GraphService", max_concurrent: int = MAX_CONCURRENT_TASKS):
         """
-        Initialize batch executor.
+        Initialize the batch executor.
 
         Args:
-            graph_service: GraphService instance for running video workflows
+            graph_service: GraphService instance for running workflows
+            max_concurrent: Maximum number of concurrent tasks (1-4)
         """
         self.graph_service = graph_service
+        self.max_concurrent = min(max(1, max_concurrent), 4)  # Clamp to 1-4
+        self._semaphore = asyncio.Semaphore(self.max_concurrent)
+        self._running_tasks: Dict[str, asyncio.Task] = {}
 
     async def start_batch(self, db: AsyncSession, batch_id: uuid.UUID) -> Dict[str, Any]:
         """
@@ -48,16 +59,17 @@ class BatchExecutor:
         Returns:
             Result with batch status and task count
         """
-        # Get batch job
+        # Fetch batch
         result = await db.execute(
-            select(BatchJob).where(BatchJob.batch_id == batch_id)
+            select(BatchJob)
+            .where(BatchJob.batch_id == batch_id)
+            .options(selectinload(BatchJob.tasks))
         )
         batch = result.scalar_one_or_none()
 
         if not batch:
             raise ValueError(f"Batch {batch_id} not found")
 
-        # Check if already started
         if batch.status != BatchJobStatus.CREATED:
             return {
                 "batch_id": str(batch.batch_id),
@@ -65,19 +77,33 @@ class BatchExecutor:
                 "message": f"Batch already started (status: {batch.status})",
             }
 
-        # Update batch status to running
+        # Update batch to running
         batch.status = BatchJobStatus.RUNNING
         batch.started_at = datetime.utcnow()
         await db.commit()
 
-        # Start executing tasks
+        # Get pending tasks
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
+
+        if not pending_tasks:
+            # No tasks to execute, mark as complete
+            batch.status = BatchJobStatus.SUCCESS
+            batch.completed_at = datetime.utcnow()
+            await db.commit()
+            return {
+                "batch_id": str(batch_id),
+                "status": batch.status,
+                "message": "No pending tasks to execute",
+            }
+
+        # Execute tasks with concurrency control
         await self._execute_batch_tasks(db, batch)
 
-        # Refresh batch to get updated stats
+        # Refresh and get final status
         await db.refresh(batch)
 
         return {
-            "batch_id": str(batch.batch_id),
+            "batch_id": str(batch_id),
             "status": batch.status,
             "total_count": batch.total_count,
             "success_count": batch.success_count,
@@ -92,244 +118,312 @@ class BatchExecutor:
             db: Database session
             batch: Batch job instance
         """
-        concurrency = batch.concurrency
-        semaphore = asyncio.Semaphore(concurrency)
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
 
-        # Get all pending tasks
-        result = await db.execute(
-            select(BatchTask)
-            .where(
-                and_(
-                    BatchTask.batch_id == batch.batch_id,
-                    BatchTask.status == BatchTaskStatus.PENDING,
-                )
-            )
-            .order_by(BatchTask.row_number)
-        )
-        pending_tasks = list(result.scalars().all())
-
-        if not pending_tasks:
-            logger.info(f"No pending tasks for batch {batch.batch_id}")
-            await self._update_batch_final_status(db, batch)
-            return
-
-        # Create async tasks for execution
+        # Create async tasks with semaphore for concurrency control
         async_tasks = []
         for task in pending_tasks:
             async_task = asyncio.create_task(
-                self._execute_single_task_with_semaphore(
-                    db, batch, task, semaphore
-                )
+                self._execute_single_task_with_semaphore(batch, task)
             )
             async_tasks.append(async_task)
+            self._running_tasks[str(task.task_id)] = async_task
 
         # Wait for all tasks to complete
-        await asyncio.gather(*async_tasks, return_exceptions=True)
+        if async_tasks:
+            await asyncio.gather(*async_tasks, return_exceptions=True)
+
+        # Clean up running tasks
+        for task in pending_tasks:
+            self._running_tasks.pop(str(task.task_id), None)
 
         # Update batch final status
         await self._update_batch_final_status(db, batch)
 
     async def _execute_single_task_with_semaphore(
         self,
-        db: AsyncSession,
         batch: BatchJob,
         task: BatchTask,
-        semaphore: asyncio.Semaphore,
     ):
         """
         Execute a single task with semaphore for concurrency control.
 
         Args:
-            db: Database session
             batch: Batch job instance
             task: Task to execute
-            semaphore: Semaphore for concurrency control
         """
-        async with semaphore:
-            await self._execute_single_task(db, batch, task)
+        async with self._semaphore:
+            await self._execute_single_task(batch, task)
 
     async def _execute_single_task(
         self,
-        db: AsyncSession,
         batch: BatchJob,
         task: BatchTask,
     ):
         """
-        Execute a single batch task.
+        Execute a single batch task with short-lived database sessions.
+
+        This method uses independent short-lived sessions for each database operation
+        to avoid holding connections open during long-running workflow execution.
 
         Args:
-            db: Database session
             batch: Batch job instance
             task: Task to execute
         """
         task_id = task.task_id
-        logger.info(f"Starting task {task_id} for batch {batch.batch_id}")
+        batch_id = batch.batch_id
+        logger.info(f"Starting task {task_id} for batch {batch_id}")
 
-        # Claim task atomically using SELECT FOR UPDATE
+        # Step 1: Claim task atomically using SELECT FOR UPDATE (short-lived session)
+        run_id = None
         try:
-            # Use a fresh session for this task
-            async with get_async_sessionmaker()() as task_db:
-                # Lock and update task status
-                result = await task_db.execute(
-                    select(BatchTask)
-                    .where(BatchTask.task_id == task_id)
-                    .with_for_update()
-                )
-                locked_task = result.scalar_one_or_none()
-
-                if not locked_task:
-                    logger.error(f"Task {task_id} not found")
-                    return
-
-                # Check if already running or completed
-                if locked_task.status != BatchTaskStatus.PENDING:
-                    logger.warning(
-                        f"Task {task_id} already in status {locked_task.status}, skipping"
+            async with get_async_sessionmaker()() as claim_db:
+                async with claim_db.begin():
+                    result = await claim_db.execute(
+                        select(BatchTask)
+                        .where(BatchTask.task_id == task_id)
+                        .with_for_update()
                     )
-                    return
+                    locked_task = result.scalar_one_or_none()
 
-                # Update to running
-                locked_task.status = BatchTaskStatus.RUNNING
-                locked_task.started_at = datetime.utcnow()
-                locked_task.error_code = None
-                locked_task.error_message = None
-                await task_db.commit()
+                    if not locked_task:
+                        logger.error(f"Task {task_id} not found")
+                        return
 
-                # Update batch running count
-                await self._update_batch_counts(task_db, batch.batch_id)
+                    # Check if already running or completed
+                    if locked_task.status != BatchTaskStatus.PENDING:
+                        logger.warning(
+                            f"Task {task_id} already in status {locked_task.status}, skipping"
+                        )
+                        return
 
-                # Execute the video workflow
-                try:
+                    # Update to running
                     run_id = uuid.uuid4()
+                    locked_task.status = BatchTaskStatus.RUNNING
+                    locked_task.started_at = datetime.utcnow()
                     locked_task.run_id = run_id
-                    await task_db.commit()
+                    locked_task.error_code = None
+                    locked_task.error_message = None
 
-                    # Prepare input for workflow - include run_id for directory isolation
-                    workflow_input = {
-                        "script_text": task.input_data.get("script_text", ""),
-                        "run_id": str(run_id),  # Pass run_id to workflow for directory isolation
-                        "script_source": "manual",  # Batch tasks use manual script mode
-                    }
-
-                    # Create context for this run
-                    from coze_coding_utils.runtime_ctx.context import new_context
-                    ctx = new_context("batch_task")
-                    ctx.run_id = str(run_id)
-
-                    # Run the workflow
-                    logger.info(f"Running workflow for task {task_id} with run_id {run_id}")
-                    workflow_result = await self.graph_service.run(workflow_input, ctx)
-
-                    # Check result
-                    if workflow_result.get("status") == "success":
-                        # Success
-                        locked_task.status = BatchTaskStatus.SUCCESS
-                        locked_task.completed_at = datetime.utcnow()
-                        locked_task.final_video_url = workflow_result.get("final_video_url")
-                        locked_task.output_data = workflow_result
-                        logger.info(f"Task {task_id} completed successfully")
-                    else:
-                        # Failed
-                        error_msg = workflow_result.get("error", "Unknown error")
-                        locked_task.status = BatchTaskStatus.FAILED
-                        locked_task.completed_at = datetime.utcnow()
-                        locked_task.error_code = "WORKFLOW_ERROR"
-                        locked_task.error_message = str(error_msg)
-                        logger.error(f"Task {task_id} failed: {error_msg}")
-
-                except asyncio.CancelledError:
-                    # Task was cancelled
-                    locked_task.status = BatchTaskStatus.FAILED
-                    locked_task.completed_at = datetime.utcnow()
-                    locked_task.error_code = "CANCELLED"
-                    locked_task.error_message = "Task was cancelled"
-                    logger.warning(f"Task {task_id} was cancelled")
-
-                except Exception as e:
-                    # Unexpected error
-                    locked_task.status = BatchTaskStatus.FAILED
-                    locked_task.completed_at = datetime.utcnow()
-                    locked_task.error_code = "EXCEPTION"
-                    locked_task.error_message = str(e)
-                    logger.error(f"Task {task_id} exception: {e}", exc_info=True)
-
-                # Commit final status
-                await task_db.commit()
-
-                # Update batch counts
-                await self._update_batch_counts(task_db, batch.batch_id)
+                # Session is closed here, connection released
 
         except Exception as e:
-            logger.error(f"Failed to execute task {task_id}: {e}", exc_info=True)
-            # Try to mark task as failed
+            logger.error(f"Failed to claim task {task_id}: {e}", exc_info=True)
+            await self._mark_task_failed(task_id, batch_id, "CLAIM_ERROR", str(e))
+            return
+
+        # Step 2: Run the workflow WITHOUT holding any database session
+        workflow_result = None
+        workflow_error = None
+        workflow_success = False
+
+        try:
+            # Prepare input for workflow - include run_id for directory isolation
+            workflow_input = {
+                "script_text": task.input_data.get("script_text", ""),
+                "run_id": str(run_id),  # Pass run_id to workflow for directory isolation
+                "script_source": "manual",  # Batch tasks use manual script mode
+            }
+
+            # Create context for this run
+            from coze_coding_utils.runtime_ctx.context import new_context
+            ctx = new_context("batch_task")
+            ctx.run_id = str(run_id)
+
+            # Run the workflow (long-running, no DB session held)
+            logger.info(f"Running workflow for task {task_id} with run_id {run_id}")
+            workflow_result = await self.graph_service.run(workflow_input, ctx)
+
+            # Check result
+            if workflow_result.get("status") == "success":
+                workflow_success = True
+                logger.info(f"Task {task_id} completed successfully")
+            else:
+                workflow_error = workflow_result.get("error", "Unknown error")
+                logger.error(f"Task {task_id} failed: {workflow_error}")
+
+        except asyncio.CancelledError:
+            workflow_error = "Task was cancelled"
+            logger.warning(f"Task {task_id} was cancelled")
+
+        except Exception as e:
+            workflow_error = str(e)
+            logger.error(f"Task {task_id} exception: {e}", exc_info=True)
+
+        # Step 3: Update final status with a NEW short-lived session (with retry)
+        await self._update_task_final_status(
+            task_id=task_id,
+            batch_id=batch_id,
+            success=workflow_success,
+            result=workflow_result,
+            error=workflow_error,
+        )
+
+        # Step 4: Update batch counts with a NEW short-lived session
+        await self._update_batch_counts_safe(batch_id)
+
+        logger.info(f"Task {task_id} execution completed")
+
+    async def _update_task_final_status(
+        self,
+        task_id: uuid.UUID,
+        batch_id: uuid.UUID,
+        success: bool,
+        result: Optional[Dict[str, Any]],
+        error: Optional[str],
+        max_retries: int = 3,
+    ):
+        """
+        Update task final status with retry logic for connection errors.
+
+        Args:
+            task_id: Task ID
+            batch_id: Batch ID
+            success: Whether the task succeeded
+            result: Workflow result (if successful)
+            error: Error message (if failed)
+            max_retries: Maximum number of retries for connection errors
+        """
+        for attempt in range(max_retries):
             try:
-                async with get_async_sessionmaker()() as error_db:
+                async with get_async_sessionmaker()() as status_db:
+                    async with status_db.begin():
+                        result_query = await status_db.execute(
+                            select(BatchTask).where(BatchTask.task_id == task_id)
+                        )
+                        task = result_query.scalar_one_or_none()
+
+                        if not task:
+                            logger.error(f"Task {task_id} not found for status update")
+                            return
+
+                        if success:
+                            task.status = BatchTaskStatus.SUCCESS
+                            task.completed_at = datetime.utcnow()
+                            task.final_video_url = result.get("final_video_url") if result else None
+                            task.output_data = result
+                        else:
+                            task.status = BatchTaskStatus.FAILED
+                            task.completed_at = datetime.utcnow()
+                            task.error_code = "WORKFLOW_ERROR" if result else "EXCEPTION"
+                            task.error_message = str(error) if error else "Unknown error"
+
+                    # Session is closed here, connection released
+                    return
+
+            except Exception as e:
+                error_name = type(e).__name__
+                if "InterfaceError" in error_name or "connection" in str(e).lower():
+                    logger.warning(
+                        f"Connection error updating task {task_id} status (attempt {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(0.5 * (attempt + 1))  # Exponential backoff
+                        continue
+                else:
+                    logger.error(f"Failed to update task {task_id} status: {e}", exc_info=True)
+                    return
+
+        # All retries failed
+        logger.error(f"Failed to update task {task_id} status after {max_retries} retries")
+
+    async def _mark_task_failed(
+        self,
+        task_id: uuid.UUID,
+        batch_id: uuid.UUID,
+        error_code: str,
+        error_message: str,
+    ):
+        """
+        Mark a task as failed with a new short-lived session.
+
+        Args:
+            task_id: Task ID
+            batch_id: Batch ID
+            error_code: Error code
+            error_message: Error message
+        """
+        try:
+            async with get_async_sessionmaker()() as error_db:
+                async with error_db.begin():
                     result = await error_db.execute(
                         select(BatchTask).where(BatchTask.task_id == task_id)
                     )
-                    failed_task = result.scalar_one_or_none()
-                    if failed_task and failed_task.status == BatchTaskStatus.RUNNING:
-                        failed_task.status = BatchTaskStatus.FAILED
-                        failed_task.completed_at = datetime.utcnow()
-                        failed_task.error_code = "EXECUTION_ERROR"
-                        failed_task.error_message = str(e)
-                        await error_db.commit()
-                        await self._update_batch_counts(error_db, batch.batch_id)
-            except Exception as inner_e:
-                logger.error(f"Failed to mark task {task_id} as failed: {inner_e}")
+                    task = result.scalar_one_or_none()
+                    if task and task.status == BatchTaskStatus.RUNNING:
+                        task.status = BatchTaskStatus.FAILED
+                        task.completed_at = datetime.utcnow()
+                        task.error_code = error_code
+                        task.error_message = error_message
+                # Session is closed here
+        except Exception as e:
+            logger.error(f"Failed to mark task {task_id} as failed: {e}", exc_info=True)
 
-    async def _update_batch_counts(self, db: AsyncSession, batch_id: uuid.UUID):
+    async def _update_batch_counts_safe(self, batch_id: uuid.UUID):
         """
-        Update batch job counts based on task statuses.
+        Update batch counts with a new short-lived session.
 
         Args:
-            db: Database session
-            batch_id: Batch job ID
+            batch_id: Batch ID
         """
-        # Count tasks by status
-        result = await db.execute(
-            select(
-                BatchTask.status,
-                func.count(BatchTask.task_id),
-            )
-            .where(BatchTask.batch_id == batch_id)
-            .group_by(BatchTask.status)
-        )
-        status_counts = dict(result.all())
+        try:
+            async with get_async_sessionmaker()() as count_db:
+                async with count_db.begin():
+                    # Get batch
+                    result = await count_db.execute(
+                        select(BatchJob).where(BatchJob.batch_id == batch_id)
+                    )
+                    batch = result.scalar_one_or_none()
+                    if not batch:
+                        return
 
-        pending_count = status_counts.get(BatchTaskStatus.PENDING, 0)
-        running_count = status_counts.get(BatchTaskStatus.RUNNING, 0)
-        success_count = status_counts.get(BatchTaskStatus.SUCCESS, 0)
-        failed_count = status_counts.get(BatchTaskStatus.FAILED, 0)
+                    # Count tasks by status
+                    success_result = await count_db.execute(
+                        select(BatchTask).where(
+                            and_(
+                                BatchTask.batch_id == batch_id,
+                                BatchTask.status == BatchTaskStatus.SUCCESS,
+                            )
+                        )
+                    )
+                    batch.success_count = len(success_result.scalars().all())
 
-        # Update batch
-        await db.execute(
-            update(BatchJob)
-            .where(BatchJob.batch_id == batch_id)
-            .values(
-                pending_count=pending_count,
-                running_count=running_count,
-                success_count=success_count,
-                failed_count=failed_count,
-            )
-        )
-        await db.commit()
+                    failed_result = await count_db.execute(
+                        select(BatchTask).where(
+                            and_(
+                                BatchTask.batch_id == batch_id,
+                                BatchTask.status == BatchTaskStatus.FAILED,
+                            )
+                        )
+                    )
+                    batch.failed_count = len(failed_result.scalars().all())
+                # Session is closed here
+        except Exception as e:
+            logger.error(f"Failed to update batch {batch_id} counts: {e}", exc_info=True)
 
     async def _update_batch_final_status(self, db: AsyncSession, batch: BatchJob):
         """
-        Update batch job final status after all tasks complete.
+        Update batch final status based on task results.
 
         Args:
             db: Database session
             batch: Batch job instance
         """
-        # Refresh batch to get latest counts
+        # Refresh batch to get latest task statuses
         await db.refresh(batch)
 
+        # Count tasks by status
+        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS)
+        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED)
+
+        # Update batch counts
+        batch.success_count = success_count
+        batch.failed_count = failed_count
+
         # Determine final status
-        if batch.failed_count == 0:
+        if failed_count == 0:
             batch.status = BatchJobStatus.SUCCESS
-        elif batch.success_count == 0:
+        elif success_count == 0:
             batch.status = BatchJobStatus.FAILED
         else:
             batch.status = BatchJobStatus.PARTIAL_FAILED
@@ -337,14 +431,14 @@ class BatchExecutor:
         batch.completed_at = datetime.utcnow()
         await db.commit()
 
-    async def retry_task(
-        self,
-        db: AsyncSession,
-        batch_id: uuid.UUID,
-        task_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+        logger.info(
+            f"Batch {batch.batch_id} completed with status {batch.status} "
+            f"(success={success_count}, failed={failed_count})"
+        )
+
+    async def retry_task(self, db: AsyncSession, batch_id: uuid.UUID, task_id: uuid.UUID) -> Dict[str, Any]:
         """
-        Retry a failed task.
+        Retry a single failed task.
 
         Args:
             db: Database session
@@ -354,32 +448,23 @@ class BatchExecutor:
         Returns:
             Result with task status
         """
-        # Get task
+        # Fetch batch and task
         result = await db.execute(
-            select(BatchTask).where(
-                and_(
-                    BatchTask.task_id == task_id,
-                    BatchTask.batch_id == batch_id,
-                )
-            )
-        )
-        task = result.scalar_one_or_none()
-
-        if not task:
-            raise ValueError(f"Task {task_id} not found")
-
-        # Check if failed
-        if task.status != BatchTaskStatus.FAILED:
-            raise ValueError(f"Can only retry failed tasks, current status: {task.status}")
-
-        # Get batch
-        result = await db.execute(
-            select(BatchJob).where(BatchJob.batch_id == batch_id)
+            select(BatchJob)
+            .where(BatchJob.batch_id == batch_id)
+            .options(selectinload(BatchJob.tasks))
         )
         batch = result.scalar_one_or_none()
 
         if not batch:
             raise ValueError(f"Batch {batch_id} not found")
+
+        task = next((t for t in batch.tasks if t.task_id == task_id), None)
+        if not task:
+            raise ValueError(f"Task {task_id} not found in batch {batch_id}")
+
+        if task.status != BatchTaskStatus.FAILED:
+            raise ValueError(f"Task {task_id} is not in FAILED status")
 
         # Reset task to pending
         task.status = BatchTaskStatus.PENDING
@@ -391,35 +476,30 @@ class BatchExecutor:
         task.run_id = None
         task.output_data = None
         task.final_video_url = None
+
         await db.commit()
 
         # Update batch counts
         await self._update_batch_counts(db, batch_id)
 
-        # If batch is not running, we need to re-execute
-        if batch.status != BatchJobStatus.RUNNING:
-            batch.status = BatchJobStatus.RUNNING
-            batch.completed_at = None
-            await db.commit()
+        # Set batch to running
+        batch.status = BatchJobStatus.RUNNING
+        batch.completed_at = None
+        await db.commit()
 
-            # Execute this task
-            await self._execute_single_task(db, batch, task)
+        # Execute the task
+        await self._execute_single_task_with_semaphore(batch, task)
 
-            # Refresh and update batch final status
-            await db.refresh(batch)
-            await self._update_batch_final_status(db, batch)
+        # Refresh and get final status
+        await db.refresh(task)
 
         return {
-            "task_id": str(task.task_id),
+            "task_id": str(task_id),
             "status": task.status,
             "retry_count": task.retry_count,
         }
 
-    async def retry_failed_tasks(
-        self,
-        db: AsyncSession,
-        batch_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+    async def retry_failed(self, db: AsyncSession, batch_id: uuid.UUID) -> Dict[str, Any]:
         """
         Retry all failed tasks in a batch.
 
@@ -428,29 +508,21 @@ class BatchExecutor:
             batch_id: Batch job ID
 
         Returns:
-            Result with retry count
+            Result with retried task count
         """
-        # Get batch
+        # Fetch batch
         result = await db.execute(
-            select(BatchJob).where(BatchJob.batch_id == batch_id)
+            select(BatchJob)
+            .where(BatchJob.batch_id == batch_id)
+            .options(selectinload(BatchJob.tasks))
         )
         batch = result.scalar_one_or_none()
 
         if not batch:
             raise ValueError(f"Batch {batch_id} not found")
 
-        # Get all failed tasks
-        result = await db.execute(
-            select(BatchTask)
-            .where(
-                and_(
-                    BatchTask.batch_id == batch_id,
-                    BatchTask.status == BatchTaskStatus.FAILED,
-                )
-            )
-            .order_by(BatchTask.row_number)
-        )
-        failed_tasks = list(result.scalars().all())
+        # Get failed tasks
+        failed_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.FAILED]
 
         if not failed_tasks:
             return {
@@ -549,5 +621,41 @@ class BatchExecutor:
             "task_ids": [str(task.task_id) for task in stuck_tasks],
         }
 
+    async def _update_batch_counts(self, db: AsyncSession, batch_id: uuid.UUID):
+        """
+        Update batch job counts based on task statuses.
 
-__all__ = ["BatchExecutor"]
+        Args:
+            db: Database session
+            batch_id: Batch job ID
+        """
+        # Get batch
+        result = await db.execute(
+            select(BatchJob).where(BatchJob.batch_id == batch_id)
+        )
+        batch = result.scalar_one_or_none()
+        if not batch:
+            return
+
+        # Count tasks by status
+        success_result = await db.execute(
+            select(BatchTask).where(
+                and_(
+                    BatchTask.batch_id == batch_id,
+                    BatchTask.status == BatchTaskStatus.SUCCESS,
+                )
+            )
+        )
+        batch.success_count = len(success_result.scalars().all())
+
+        failed_result = await db.execute(
+            select(BatchTask).where(
+                and_(
+                    BatchTask.batch_id == batch_id,
+                    BatchTask.status == BatchTaskStatus.FAILED,
+                )
+            )
+        )
+        batch.failed_count = len(failed_result.scalars().all())
+
+        await db.commit()

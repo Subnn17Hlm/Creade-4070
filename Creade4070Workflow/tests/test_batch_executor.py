@@ -66,6 +66,9 @@ class TestBatchExecutor:
             )
             tasks.append(task)
         
+        # Add tasks to batch
+        batch.tasks = tasks
+        
         # Mock database queries
         db.execute = AsyncMock()
         
@@ -155,6 +158,7 @@ class TestBatchExecutor:
             )
             tasks.append(task)
         
+        batch.tasks = tasks
         # Mock database
         batch_result = MagicMock()
         batch_result.scalar_one_or_none.return_value = batch
@@ -212,6 +216,7 @@ class TestBatchExecutor:
             error_code="WORKFLOW_ERROR",
             error_message="Test error",
         )
+        batch.tasks = [task]
         
         # Mock database queries for initial task/batch lookup
         def mock_execute(query):
@@ -277,14 +282,15 @@ class TestBatchExecutor:
             status=BatchTaskStatus.SUCCESS,
             input_data={"script_text": "Test script"},
         )
+        batch.tasks = [task]
         
-        # Mock database
+        # Mock database to return batch
         result = MagicMock()
-        result.scalar_one_or_none.return_value = task
+        result.scalar_one_or_none.return_value = batch
         db.execute.return_value = result
         
         # Try to retry successful task
-        with pytest.raises(ValueError, match="Can only retry failed tasks"):
+        with pytest.raises(ValueError, match="is not in FAILED status"):
             await executor.retry_task(db, batch.batch_id, task.task_id)
 
     @pytest.mark.asyncio
@@ -367,6 +373,7 @@ class TestBatchExecutor:
             )
             for i in range(3)
         ]
+        batch.tasks = tasks
         
         # Mock database
         batch_result = MagicMock()
@@ -424,6 +431,7 @@ class TestBatchExecutor:
             )
             for i in range(2)
         ]
+        batch.tasks = tasks
         
         # Mock database
         batch_result = MagicMock()
