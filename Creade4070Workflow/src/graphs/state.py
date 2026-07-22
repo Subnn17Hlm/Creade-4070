@@ -36,6 +36,12 @@ class GlobalState(TypedDict, total=False):
     run_id: str
     run_dir: str
 
+    # BGM 追踪信息
+    bgm_source: str  # "tos" | "bgm_urls" | "local" | ""
+    bgm_bucket: str  # TOS bucket name
+    bgm_object_key: str  # TOS object key
+    bgm_used: bool  # whether BGM was successfully selected
+
     # Node0 - 文案来源选择
     raw_script: str
     generated_script_path: str

@@ -12,6 +12,7 @@ This test file verifies:
 import os
 import pytest
 import hashlib
+import tempfile
 from unittest.mock import patch, MagicMock
 
 
@@ -20,77 +21,87 @@ class TestBGMUrlsConfiguration:
 
     def test_bgm_urls_json_array(self):
         """Test BGM_URLS with JSON array format"""
+        import tempfile
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         bgm_urls = '["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]'
         
         with patch.dict(os.environ, {"BGM_URLS": bgm_urls}):
-            # Test with different script_ids to verify stable selection
-            result1 = _select_bgm_stable("test_script_1")
-            result2 = _select_bgm_stable("test_script_1")
-            result3 = _select_bgm_stable("test_script_2")
-            
-            # Same script_id should produce same result
-            assert result1 == result2
-            # Result should be one of the URLs
-            assert result1 in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
-            # Different script_id may produce different result
-            assert result3 in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Test with different script_ids to verify stable selection
+                result1, _ = _select_bgm_stable("test_script_1", temp_dir)
+                result2, _ = _select_bgm_stable("test_script_1", temp_dir)
+                result3, _ = _select_bgm_stable("test_script_2", temp_dir)
+                
+                # Same script_id should produce same result
+                assert result1 == result2
+                # Result should be one of the URLs
+                assert result1 in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
+                # Different script_id may produce different result
+                assert result3 in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
 
     def test_bgm_urls_comma_separated(self):
         """Test BGM_URLS with comma-separated format"""
+        import tempfile
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         bgm_urls = "https://example.com/bgm1.mp3,https://example.com/bgm2.mp3,https://example.com/bgm3.mp3"
         
         with patch.dict(os.environ, {"BGM_URLS": bgm_urls}):
-            result = _select_bgm_stable("test_script_1")
-            assert result in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result, _ = _select_bgm_stable("test_script_1", temp_dir)
+                assert result in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
 
     def test_bgm_urls_filters_empty_values(self):
         """Test that empty values are filtered out"""
+        import tempfile
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         bgm_urls = '["https://example.com/bgm1.mp3", "", "https://example.com/bgm2.mp3", null]'
         
         with patch.dict(os.environ, {"BGM_URLS": bgm_urls}):
-            result = _select_bgm_stable("test_script_1")
-            # Should only select from non-empty URLs
-            assert result in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3"]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result, _ = _select_bgm_stable("test_script_1", temp_dir)
+                # Should only select from non-empty URLs
+                assert result in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3"]
 
     def test_bgm_urls_stable_across_processes(self):
         """Test that same script_id produces consistent results across processes"""
+        import tempfile
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         bgm_urls = '["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]'
         
         with patch.dict(os.environ, {"BGM_URLS": bgm_urls}):
-            # Simulate multiple "processes" by calling multiple times
-            results = [_select_bgm_stable("consistent_script_id") for _ in range(10)]
-            
-            # All results should be the same
-            assert len(set(results)) == 1
-            assert results[0] in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Simulate multiple "processes" by calling multiple times
+                results = [_select_bgm_stable("consistent_script_id", temp_dir)[0] for _ in range(10)]
+                
+                # All results should be the same
+                assert len(set(results)) == 1
+                assert results[0] in ["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3", "https://example.com/bgm3.mp3"]
 
     def test_bgm_urls_sha256_stable_hash(self):
         """Test that SHA256 is used for stable hashing"""
+        import tempfile
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         bgm_urls = '["https://example.com/bgm1.mp3", "https://example.com/bgm2.mp3"]'
         
         with patch.dict(os.environ, {"BGM_URLS": bgm_urls}):
-            # Verify that the selection is deterministic
-            script_id = "test_script_for_hash"
-            result1 = _select_bgm_stable(script_id)
-            result2 = _select_bgm_stable(script_id)
-            
-            assert result1 == result2
-            
-            # Verify SHA256 is used (not Python's built-in hash which is randomized)
-            # We can't directly test the implementation, but we can verify consistency
-            # across multiple calls with the same script_id
-            for _ in range(5):
-                assert _select_bgm_stable(script_id) == result1
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Verify that the selection is deterministic
+                script_id = "test_script_for_hash"
+                result1, _ = _select_bgm_stable(script_id, temp_dir)
+                result2, _ = _select_bgm_stable(script_id, temp_dir)
+                
+                assert result1 == result2
+                
+                # Verify SHA256 is used (not Python's built-in hash which is randomized)
+                # We can't directly test the implementation, but we can verify consistency
+                # across multiple calls with the same script_id
+                for _ in range(5):
+                    assert _select_bgm_stable(script_id, temp_dir)[0] == result1
 
 
 class TestBGMUrlsFallback:
@@ -110,31 +121,33 @@ class TestBGMUrlsFallback:
         env.pop("BGM_URLS", None)
         
         with patch.dict(os.environ, env, clear=True):
-            # Mock the local BGM directory - need to mock the actual BGM_DIR path
-            with patch("os.path.exists") as mock_exists:
-                with patch("glob.glob") as mock_glob:
-                    with patch("os.path.getsize") as mock_getsize:
-                        # Mock exists to return True only for BGM_DIR
-                        def exists_side_effect(path):
-                            if path == bgm_dir:
-                                return True
-                            return os.path.exists(path)
-                        
-                        mock_exists.side_effect = exists_side_effect
-                        # Mock glob.glob to return MP3 files
-                        mock_glob.return_value = [
-                            os.path.join(bgm_dir, "bgm1.mp3"),
-                            os.path.join(bgm_dir, "bgm2.mp3")
-                        ]
-                        # Mock getsize to return valid file sizes
-                        mock_getsize.return_value = 1024
-                        
-                        result = _select_bgm_stable("test_script_1")
-                        
-                        # Should fall back to local directory
-                        assert result is not None
-                        assert result != ""
-                        assert result.endswith(".mp3")
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Mock the local BGM directory - need to mock the actual BGM_DIR path
+                with patch("os.path.exists") as mock_exists:
+                    with patch("glob.glob") as mock_glob:
+                        with patch("os.path.getsize") as mock_getsize:
+                            # Mock exists to return True only for BGM_DIR
+                            def exists_side_effect(path):
+                                if path == bgm_dir:
+                                    return True
+                                return os.path.exists(path)
+                            
+                            mock_exists.side_effect = exists_side_effect
+                            # Mock glob.glob to return MP3 files
+                            mock_glob.return_value = [
+                                os.path.join(bgm_dir, "bgm1.mp3"),
+                                os.path.join(bgm_dir, "bgm2.mp3")
+                            ]
+                            # Mock getsize to return valid file sizes
+                            mock_getsize.return_value = 1024
+                            
+                            result, trace_info = _select_bgm_stable("test_script_1", temp_dir)
+                            
+                            # Should fall back to local directory
+                            assert result is not None
+                            assert result != ""
+                            assert result.endswith(".mp3")
+                            assert trace_info["bgm_source"] == "local"
 
     def test_bgm_urls_not_configured_no_local_fallback(self):
         """Test warning when BGM_URLS not configured and no local fallback"""
@@ -144,25 +157,29 @@ class TestBGMUrlsFallback:
         env.pop("BGM_URLS", None)
         
         with patch.dict(os.environ, env, clear=True):
-            # Mock no local BGM directory
-            with patch("os.path.exists") as mock_exists:
-                mock_exists.return_value = False
-                
-                result = _select_bgm_stable("test_script_1")
-                
-                # Should return empty string when no BGM available
-                assert result == ""
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Mock no local BGM directory
+                with patch("os.path.exists") as mock_exists:
+                    mock_exists.return_value = False
+                    
+                    result, trace_info = _select_bgm_stable("test_script_1", temp_dir)
+                    
+                    # Should return empty string when no BGM available
+                    assert result == ""
+                    assert "BGM 配置缺失" in trace_info["warning"]
 
     def test_bgm_urls_empty_string(self):
         """Test that empty BGM_URLS string is treated as not configured"""
         from src.graphs.nodes.script_source_router_node import _select_bgm_stable
         
         with patch.dict(os.environ, {"BGM_URLS": ""}):
-            with patch("os.path.exists") as mock_exists:
-                mock_exists.return_value = False
-                
-                result = _select_bgm_stable("test_script_1")
-                assert result == ""
+            with tempfile.TemporaryDirectory() as temp_dir:
+                with patch("os.path.exists") as mock_exists:
+                    mock_exists.return_value = False
+                    
+                    result, trace_info = _select_bgm_stable("test_script_1", temp_dir)
+                    assert result == ""
+                    assert "BGM 配置缺失" in trace_info["warning"]
 
 
 class TestBGMDownload:
@@ -212,10 +229,11 @@ class TestBGMWarning:
         
         env = os.environ.copy()
         env.pop("BGM_URLS", None)
+        env.pop("BGM_TOS_PREFIX", None)
         
         with patch.dict(os.environ, env, clear=True):
             with patch("src.graphs.nodes.script_source_router_node._select_bgm_stable") as mock_select:
-                mock_select.return_value = ""  # No BGM available
+                mock_select.return_value = ("", {"bgm_source": "", "bgm_bucket": "", "bgm_object_key": "", "bgm_used": False, "warning": "BGM 配置缺失"})
                 
                 state = {
                     "script_source": "manual",
@@ -233,7 +251,7 @@ class TestBGMWarning:
                 
                 # Should have warning in result
                 assert "warnings" in result
-                assert any("BGM_URLS" in w or "BGM 选择失败" in w for w in result["warnings"])
+                assert any("BGM" in w for w in result["warnings"])
 
 
 class TestBGMDualPathAmix:

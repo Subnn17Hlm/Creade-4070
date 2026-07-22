@@ -11,7 +11,7 @@
 
 import os
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -173,6 +173,71 @@ class TosMaterialClient:
     @property
     def config(self) -> TosConfig:
         return self._config
+
+    def list_objects(
+        self,
+        bucket: str,
+        prefix: str = "",
+        max_keys: int = 1000,
+    ) -> List[Dict[str, Any]]:
+        """
+        列举指定前缀下的对象。
+        
+        Args:
+            bucket: 桶名
+            prefix: 对象键前缀
+            max_keys: 最大返回对象数
+            
+        Returns:
+            对象列表，每个对象包含 key, size, last_modified
+            
+        Raises:
+            TosClientError: 如果列举失败
+        """
+        try:
+            client = self._get_client()
+            result = client.list_objects(bucket=bucket, prefix=prefix, max_keys=max_keys)
+            
+            objects = []
+            for obj in result.contents:
+                objects.append({
+                    "key": obj.key,
+                    "size": obj.size,
+                    "last_modified": obj.last_modified,
+                })
+            
+            logger.info(f"TOS 列举对象: bucket={bucket}, prefix={prefix}, count={len(objects)}")
+            return objects
+        except Exception as e:
+            raise TosClientError(f"列举对象失败: {type(e).__name__}")
+
+    def download_object(
+        self,
+        bucket: str,
+        object_key: str,
+        local_path: str,
+    ) -> str:
+        """
+        下载对象到本地文件。
+        
+        Args:
+            bucket: 桶名
+            object_key: 对象键
+            local_path: 本地文件路径
+            
+        Returns:
+            本地文件路径
+            
+        Raises:
+            TosClientError: 如果下载失败
+        """
+        try:
+            client = self._get_client()
+            client.get_object(bucket=bucket, key=object_key, file_path=local_path)
+            logger.info(f"TOS 下载对象: bucket={bucket}, key={object_key}, local={local_path}")
+            return local_path
+        except Exception as e:
+            raise TosClientError(f"下载对象失败: {type(e).__name__}")
 
     def head_object(self, bucket: str, object_key: str) -> Dict[str, Any]:
         """

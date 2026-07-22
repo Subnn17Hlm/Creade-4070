@@ -160,15 +160,17 @@ class TestBGMDirectoryAndSelection:
     
     def test_same_script_id_selects_same_bgm(self):
         """Test that same script_id selects same BGM across processes."""
+        import tempfile
         from graphs.nodes.script_source_router_node import _select_bgm_stable
         
         script_id = "test_script_12345"
         
         # Call multiple times to simulate different processes
         bgm_urls = []
-        for _ in range(5):
-            bgm_url = _select_bgm_stable(script_id)
-            bgm_urls.append(bgm_url)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for _ in range(5):
+                bgm_url, trace_info = _select_bgm_stable(script_id, temp_dir)
+                bgm_urls.append(bgm_url)
         
         # All selections should be the same
         assert len(set(bgm_urls)) == 1, f"Same script_id should select same BGM, but got {bgm_urls}"
