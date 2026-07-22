@@ -586,28 +586,69 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
     
     返回 status: queued / running / success / failed / timeout
     以及完成后的完整 result（包含 final_video_url 等）。
+    
+    支持三种查询方式（按优先级）：
+    1. 通过 external_task_id (即 run_id) 查找
+    2. 通过 task_id 查找
+    3. 通过 batch_id 查找该批次下的所有任务
     """
     from storage.database.db import get_async_sessionmaker
-    from storage.database.batch_models import BatchTask, BatchTaskStatus
+    from storage.database.batch_models import BatchTask, BatchTaskStatus, BatchJob
 
     try:
         async_session_maker = get_async_sessionmaker()
         async with async_session_maker() as db:
-            # 通过 external_task_id (即 run_id) 查找任务
+            task = None
+            query_method = None
+            
+            # 方式1: 通过 external_task_id (run_id) 查找
             logger.info(f"[GET /status] Querying by external_task_id={run_id} (type={type(run_id).__name__})")
             result = await db.execute(
                 select(BatchTask).where(BatchTask.external_task_id == run_id)
             )
             task = result.scalar_one_or_none()
-
+            if task:
+                query_method = "external_task_id"
+            
+            # 方式2: 如果未找到，尝试通过 task_id 查找
             if task is None:
-                # 诊断：查询所有任务，查看实际存储的 external_task_id 值
-                logger.warning(f"[GET /status] Task not found by external_task_id={run_id}, checking all tasks...")
+                try:
+                    import uuid
+                    task_uuid = uuid.UUID(run_id)
+                    result = await db.execute(
+                        select(BatchTask).where(BatchTask.task_id == task_uuid)
+                    )
+                    task = result.scalar_one_or_none()
+                    if task:
+                        query_method = "task_id"
+                        logger.info(f"[GET /status] Found by task_id={run_id}")
+                except (ValueError, AttributeError):
+                    pass  # run_id 不是有效的 UUID
+            
+            # 方式3: 如果仍未找到，尝试通过 batch_id 查找
+            if task is None:
+                try:
+                    import uuid
+                    batch_uuid = uuid.UUID(run_id)
+                    result = await db.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_uuid).limit(1)
+                    )
+                    task = result.scalar_one_or_none()
+                    if task:
+                        query_method = "batch_id"
+                        logger.info(f"[GET /status] Found by batch_id={run_id}")
+                except (ValueError, AttributeError):
+                    pass  # run_id 不是有效的 UUID
+            
+            if task is None:
+                # 诊断：查询所有任务，查看实际存储的值
+                logger.warning(f"[GET /status] Task not found by any method for id={run_id}, checking all tasks...")
                 all_result = await db.execute(select(BatchTask).limit(10))
                 all_tasks = all_result.scalars().all()
                 for t in all_tasks:
                     logger.warning(
                         f"[GET /status] Found task: task_id={t.task_id}, "
+                        f"batch_id={t.batch_id}, "
                         f"external_task_id={t.external_task_id} (type={type(t.external_task_id).__name__}), "
                         f"status={t.status}"
                     )
@@ -623,9 +664,11 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
             status = status_map.get(task.status, "unknown")
 
             response = {
-                "run_id": run_id,
+                "run_id": task.external_task_id or run_id,
                 "status": status,
                 "task_id": str(task.task_id),
+                "batch_id": str(task.batch_id),
+                "query_method": query_method,
                 "created_at": task.created_at.isoformat() if task.created_at else None,
             }
 
@@ -640,22 +683,13 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
                     response["error"] = task.error_message
                     response["error_code"] = task.error_code
 
-                # 检查是否超时（running 状态超过 30 分钟）
-                if task.status == BatchTaskStatus.RUNNING and task.started_at:
-                    from datetime import datetime, timedelta
-                    running_duration = datetime.utcnow() - task.started_at
-                    if running_duration > timedelta(minutes=30):
-                        response["status"] = "timeout"
-                        response["message"] = "Task exceeded 30 minutes running time"
-
-            elif status == "running":
-                # 检查是否超时
-                if task.started_at:
-                    from datetime import datetime, timedelta
-                    running_duration = datetime.utcnow() - task.started_at
-                    if running_duration > timedelta(minutes=30):
-                        response["status"] = "timeout"
-                        response["message"] = "Task exceeded 30 minutes running time"
+            # 检查是否超时（running 状态超过 30 分钟）
+            if status == "running" and task.started_at:
+                from datetime import datetime, timedelta
+                running_duration = datetime.utcnow() - task.started_at
+                if running_duration > timedelta(minutes=30):
+                    response["status"] = "timeout"
+                    response["message"] = "Task exceeded 30 minutes running time"
 
             return response
 

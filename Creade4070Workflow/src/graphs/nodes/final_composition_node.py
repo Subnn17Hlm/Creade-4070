@@ -560,6 +560,217 @@ def _burn_subtitles_with_overlay(
     return result
 
 
+def _burn_subtitles_batched(
+    ffmpeg_path: str,
+    video_path: str,
+    audio_path: str,
+    srt_path: str,
+    font_path: str,
+    output_path: str,
+    temp_dir: str,
+    video_width: int = 720,
+    video_height: int = 1280,
+    max_cues_per_batch: int = 3,
+) -> Dict[str, Any]:
+    """
+    分批烧录字幕，避免同时加载所有 PNG 导致 OOM。
+    
+    策略：
+    1. 将 cues 分成多批，每批最多 max_cues_per_batch 个
+    2. 每批独立运行 ffmpeg，输出作为下一批的输入
+    3. 中间文件放入 temp_dir，完成后清理
+    4. 统一使用 -threads 1 限制资源
+    """
+    result = {
+        "subtitle_burned": False,
+        "subtitle_strategy": "batched_overlay",
+        "cue_count": 0,
+        "batch_count": 0,
+        "batches": [],
+        "ffmpeg_returncode": -1,
+        "ffmpeg_stderr_tail": "",
+    }
+    
+    # 解析 SRT
+    cues = _parse_srt(srt_path)
+    if not cues:
+        result["error"] = "No cues in SRT"
+        return result
+    
+    result["cue_count"] = len(cues)
+    
+    # 分批
+    batches = []
+    for i in range(0, len(cues), max_cues_per_batch):
+        batch_cues = cues[i:i + max_cues_per_batch]
+        batches.append({
+            "batch_index": len(batches),
+            "cue_start": i,
+            "cue_end": i + len(batch_cues),
+            "cues": batch_cues,
+        })
+    
+    result["batch_count"] = len(batches)
+    logger.info(
+        "[Node7] 分批字幕烧录: cue_count=%d, batch_count=%d, max_cues_per_batch=%d, "
+        "resolution=%dx%d",
+        len(cues), len(batches), max_cues_per_batch, video_width, video_height,
+    )
+    
+    # 当前输入视频路径（第一批使用原始视频，后续批次使用上一批的输出）
+    current_input_video = video_path
+    intermediate_files = []
+    
+    try:
+        for batch_info in batches:
+            batch_idx = batch_info["batch_index"]
+            batch_cues = batch_info["cues"]
+            cue_start = batch_info["cue_start"]
+            cue_end = batch_info["cue_end"]
+            
+            logger.info(
+                "[Node7] 烧录批次 %d/%d: cues[%d:%d] (%d 条)",
+                batch_idx + 1, len(batches), cue_start, cue_end, len(batch_cues),
+            )
+            
+            # 渲染该批次的 PNG
+            batch_png_files = []
+            for i, cue in enumerate(batch_cues):
+                png_path = os.path.join(temp_dir, f"batch{batch_idx}_subtitle_{i:03d}.png")
+                render_result = _render_subtitle_png(
+                    cue["text"],
+                    png_path,
+                    font_path,
+                    font_size=38,
+                    video_width=video_width,
+                    video_height=video_height,
+                )
+                
+                if not render_result["success"]:
+                    error_msg = render_result.get("error", "Unknown error")
+                    result["error"] = f"批次 {batch_idx + 1} 渲染第 {i+1} 条字幕 PNG 失败: {error_msg}"
+                    return result
+                
+                batch_png_files.append({
+                    "path": png_path,
+                    "start": cue["start"],
+                    "end": cue["end"],
+                    "text": cue["text"],
+                })
+                intermediate_files.append(png_path)
+            
+            # 构建该批次的 filter_complex
+            filter_parts = []
+            current_video_label = "[0:v]"
+            
+            for i, png_info in enumerate(batch_png_files):
+                input_idx = i + 2  # 0=video, 1=audio, 2..=PNGs
+                start = png_info["start"]
+                end = png_info["end"]
+                output_label = f"[v{i}]"
+                
+                filter_parts.append(
+                    f"{current_video_label}[{input_idx}:v]overlay=0:0:enable='between(t,{start},{end})'{output_label}"
+                )
+                current_video_label = output_label
+            
+            filter_complex = ";".join(filter_parts)
+            
+            # 确定该批次的输出路径
+            if batch_idx == len(batches) - 1:
+                # 最后一批输出到最终路径
+                batch_output = output_path
+            else:
+                # 中间批次输出到临时文件
+                batch_output = os.path.join(temp_dir, f"batch{batch_idx}_output.mp4")
+                intermediate_files.append(batch_output)
+            
+            # 构建 ffmpeg 命令
+            cmd = [
+                ffmpeg_path, "-y",
+                "-threads", "1",
+                "-i", current_input_video,
+                "-i", audio_path,
+            ]
+            
+            for png_info in batch_png_files:
+                cmd.extend(["-loop", "1", "-i", png_info["path"]])
+            
+            cmd.extend([
+                "-filter_complex", filter_complex,
+                "-map", current_video_label,
+                "-map", "1:a",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-threads", "1",
+                "-shortest",
+                batch_output,
+            ])
+            
+            logger.info("[Node7] 批次 %d 命令: %s", batch_idx + 1, _sanitize_cmd_for_log(cmd))
+            
+            # 执行 ffmpeg
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=180,
+            )
+            
+            batch_result = {
+                "batch_index": batch_idx,
+                "cue_range": f"[{cue_start}:{cue_end}]",
+                "cue_count": len(batch_cues),
+                "returncode": proc.returncode,
+                "stderr_tail": proc.stderr[-2000:] if proc.stderr else "",
+            }
+            result["batches"].append(batch_result)
+            result["ffmpeg_returncode"] = proc.returncode
+            result["ffmpeg_stderr_tail"] = proc.stderr[-8000:] if proc.stderr else ""
+            
+            if proc.returncode != 0:
+                if proc.returncode == -9:
+                    result["error"] = (
+                        f"批次 {batch_idx + 1} FFmpeg 被 SIGKILL 终止 (code=-9)，内存超限。"
+                        f"cue_range=[{cue_start}:{cue_end}], resolution={video_width}x{video_height}, "
+                        f"stderr: {proc.stderr[-2000:] if proc.stderr else '(empty)'}"
+                    )
+                    logger.error(
+                        "[Node7] 批次 %d OOM: cue_range=[%d:%d], resolution=%dx%d",
+                        batch_idx + 1, cue_start, cue_end, video_width, video_height,
+                    )
+                else:
+                    result["error"] = f"批次 {batch_idx + 1} FFmpeg failed with code {proc.returncode}"
+                return result
+            
+            if not os.path.exists(batch_output) or os.path.getsize(batch_output) == 0:
+                result["error"] = f"批次 {batch_idx + 1} 输出文件不存在或大小为 0"
+                return result
+            
+            # 下一批次的输入是当前批次的输出
+            current_input_video = batch_output
+        
+        # 所有批次成功
+        result["subtitle_burned"] = True
+        logger.info("[Node7] 分批字幕烧录完成: %d 批次全部成功", len(batches))
+        
+    except Exception as e:
+        result["error"] = str(e)
+    finally:
+        # 清理中间文件（保留最终输出）
+        for f in intermediate_files:
+            if f != output_path and os.path.exists(f):
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+    
+    return result
+
+
 def final_composition_node(
     state: dict,
     config: RunnableConfig,
@@ -784,8 +995,8 @@ def final_composition_node(
             raise RuntimeError(error_msg)
         
         try:
-            logger.info("[Node7] 使用 Pillow PNG overlay 方式烧录字幕")
-            overlay_result = _burn_subtitles_with_overlay(
+            logger.info("[Node7] 使用分批 Pillow PNG overlay 方式烧录字幕")
+            overlay_result = _burn_subtitles_batched(
                 ffmpeg_path=ffmpeg_path,
                 video_path=concat_path,
                 audio_path=tts_wav_path,
@@ -795,19 +1006,24 @@ def final_composition_node(
                 temp_dir=temp_dir,
                 video_width=1080,
                 video_height=1920,
+                max_cues_per_batch=3,
             )
             
             if overlay_result.get("subtitle_burned"):
                 subtitle_burned = True
-                subtitle_filter_used = "pillow_png_overlay"
-                logger.info("[Node7] Pillow PNG overlay 字幕烧录成功: cue_count=%d", overlay_result.get("cue_count", 0))
+                subtitle_filter_used = "batched_pillow_png_overlay"
+                logger.info(
+                    "[Node7] 分批字幕烧录成功: cue_count=%d, batch_count=%d",
+                    overlay_result.get("cue_count", 0),
+                    overlay_result.get("batch_count", 0),
+                )
             else:
                 error_msg = overlay_result.get("error", "Unknown error")
-                logger.error("[Node7] Pillow PNG overlay 字幕烧录失败: %s", error_msg)
+                logger.error("[Node7] 分批字幕烧录失败: %s", error_msg)
                 raise RuntimeError(f"字幕烧录失败: {error_msg}")
                 
         except Exception as e:
-            logger.error("[Node7] Pillow PNG overlay 字幕烧录异常: %s", e)
+            logger.error("[Node7] 分批字幕烧录异常: %s", e)
             raise RuntimeError(f"字幕烧录失败: {e}")
         
         subbed_duration = get_media_duration(subbed_path)
