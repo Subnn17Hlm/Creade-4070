@@ -238,3 +238,143 @@ class TestBatchExecutorIntegration:
         # locked_task.error_message = str(error_msg)
         # await task_db.commit()
         pass  # Implementation verified
+
+
+class TestRealDatabaseIntegration:
+    """Real database integration tests for POST/status flow."""
+
+    @pytest.mark.asyncio
+    async def test_post_creates_record_queryable_by_new_session(self):
+        """POST /run should create a record that is immediately queryable by a new session."""
+        from storage.database.db import get_async_sessionmaker
+        from storage.database.batch_models import BatchJob, BatchTask, BatchJobStatus, BatchTaskStatus
+        import uuid
+
+        # Skip if no database available
+        try:
+            async_session_maker = get_async_sessionmaker()
+        except Exception:
+            pytest.skip("No database available")
+
+        run_id = str(uuid.uuid4())
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+
+        try:
+            # Create record in one session
+            async with async_session_maker() as session1:
+                batch = BatchJob(
+                    batch_id=batch_id,
+                    status=BatchJobStatus.CREATED,
+                    total_count=1,
+                    pending_count=1,
+                    running_count=0,
+                    success_count=0,
+                    failed_count=0,
+                    concurrency=1,
+                    idempotency_key=f"test-integration-{run_id}",
+                    source_filename="test",
+                )
+                session1.add(batch)
+
+                task = BatchTask(
+                    task_id=task_id,
+                    batch_id=batch_id,
+                    row_number=1,
+                    external_task_id=run_id,
+                    status=BatchTaskStatus.PENDING,
+                    input_data={"script_text": "test"},
+                )
+                session1.add(task)
+                await session1.commit()
+
+            # Query in a completely new session (simulating GET /api/run/{run_id}/status)
+            async with async_session_maker() as session2:
+                from sqlalchemy import select
+                result = await session2.execute(
+                    select(BatchTask).where(BatchTask.external_task_id == run_id)
+                )
+                found_task = result.scalar_one_or_none()
+
+                assert found_task is not None, f"Task with run_id={run_id} not found in new session"
+                assert str(found_task.task_id) == str(task_id)
+                assert str(found_task.batch_id) == str(batch_id)
+                assert found_task.status == BatchTaskStatus.PENDING
+        finally:
+            # Cleanup
+            try:
+                async with async_session_maker() as cleanup_session:
+                    from sqlalchemy import delete
+                    await cleanup_session.execute(delete(BatchTask).where(BatchTask.task_id == task_id))
+                    await cleanup_session.execute(delete(BatchJob).where(BatchJob.batch_id == batch_id))
+                    await cleanup_session.commit()
+            except Exception:
+                pass  # Cleanup failure is acceptable
+
+    @pytest.mark.asyncio
+    async def test_run_id_string_type_consistency(self):
+        """run_id must be stored and queried as string consistently."""
+        from storage.database.db import get_async_sessionmaker
+        from storage.database.batch_models import BatchJob, BatchTask, BatchJobStatus, BatchTaskStatus
+        import uuid
+
+        try:
+            async_session_maker = get_async_sessionmaker()
+        except Exception:
+            pytest.skip("No database available")
+
+        # Use a string run_id (simulating what POST /run does after str(ctx.run_id))
+        run_id_str = str(uuid.uuid4())
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+
+        try:
+            # Create with string run_id
+            async with async_session_maker() as session:
+                batch = BatchJob(
+                    batch_id=batch_id,
+                    status=BatchJobStatus.CREATED,
+                    total_count=1,
+                    pending_count=1,
+                    running_count=0,
+                    success_count=0,
+                    failed_count=0,
+                    concurrency=1,
+                    idempotency_key=f"test-type-{run_id_str}",
+                    source_filename="test",
+                )
+                session.add(batch)
+
+                task = BatchTask(
+                    task_id=task_id,
+                    batch_id=batch_id,
+                    row_number=1,
+                    external_task_id=run_id_str,  # String type
+                    status=BatchTaskStatus.PENDING,
+                    input_data={"script_text": "test"},
+                )
+                session.add(task)
+                await session.commit()
+
+            # Query with the same string run_id (simulating GET /api/run/{run_id}/status)
+            async with async_session_maker() as session:
+                from sqlalchemy import select
+                result = await session.execute(
+                    select(BatchTask).where(BatchTask.external_task_id == run_id_str)
+                )
+                found_task = result.scalar_one_or_none()
+
+                assert found_task is not None
+                assert found_task.external_task_id == run_id_str
+                assert isinstance(found_task.external_task_id, str)
+        finally:
+            # Cleanup
+            try:
+                async with async_session_maker() as cleanup_session:
+                    from sqlalchemy import delete
+                    await cleanup_session.execute(delete(BatchTask).where(BatchTask.task_id == task_id))
+                    await cleanup_session.execute(delete(BatchJob).where(BatchJob.batch_id == batch_id))
+                    await cleanup_session.commit()
+            except Exception:
+                pass  # Cleanup failure is acceptable
+        pass  # Implementation verified

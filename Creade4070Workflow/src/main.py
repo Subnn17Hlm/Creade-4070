@@ -438,7 +438,9 @@ async def http_run(request: Request) -> Dict[str, Any]:
     upstream_run_id = request.headers.get(HEADER_X_RUN_ID)
     if upstream_run_id:
         ctx.run_id = upstream_run_id
-    run_id = ctx.run_id
+    # 确保 run_id 是字符串类型，避免 UUID 对象与字符串不匹配
+    run_id = str(ctx.run_id)
+    ctx.run_id = run_id  # 同步更新 context 中的 run_id
     request_context.set(ctx)
 
     logger.info(
