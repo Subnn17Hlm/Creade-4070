@@ -30,6 +30,14 @@ __pycache__/
 *.rmvb
 *.vob
 
+# 音频文件（BGM等）
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+*.m4a
+
 # 归档文件
 *.iso
 *.dmg

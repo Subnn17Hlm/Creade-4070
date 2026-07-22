@@ -27,18 +27,55 @@ RUNS_BASE = os.path.join(tempfile.gettempdir(), "runs")
 BGM_DIR = os.path.join(WORKSPACE, "assets", "bgm")
 
 
+def _parse_bgm_urls() -> List[str]:
+    """
+    解析 BGM_URLS 环境变量，支持 JSON 数组或逗号分隔的 URL 列表。
+    返回过滤空值后的 URL 列表。
+    """
+    import json
+    bgm_urls_env = os.getenv("BGM_URLS", "")
+    if not bgm_urls_env:
+        return []
+    
+    # 尝试解析为 JSON 数组
+    try:
+        urls = json.loads(bgm_urls_env)
+        if isinstance(urls, list):
+            return [url.strip() for url in urls if url and url.strip()]
+    except (json.JSONDecodeError, TypeError):
+        pass
+    
+    # 回退到逗号分隔解析
+    return [url.strip() for url in bgm_urls_env.split(",") if url and url.strip()]
+
+
 def _select_bgm_stable(script_id: str) -> str:
     """
-    从BGM目录中稳定选择一个BGM文件。
+    从BGM_URLS环境变量或本地BGM目录中稳定选择一个BGM。
     使用 script_id 的 SHA256 hash 确保同一 script_id 总是选择相同的 BGM。
+    
+    优先级：
+    1. BGM_URLS 环境变量（JSON 数组或逗号分隔的 URL 列表）
+    2. 本地 assets/bgm 目录（开发环境 fallback）
     """
+    # 1. 优先从 BGM_URLS 环境变量选择远程 URL
+    bgm_urls = _parse_bgm_urls()
+    if bgm_urls:
+        # 使用 script_id 的 SHA256 hash 稳定选择（跨进程稳定）
+        digest = hashlib.sha256(script_id.encode("utf-8")).digest()
+        index = int.from_bytes(digest[:8], "big") % len(bgm_urls)
+        selected_url = bgm_urls[index]
+        logger.info(f"从 BGM_URLS 稳定选择远程 BGM (script_id={script_id}): {selected_url}")
+        return selected_url
+    
+    # 2. Fallback 到本地 assets/bgm 目录（开发环境）
     if not os.path.exists(BGM_DIR):
-        logger.warning(f"BGM目录不存在: {BGM_DIR}")
+        logger.warning(f"BGM_URLS 未配置，且 BGM 目录不存在: {BGM_DIR}")
         return ""
     
     bgm_files = sorted(glob.glob(os.path.join(BGM_DIR, "*.mp3")))
     if not bgm_files:
-        logger.warning(f"BGM目录中没有MP3文件: {BGM_DIR}")
+        logger.warning(f"BGM_URLS 未配置，且 BGM 目录中没有 MP3 文件: {BGM_DIR}")
         return ""
     
     # 验证所有BGM文件的有效性
@@ -52,14 +89,14 @@ def _select_bgm_stable(script_id: str) -> str:
             logger.warning(f"BGM文件验证失败 {bgm_file}: {e}")
     
     if not valid_bgm_files:
-        logger.warning(f"BGM目录中没有有效的MP3文件: {BGM_DIR}")
+        logger.warning(f"BGM_URLS 未配置，且 BGM 目录中没有有效的 MP3 文件: {BGM_DIR}")
         return ""
     
     # 使用 script_id 的 SHA256 hash 稳定选择（跨进程稳定）
     digest = hashlib.sha256(script_id.encode("utf-8")).digest()
     index = int.from_bytes(digest[:8], "big") % len(valid_bgm_files)
     selected = valid_bgm_files[index]
-    logger.info(f"稳定选择BGM (script_id={script_id}): {os.path.basename(selected)}")
+    logger.info(f"从本地目录稳定选择 BGM (script_id={script_id}): {os.path.basename(selected)}")
     return selected
 
 
@@ -113,7 +150,7 @@ def script_source_router_node(
         if bgm_url:
             logger.info(f"未指定BGM，稳定选择: {bgm_url}")
         else:
-            bgm_warnings.append("BGM 选择失败：BGM 目录不存在或为空，将仅使用 TTS 音频")
+            bgm_warnings.append("BGM 选择失败：BGM_URLS 未配置且本地 BGM 目录不存在或为空，将仅使用 TTS 音频")
             logger.warning("[Node0a] BGM 选择失败，将仅使用 TTS 音频")
 
     # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
