@@ -1042,6 +1042,24 @@ async function runWorkflow() {
         if (d.run_id) {
           html += '<span class="ok">run_id:</span> ' + d.run_id + '\\n';
         }
+        if (d.batch_id) {
+          html += '<span class="ok">batch_id:</span> ' + d.batch_id + '\\n';
+        }
+        if (d.task_id) {
+          html += '<span class="ok">task_id:</span> ' + d.task_id + '\\n';
+        }
+
+        // 保存到 localStorage 并构建 status_url
+        if (d.run_id && d.batch_id && d.task_id) {
+          const statusUrl = `/api/run/${d.run_id}/status?batch_id=${d.batch_id}&task_id=${d.task_id}`;
+          localStorage.setItem('workflow_run_id', d.run_id);
+          localStorage.setItem('workflow_batch_id', d.batch_id);
+          localStorage.setItem('workflow_task_id', d.task_id);
+          localStorage.setItem('workflow_status_url', statusUrl);
+          html += '<span class="ok">status_url:</span> ' + statusUrl + '\\n';
+          html += '<span class="info">已保存到 localStorage，刷新页面后可继续轮询</span>\\n';
+        }
+
         html += '\\n--- 完整响应 ---\\n' + JSON.stringify(parsed, null, 2);
 
         if (d.final_video_url) {
@@ -1049,10 +1067,14 @@ async function runWorkflow() {
           videoDiv.innerHTML = '<video controls src="' + d.final_video_url + '"></video>';
         }
       } else {
-        html += '<span class="fail">错误:</span>\\n' + JSON.stringify(parsed, null, 2);
+        html += '<span class="fail">HTTP ' + res.status + ' 错误:</span>\\n';
+        html += '<span class="fail">Request URL:</span> POST /run\\n';
+        html += '<span class="fail">响应正文:</span>\\n' + JSON.stringify(parsed, null, 2);
       }
     } else {
-      html += raw || '(空响应)';
+      html += '<span class="fail">HTTP ' + res.status + '</span>\\n';
+      html += '<span class="fail">Request URL:</span> POST /run\\n';
+      html += '<span class="fail">响应正文:</span>\\n' + (raw || '(空响应)');
     }
 
     resultDiv.innerHTML = html;
@@ -1171,39 +1193,104 @@ function WorkflowMonitor() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [polling, setPolling] = useState(false);
+  const [lastStatus, setLastStatus] = useState(null);
+  const [requestInfo, setRequestInfo] = useState(null);
 
   useEffect(() => {
     fetchTopology().then(setTopology);
+    // 从 localStorage 恢复状态
+    const savedStatusUrl = localStorage.getItem('workflow_status_url');
+    if (savedStatusUrl) {
+      loadStatus(savedStatusUrl, true);
+    }
   }, []);
 
-  const loadTrace = async (runId) => {
-    if (!runId) {
-      setError('请输入 run_id');
+  const loadStatus = async (statusUrl, isAutoLoad = false) => {
+    if (!statusUrl) {
+      setError('请输入 status_url');
       return;
     }
     setLoading(true);
     setError(null);
+    setRequestInfo({ url: statusUrl, method: 'GET' });
     try {
-      const res = await fetch(`/api/runs/${runId}/trace`);
-      const data = await res.json();
+      const res = await fetch(statusUrl);
+      const raw = await res.text();
+      let data;
+      try { data = JSON.parse(raw); } catch (e) { data = null; }
+
+      setRequestInfo({
+        url: statusUrl,
+        method: 'GET',
+        status: res.status,
+        statusText: res.statusText
+      });
+
+      if (!res.ok) {
+        setError(`HTTP ${res.status} ${res.statusText}\\nRequest URL: ${statusUrl}\\n响应正文: ${raw}`);
+        return;
+      }
+
       if (data.error) {
         setError('加载失败: ' + (data.message || data.error));
         return;
       }
+
+      setLastStatus(data);
+
+      // 将状态映射到节点
       const stateMap = {};
-      (data.nodes || []).forEach(ns => { stateMap[ns.node || ns.id] = ns; });
+      const status = data.status || 'pending';
+      // 假设所有节点都是同一个状态（简化处理）
+      if (topology) {
+        topology.nodes.forEach(node => {
+          stateMap[node.id] = {
+            status: status,
+            error_message: data.error_message,
+            final_video_url: data.final_video_url
+          };
+        });
+      }
       setNodeStates(stateMap);
       setError(null);
+
+      // 如果状态是终态，停止轮询
+      if (['success', 'failed', 'timeout', 'cancelled'].includes(status)) {
+        setPolling(false);
+      }
     } catch (e) {
-      setError('加载失败: ' + e.message);
+      setError(`请求失败: ${e.message}\\nRequest URL: ${statusUrl}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadClick = () => {
+    const statusUrl = document.getElementById('wm-status-url').value.trim();
+    if (statusUrl) {
+      localStorage.setItem('workflow_status_url', statusUrl);
+      loadStatus(statusUrl);
+      setPolling(true);
     }
   };
 
   const handleNodeClick = (node) => {
     setSelectedNode(node);
   };
+
+  // 轮询逻辑
+  useEffect(() => {
+    if (!polling) return;
+    const statusUrl = localStorage.getItem('workflow_status_url');
+    if (!statusUrl) return;
+
+    const interval = setInterval(() => {
+      loadStatus(statusUrl, true);
+    }, 3000); // 每 3 秒轮询一次
+
+    return () => clearInterval(interval);
+  }, [polling, topology]);
 
   if (!topology) {
     return <div style={{ padding: '20px', color: '#999' }}>加载中...</div>;
@@ -1215,20 +1302,28 @@ function WorkflowMonitor() {
     <div>
       <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
-          id="wm-run-id"
+          id="wm-status-url"
           type="text"
-          placeholder="输入 run_id"
+          placeholder="输入 status_url (例如: /api/run/{run_id}/status?batch_id=...&task_id=...)"
+          defaultValue={localStorage.getItem('workflow_status_url') || ''}
           style={{ flex: 1, padding: '8px', background: '#2a2a2a', border: '1px solid #444', borderRadius: '4px', color: '#fff' }}
         />
         <button
-          onClick={() => loadTrace(document.getElementById('wm-run-id').value.trim())}
+          onClick={handleLoadClick}
           disabled={loading}
           style={{ padding: '8px 16px', background: '#4a9eff', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}
         >
           {loading ? '加载中...' : '加载运行记录'}
         </button>
+        {polling && <span style={{ color: '#4caf50', fontSize: '12px' }}>轮询中...</span>}
       </div>
-      {error && <div style={{ padding: '12px', background: '#4d1e1e', border: '1px solid #f44', borderRadius: '4px', color: '#f44', marginBottom: '12px' }}>{error}</div>}
+      {requestInfo && (
+        <div style={{ padding: '8px', background: '#2a2a2a', borderRadius: '4px', marginBottom: '8px', fontSize: '11px', color: '#999' }}>
+          <div>Request: {requestInfo.method} {requestInfo.url}</div>
+          {requestInfo.status && <div>Response: HTTP {requestInfo.status} {requestInfo.statusText}</div>}
+        </div>
+      )}
+      {error && <div style={{ padding: '12px', background: '#4d1e1e', border: '1px solid #f44', borderRadius: '4px', color: '#f44', marginBottom: '12px', whiteSpace: 'pre-wrap' }}>{error}</div>}
       <WorkflowTree
         nodes={topology.nodes}
         edges={topology.edges}
@@ -1243,6 +1338,7 @@ function WorkflowMonitor() {
           {selectedState.completed_at && <div><strong>完成:</strong> {new Date(selectedState.completed_at * 1000).toLocaleTimeString()}</div>}
           {selectedState.duration_ms && <div><strong>耗时:</strong> {selectedState.duration_ms}ms</div>}
           {selectedState.error_message && <div style={{ color: '#f44', marginTop: '8px' }}><strong>错误:</strong> {selectedState.error_message}</div>}
+          {selectedState.final_video_url && <div style={{ marginTop: '8px' }}><strong>视频:</strong> <a href={selectedState.final_video_url} target="_blank" style={{ color: '#4a9eff' }}>{selectedState.final_video_url}</a></div>}
           {selectedState.input_summary && Object.keys(selectedState.input_summary).length > 0 && (
             <div style={{ marginTop: '8px' }}><strong>输入:</strong><pre>{JSON.stringify(selectedState.input_summary, null, 2)}</pre></div>
           )}
@@ -1251,22 +1347,28 @@ function WorkflowMonitor() {
           )}
         </div>
       )}
+      {lastStatus && lastStatus.final_video_url && (
+        <div style={{ marginTop: '16px', padding: '16px', background: '#1e4d2e', borderRadius: '8px' }}>
+          <div style={{ color: '#4caf50', fontWeight: 'bold', marginBottom: '8px' }}>视频生成成功!</div>
+          <video controls src={lastStatus.final_video_url} style={{ width: '100%', maxWidth: '400px', borderRadius: '4px' }}></video>
+        </div>
+      )}
     </div>
   );
 }
 
-// Auto-load trace after workflow run
+// Auto-load status after workflow run
 const originalRunWorkflow = window.runWorkflow;
 window.runWorkflow = async function() {
   await originalRunWorkflow();
   const resultDiv = document.getElementById('wf-result');
   const text = resultDiv.textContent;
-  const match = text.match(/run_id[:\\s]+([a-f0-9-]{36})/i);
-  if (match) {
-    document.getElementById('wm-run-id').value = match[1];
+  const statusUrlMatch = text.match(/status_url[:\s]+(\/api\/run\/[^\s]+)/i);
+  if (statusUrlMatch) {
+    const statusUrl = statusUrlMatch[1];
+    document.getElementById('wm-status-url').value = statusUrl;
     setTimeout(() => {
-      const event = new Event('click');
-      document.querySelector('button[onclick*="loadWorkflowTrace"]')?.dispatchEvent(event) ||
+      // 点击"加载运行记录"按钮
       document.querySelectorAll('button').forEach(btn => {
         if (btn.textContent.includes('加载')) btn.click();
       });
