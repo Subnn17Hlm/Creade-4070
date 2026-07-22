@@ -30,7 +30,7 @@ BGM_DIR = os.path.join(WORKSPACE, "assets", "bgm")
 def _select_bgm_stable(script_id: str) -> str:
     """
     从BGM目录中稳定选择一个BGM文件。
-    使用 script_id 的 MD5 hash 确保同一 script_id 总是选择相同的 BGM。
+    使用 script_id 的 SHA256 hash 确保同一 script_id 总是选择相同的 BGM。
     """
     if not os.path.exists(BGM_DIR):
         logger.warning(f"BGM目录不存在: {BGM_DIR}")
@@ -41,10 +41,24 @@ def _select_bgm_stable(script_id: str) -> str:
         logger.warning(f"BGM目录中没有MP3文件: {BGM_DIR}")
         return ""
     
-    # 使用 script_id 的 MD5 hash 稳定选择
-    hash_digest = hashlib.md5(script_id.encode()).hexdigest()
-    index = int(hash_digest, 16) % len(bgm_files)
-    selected = bgm_files[index]
+    # 验证所有BGM文件的有效性
+    valid_bgm_files = []
+    for bgm_file in bgm_files:
+        try:
+            file_size = os.path.getsize(bgm_file)
+            if file_size > 0:
+                valid_bgm_files.append(bgm_file)
+        except Exception as e:
+            logger.warning(f"BGM文件验证失败 {bgm_file}: {e}")
+    
+    if not valid_bgm_files:
+        logger.warning(f"BGM目录中没有有效的MP3文件: {BGM_DIR}")
+        return ""
+    
+    # 使用 script_id 的 SHA256 hash 稳定选择（跨进程稳定）
+    digest = hashlib.sha256(script_id.encode("utf-8")).digest()
+    index = int.from_bytes(digest[:8], "big") % len(valid_bgm_files)
+    selected = valid_bgm_files[index]
     logger.info(f"稳定选择BGM (script_id={script_id}): {os.path.basename(selected)}")
     return selected
 
@@ -93,13 +107,17 @@ def script_source_router_node(
 
     # 处理BGM：如果没有指定，稳定选择一个
     bgm_url = state.get("bgm_url", "") or ""
+    bgm_warnings = []
     if not bgm_url:
         bgm_url = _select_bgm_stable(script_id)
         if bgm_url:
             logger.info(f"未指定BGM，稳定选择: {bgm_url}")
+        else:
+            bgm_warnings.append("BGM 选择失败：BGM 目录不存在或为空，将仅使用 TTS 音频")
+            logger.warning("[Node0a] BGM 选择失败，将仅使用 TTS 音频")
 
     # 返回 dict 而非 Pydantic Model，确保 LangGraph 正确合并到 State
-    return {
+    result = {
         "script_source": script_source,
         "script_text": state.get("script_text", "") or "",
         "product_name": state.get("product_name", "") or "",
@@ -112,3 +130,11 @@ def script_source_router_node(
         "run_dir": run_dir,
         "run_id": run_id,  # Pass run_id to state for downstream nodes
     }
+    
+    # 如果有 BGM 警告，合并到 warnings 中
+    if bgm_warnings:
+        existing_warnings = list(state.get("warnings") or [])
+        existing_warnings.extend(bgm_warnings)
+        result["warnings"] = existing_warnings
+    
+    return result

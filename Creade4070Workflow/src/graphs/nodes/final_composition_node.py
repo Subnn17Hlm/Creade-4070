@@ -1041,16 +1041,45 @@ def final_composition_node(
         # BGM 处理
         bgm_used = False
         local_bgm = ""
+        bgm_warnings = []
         
+        # 使用基于项目文件位置的绝对路径解析 BGM 目录
         if not bgm_url:
-            bgm_dir = os.path.join(os.getenv("COZE_WORKSPACE_PATH", ""), "assets/bgm")
-            if os.path.exists(bgm_dir):
+            # 尝试多种方式解析 BGM 目录
+            bgm_dir = None
+            for candidate in [
+                os.path.join(os.path.dirname(__file__), "../../../assets/bgm"),
+                os.path.join(os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects"), "assets/bgm"),
+            ]:
+                candidate = os.path.abspath(candidate)
+                if os.path.exists(candidate):
+                    bgm_dir = candidate
+                    break
+            
+            if bgm_dir:
                 bgm_files = sorted([f for f in os.listdir(bgm_dir) if f.endswith(".mp3")])
-                if bgm_files:
+                # 验证文件有效性
+                valid_bgm_files = []
+                for f in bgm_files:
+                    fpath = os.path.join(bgm_dir, f)
+                    try:
+                        if os.path.getsize(fpath) > 0:
+                            valid_bgm_files.append(fpath)
+                    except Exception:
+                        pass
+                
+                if valid_bgm_files:
                     import hashlib
-                    hash_val = int(hashlib.md5(run_dir.encode()).hexdigest(), 16)
-                    bgm_index = hash_val % len(bgm_files)
-                    bgm_url = os.path.join(bgm_dir, bgm_files[bgm_index])
+                    digest = hashlib.sha256(run_dir.encode("utf-8")).digest()
+                    bgm_index = int.from_bytes(digest[:8], "big") % len(valid_bgm_files)
+                    bgm_url = valid_bgm_files[bgm_index]
+                    logger.info("[Node7] 未指定BGM，稳定选择: %s", os.path.basename(bgm_url))
+                else:
+                    bgm_warnings.append("BGM 目录中没有有效的 MP3 文件，将仅使用 TTS 音频")
+                    logger.warning("[Node7] BGM 目录中没有有效的 MP3 文件")
+            else:
+                bgm_warnings.append("BGM 目录不存在，将仅使用 TTS 音频")
+                logger.warning("[Node7] BGM 目录不存在")
         
         if bgm_url:
             try:
@@ -1059,7 +1088,8 @@ def final_composition_node(
                 logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
                 
                 # 混合 TTS + BGM
-                bgm_volume = 0.40
+                # 使用配置值或默认值 0.15
+                bgm_volume = float(os.getenv("BGM_VOLUME", "0.15"))
                 bgm_mix_cmd = [
                     ffmpeg_path, "-y",
                     "-i", subbed_path,
@@ -1081,8 +1111,11 @@ def final_composition_node(
                 logger.info("[Node7] TTS+BGM 混音完成")
                 
             except Exception as e:
-                logger.error("[Node7] BGM混合失败: %s，仅使用TTS", e)
+                error_msg = str(e)
+                logger.error("[Node7] BGM混合失败: %s，仅使用TTS", error_msg)
                 bgm_used = False
+                # 添加安全、可理解的错误信息，不暴露内部路径或堆栈
+                bgm_warnings.append("BGM 混音失败，视频已生成但仅包含 TTS 音频")
         
         if not bgm_used:
             # 仅使用 TTS
@@ -1149,7 +1182,7 @@ def final_composition_node(
             bgm_used=bgm_used,
         )
 
-        return {
+        result = {
             "final_video_path": final_mp4,
             "contact_sheet_path": contact_sheet_path,
             "video_duration": video_duration,
@@ -1157,8 +1190,17 @@ def final_composition_node(
             "final_video_duration": video_duration,
             "final_audio_duration": video_duration,
             "mixed_audio_path": mixed_path,
+            "bgm_used": bgm_used,
             "node_trace": ["final_composition"],
         }
+        
+        # 如果有 BGM 警告，合并到 warnings 中
+        if bgm_warnings:
+            existing_warnings = list(state.get("warnings") or [])
+            existing_warnings.extend(bgm_warnings)
+            result["warnings"] = existing_warnings
+        
+        return result
 
     except Exception as e:
         logger.error("[Node7] 合成失败: %s", e)

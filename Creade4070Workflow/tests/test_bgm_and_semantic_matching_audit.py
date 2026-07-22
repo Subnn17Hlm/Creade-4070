@@ -53,7 +53,7 @@ class TestSemanticMatchingVisualGrouping:
         from graphs.nodes.material_matching_node import _build_visual_groups
         
         # Create test data with two sentences that should be merged
-        # Sentence 1: about "折叠" (folding)
+        # Sentence 1: about "折叠" (folding) - this is a STRONG semantic short
         # Sentence 2: about "旅行场景" (travel scene)
         sentence_mappings = [
             {
@@ -77,22 +77,18 @@ class TestSemanticMatchingVisualGrouping:
         
         groups = _build_visual_groups(sentence_mappings, timing_data)
         
-        # The groups should be merged (since first sentence is short)
-        assert len(groups) == 1, "Sentences should be merged into one group"
+        # IMPORTANT: "折叠设计" is a STRONG semantic short (折叠 is in _STRONG_SEMANTIC_SHORT_PATTERNS)
+        # Strong semantic shorts are NOT merged - they are kept separate to preserve semantic intent
+        # This is the CORRECT behavior per user requirement: "一段文案包含多个强意图时，不得只保留第一个标签"
+        assert len(groups) == 2, "Strong semantic shorts should NOT be merged"
         
-        group = groups[0]
-        # BUG: The primary_tag selection might not preserve the semantic intent
-        # If "折叠动作" is selected, it's correct
-        # If "旅行场景" is selected, it might be wrong for the combined content
-        primary_tag = group["primary_tag"]
+        # Each group should have its own primary_tag
+        assert groups[0]["primary_tag"] == "折叠动作", "First group should have 折叠动作 tag"
+        assert groups[1]["primary_tag"] == "旅行场景", "Second group should have 旅行场景 tag"
         
         # Document the actual behavior
-        print(f"Primary tag selected: {primary_tag}")
-        print(f"Group sentences: {group['sentence_texts']}")
-        
-        # The issue is that only ONE tag is used for matching,
-        # but the merged group has multiple semantic intents
-        assert primary_tag in ["折叠动作", "旅行场景"], "Primary tag should be one of the merged tags"
+        print(f"Group 1 primary tag: {groups[0]['primary_tag']}")
+        print(f"Group 2 primary tag: {groups[1]['primary_tag']}")
     
     def test_material_matching_uses_only_primary_tag(self):
         """Verify that material matching only uses primary_tag, ignoring other tags."""

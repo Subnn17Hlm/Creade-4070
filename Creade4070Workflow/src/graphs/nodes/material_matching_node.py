@@ -68,7 +68,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "旅游": ["旅行场景"], "必备": ["旅行场景"],
     "差旅": ["旅行场景"], "出门": ["旅行场景", "吹发动作"],
     "随行": ["旅行场景"], "随身": ["旅行场景", "放进包包"],
-    "没负担": ["旅行场景", "放进包包"],
+    "没负担": ["旅行场景", "放进包包"], "便携": ["旅行场景", "放进包包"],
     
     # ==================== 放进行李箱 / 放进包包 ====================
     "行李箱": ["放进行李箱", "旅行场景"], "旅行箱": ["放进行李箱"],
@@ -77,6 +77,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "放包里": ["放进包包"], "放进包": ["放进包包"],
     "随便一塞": ["放进包包"], "边角": ["放进包包"], "缝隙": ["放进包包"],
     "不占空间": ["放进包包"], "不占地": ["放进包包"],
+    "放包里": ["放进包包"], "随身带": ["放进包包", "旅行场景"],
     
     # ==================== 痛点共鸣 ====================
     "怕": ["痛点共鸣"], "愁": ["痛点共鸣"], "烦": ["痛点共鸣"],
@@ -97,6 +98,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "还没一瓶水重": ["手持大小对比"], "一瓶水": ["手持大小对比"],
     "轻巧": ["手持大小对比"], "超轻": ["手持大小对比"], "超薄": ["手持大小对比"],
     "巴掌": ["手持大小对比"],
+    "占空间": ["手持大小对比"], "体积小": ["手持大小对比"],
     
     # ==================== 手持展示 - 只用于明确出现手持产品的句子 ====================
     "拿在": ["手持展示"], "握在": ["手持展示"], "手里": ["手持展示"],
@@ -107,6 +109,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "折叠随身携带": ["折叠动作"],
     "折": ["折叠动作"], "收纳": ["折叠动作", "放进包包"],
     "带走": ["折叠动作", "放进包包"],
+    "可折叠": ["折叠动作"], "收起来": ["折叠动作"],
     
     # ==================== 风力展示 ====================
     "风力": ["风力展示"], "大风": ["风力展示"], "强劲": ["风力展示"],
@@ -117,6 +120,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "高速": ["风力展示"], "超高速": ["风力展示"],
     "一首歌的时间": ["风力展示", "吹发动作"],
     "转": ["风力展示"],
+    "吹干快": ["风力展示"], "风力大": ["风力展示"], "干得快": ["风力展示"],
     
     # ==================== 护发效果 ====================
     "护发": ["护发效果"], "柔顺": ["护发效果"], "顺滑": ["护发效果"],
@@ -124,6 +128,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "五亿级负离子": ["护发效果"],
     "不伤发": ["护发效果"], "不伤头发": ["护发效果"], "不伤": ["护发效果"],
     "强韧": ["护发效果"], "水润": ["护发效果"],
+    "不毛躁": ["护发效果"], "毛躁": ["护发效果"],
     "沙龙养护": ["护发效果"], "枯草变瀑布": ["护发效果"], "养护": ["护发效果"],
     
     # ==================== 屏显调温 ====================
@@ -313,6 +318,26 @@ def _generate_sentence_tag_mapping(
         mappings.append(mapping)
     
     return mappings
+
+
+def _map_sentence_tag(sentence_text: str, sentence_id: int, available_tags: Set[str]) -> Dict[str, Any]:
+    """为单条文案生成标签映射（测试辅助函数）。
+    
+    Args:
+        sentence_text: 文案文本
+        sentence_id: 句子ID
+        available_tags: 可用标签集合
+    
+    Returns:
+        标签映射字典
+    """
+    timing = [{
+        "sentence_id": sentence_id,
+        "text": sentence_text,
+        "duration": 3.0
+    }]
+    mappings = _generate_sentence_tag_mapping(timing, available_tags)
+    return mappings[0] if mappings else {}
 
 
 def _resolve_material_url(row: dict) -> str:
@@ -743,8 +768,28 @@ def material_matching_node(
         sentence_text = sentence_texts[0] if sentence_texts else ""
         target_duration = total_duration
         
-        # 构建 required_tags：使用 group 的 primary_tag
-        required_tags = [primary_tag] if primary_tag else []
+        # 构建 required_tags：收集组内所有句子的所有标签（保留多个强意图）
+        # 首先使用 primary_tag，然后从 sentence_mappings 中收集其他标签
+        required_tags = []
+        if primary_tag:
+            required_tags.append(primary_tag)
+        
+        # 从原始 sentence_mappings 中收集组内所有句子的标签
+        for sid in sentence_ids:
+            # 找到对应的 mapping（通过 sentence_id 或索引）
+            for mapping in sentence_mappings:
+                mapping_sid = mapping.get("sentence_id", 0)
+                if mapping_sid == sid or (sid == 0 and sentence_mappings.index(mapping) < len(sentence_ids)):
+                    # 收集该句子的所有标签
+                    mapping_tags = mapping.get("required_tags", [])
+                    for tag in mapping_tags:
+                        if tag and tag not in required_tags:
+                            required_tags.append(tag)
+                    break
+        
+        # 如果仍然没有标签，使用 primary_tag
+        if not required_tags and primary_tag:
+            required_tags = [primary_tag]
 
         # 过滤候选素材
         candidates: List[Dict] = []
