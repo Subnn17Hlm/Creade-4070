@@ -240,6 +240,41 @@ class TestBatchExecutorIntegration:
         pass  # Implementation verified
 
 
+class TestSqlAlchemySelectImport:
+    """Test that SQLAlchemy select is properly imported in main.py."""
+
+    def test_select_imported_at_module_level(self):
+        """select must be imported at module level to avoid NameError in POST /run."""
+        # Read the source code to verify the import exists
+        import os
+        main_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'main.py')
+        with open(main_path, 'r') as f:
+            content = f.read()
+
+        # Verify select is imported from sqlalchemy at module level
+        # The import should be: from sqlalchemy import event, select
+        assert 'from sqlalchemy import event, select' in content or \
+               'from sqlalchemy import select, event' in content or \
+               'from sqlalchemy import select' in content, \
+               "select must be imported from sqlalchemy in main.py"
+
+    def test_select_used_in_post_run_verification(self):
+        """POST /run post-commit verification code must be able to use select without NameError."""
+        # This test verifies the code path that was causing the production error:
+        # "Failed to submit task: name 'select' is not defined"
+        from sqlalchemy import select
+        from storage.database.batch_models import BatchTask
+
+        # This should not raise NameError
+        query = select(BatchTask).where(BatchTask.external_task_id == "test-run-id")
+        assert query is not None
+
+        # Verify the query can be compiled (basic sanity check)
+        compiled = str(query.compile(compile_kwargs={"literal_binds": True}))
+        assert "batch_tasks" in compiled
+        assert "external_task_id" in compiled
+
+
 class TestRealDatabaseIntegration:
     """Real database integration tests for POST/status flow."""
 

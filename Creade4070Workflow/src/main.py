@@ -40,7 +40,7 @@ from coze_coding_utils.async_tasks import (
 from coze_coding_utils.async_tasks import config as async_task_config
 from coze_coding_utils.async_tasks.headers import HEADER_X_RUN_ID as _ASYNC_HEADER_X_RUN_ID
 from coze_coding_utils.runtime_ctx.context import new_context as _new_async_ctx
-from sqlalchemy import event
+from sqlalchemy import event, select
 
 setup_logging(
     log_file=LOG_FILE,
@@ -589,7 +589,6 @@ async def http_get_run_status(run_id: str) -> Dict[str, Any]:
     """
     from storage.database.db import get_async_sessionmaker
     from storage.database.batch_models import BatchTask, BatchTaskStatus
-    from sqlalchemy import select
 
     try:
         async_session_maker = get_async_sessionmaker()
