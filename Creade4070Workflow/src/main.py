@@ -418,7 +418,11 @@ async def http_get_task(task_id: str) -> dict:
 HEADER_X_RUN_ID = "x-run-id"
 @app.post("/run")
 async def http_run(request: Request) -> Dict[str, Any]:
-    global result
+    """
+    异步提交单任务运行。
+    立即返回 run_id 和 status="submitted"，工作流在后台执行。
+    前端通过 GET /api/run/{run_id}/status 轮询结果。
+    """
     raw_body = await request.body()
     try:
         body_text = raw_body.decode("utf-8")
@@ -442,117 +446,143 @@ async def http_run(request: Request) -> Dict[str, Any]:
         f"body={body_text}"
     )
 
-    # 变量初始化，用于 finally 块
-    script_id = None
-    trace_file_path = None
-    run_status = "failed"
-    quality_status = None
-
     try:
         payload = await request.json()
-        
-        # 提取 script_id 并注册运行映射
-        script_id = payload.get("script_id") or payload.get("run_id") or run_id
-        trace_file_path = f"/tmp/runs/{script_id}/node_trace.jsonl"
-        register_run(run_id, script_id, trace_file_path)
-
-        # 创建任务并记录 - 这是关键，让我们可以通过run_id取消任务
-        task = asyncio.create_task(service.run(payload, ctx))
-        service.running_tasks[run_id] = task
-
-        try:
-            result = await asyncio.wait_for(task, timeout=float(TIMEOUT_SECONDS))
-        except asyncio.TimeoutError:
-            logger.error(f"Run execution timeout after {TIMEOUT_SECONDS}s for run_id: {run_id}")
-            task.cancel()
-            try:
-                result = await task
-            except asyncio.CancelledError:
-                run_status = "timeout"
-                return {
-                    "status": "timeout",
-                    "run_id": run_id,
-                    "message": f"Execution timeout: exceeded {TIMEOUT_SECONDS} seconds"
-                }
-
-        if not result:
-            result = {}
-        if isinstance(result, dict):
-            result["run_id"] = run_id
-            # 提取质量状态
-            quality_report = result.get("quality_report") or {}
-            if isinstance(quality_report, dict):
-                quality_status = quality_report.get("status")
-            run_status = "success" if result.get("status") == "success" else "failed"
-            
-            # 清洗 URL - 在返回前递归清洗整个响应对象
-            from utils.media_uploader import _clean_url
-            def clean_urls_recursive(obj):
-                if isinstance(obj, str):
-                    return _clean_url(obj)
-                elif isinstance(obj, dict):
-                    return {k: clean_urls_recursive(v) for k, v in obj.items()}
-                elif isinstance(obj, list):
-                    return [clean_urls_recursive(item) for item in obj]
-                return obj
-            result = clean_urls_recursive(result)
-            
-            # 断言 final_video_url 格式正确
-            final_video_url = result.get("final_video_url")
-            if final_video_url:
-                assert not final_video_url.startswith("["), f"final_video_url should not start with '[': {final_video_url}"
-                assert "](" not in final_video_url, f"final_video_url should not contain '](': {final_video_url}"
-        
-        return result
-
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error in http_run: {e}, traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=f"Invalid JSON format, {extract_core_stack()}")
 
-    except asyncio.CancelledError:
-        logger.info(f"Request cancelled for run_id: {run_id}")
-        run_status = "cancelled"
-        result = {"status": "cancelled", "run_id": run_id, "message": "Execution was cancelled"}
-        return result
+    # 提取 script_id 并注册运行映射
+    script_id = payload.get("script_id") or payload.get("run_id") or run_id
+    trace_file_path = f"/tmp/runs/{script_id}/node_trace.jsonl"
+    register_run(run_id, script_id, trace_file_path)
 
-    except Exception as e:
-        # 使用错误分类器获取错误信息
-        error_response = service.error_classifier.get_error_response(e, {"node_name": "http_run", "run_id": run_id})
-        logger.error(
-            f"Unexpected error in http_run: [{error_response['error_code']}] {error_response['error_message']}, "
-            f"traceback: {traceback.format_exc()}", exc_info=True
-        )
-        raise HTTPException(
-            status_code=500,
-            detail={
+    # 创建后台任务，不等待完成
+    async def _run_workflow_background():
+        """后台运行工作流，结果存入 _run_mapping"""
+        from graphs.run_trace_persistence import update_run_status
+        bg_run_status = "failed"
+        bg_quality_status = None
+        bg_result = {}
+        try:
+            bg_result = await asyncio.wait_for(
+                service.run(payload, ctx),
+                timeout=float(TIMEOUT_SECONDS),
+            )
+            if not bg_result:
+                bg_result = {}
+            if isinstance(bg_result, dict):
+                bg_result["run_id"] = run_id
+                quality_report = bg_result.get("quality_report") or {}
+                if isinstance(quality_report, dict):
+                    bg_quality_status = quality_report.get("status")
+                bg_run_status = "success" if bg_result.get("status") == "success" else "failed"
+
+                # 清洗 URL
+                from utils.media_uploader import _clean_url
+                def clean_urls_recursive(obj):
+                    if isinstance(obj, str):
+                        return _clean_url(obj)
+                    elif isinstance(obj, dict):
+                        return {k: clean_urls_recursive(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [clean_urls_recursive(item) for item in obj]
+                    return obj
+                bg_result = clean_urls_recursive(bg_result)
+        except asyncio.TimeoutError:
+            logger.error(f"Run execution timeout after {TIMEOUT_SECONDS}s for run_id: {run_id}")
+            bg_run_status = "timeout"
+            bg_result = {"status": "timeout", "run_id": run_id,
+                         "message": f"Execution timeout: exceeded {TIMEOUT_SECONDS} seconds"}
+        except asyncio.CancelledError:
+            logger.info(f"Request cancelled for run_id: {run_id}")
+            bg_run_status = "cancelled"
+            bg_result = {"status": "cancelled", "run_id": run_id, "message": "Execution was cancelled"}
+        except Exception as e:
+            error_response = service.error_classifier.get_error_response(
+                e, {"node_name": "http_run", "run_id": run_id})
+            logger.error(
+                f"Unexpected error in http_run: [{error_response['error_code']}] "
+                f"{error_response['error_message']}, traceback: {traceback.format_exc()}",
+                exc_info=True,
+            )
+            bg_run_status = "failed"
+            bg_result = {
+                "status": "failed",
+                "run_id": run_id,
                 "error_code": error_response["error_code"],
                 "error_message": error_response["error_message"],
-                "stack_trace": extract_core_stack(),
             }
-        )
-    finally:
-        # 持久化运行追踪 - 使用 result 中的数据而不是从文件读取
-        try:
-            if script_id:
-                # 从 result 中提取 node_trace_entries
+        finally:
+            # 更新运行状态和结果
+            update_run_status(run_id, bg_run_status, result=bg_result,
+                              quality_status=bg_quality_status)
+            service.running_tasks.pop(run_id, None)
+
+            # 持久化运行追踪
+            try:
                 trace_entries = []
-                if isinstance(result, dict):
-                    quality_report = result.get("quality_report") or {}
+                executed_nodes = []
+                if isinstance(bg_result, dict):
+                    quality_report = bg_result.get("quality_report") or {}
                     if isinstance(quality_report, dict):
                         diagnostics = quality_report.get("script_flow_diagnostics") or {}
                         if isinstance(diagnostics, dict):
                             trace_entries = diagnostics.get("node_trace_entries") or []
-                    executed_nodes = result.get("executed_nodes") or []
-                
-                # 持久化追踪
-                trace_result = persist_run_trace(run_id, script_id, trace_entries, run_status, quality_status, executed_nodes)
-                # 将持久化诊断信息添加到 result
-                if isinstance(result, dict) and trace_result:
-                    result["trace_persistence"] = trace_result.get("trace_persistence", {})
-        except Exception as e:
-            logger.warning("Failed to persist run trace: %s", e)
-        
-        cozeloop.flush()
+                    executed_nodes = bg_result.get("executed_nodes") or []
+                persist_run_trace(run_id, script_id, trace_entries,
+                                  bg_run_status, bg_quality_status, executed_nodes)
+            except Exception as e:
+                logger.warning("Failed to persist run trace: %s", e)
+            cozeloop.flush()
+
+    task = asyncio.create_task(_run_workflow_background())
+    service.running_tasks[run_id] = task
+
+    # 立即返回，不等待工作流完成
+    return {
+        "status": "submitted",
+        "run_id": run_id,
+        "message": "Workflow submitted successfully. Poll GET /api/run/{run_id}/status for result.",
+    }
+
+
+@app.get("/api/run/{run_id}/status")
+async def http_get_run_status(run_id: str) -> Dict[str, Any]:
+    """
+    查询单任务运行状态。
+    返回 status: submitted / running / success / failed / timeout / cancelled
+    以及完成后的完整 result（包含 final_video_url 等）。
+    """
+    from graphs.run_trace_persistence import get_run_mapping
+    mapping = get_run_mapping(run_id)
+
+    if mapping is None:
+        raise HTTPException(status_code=404, detail=f"run_id {run_id} not found")
+
+    status = mapping.get("status", "unknown")
+    response = {
+        "run_id": run_id,
+        "status": status,
+        "created_at": mapping.get("created_at"),
+    }
+
+    # 如果已完成，返回完整结果
+    if status in ("success", "failed", "timeout", "cancelled"):
+        result = mapping.get("result") or {}
+        response["result"] = result
+        response["completed_at"] = mapping.get("completed_at")
+        if mapping.get("quality_status"):
+            response["quality_status"] = mapping["quality_status"]
+    elif status == "running":
+        # 检查任务是否仍在运行
+        task = service.running_tasks.get(run_id)
+        if task is None or task.done():
+            # 任务已结束但状态未更新（异常情况）
+            response["status"] = "unknown"
+            response["message"] = "Task completed but status not updated"
+
+    return response
 
 
 HEADER_X_WORKFLOW_STREAM_MODE = "x-workflow-stream-mode"

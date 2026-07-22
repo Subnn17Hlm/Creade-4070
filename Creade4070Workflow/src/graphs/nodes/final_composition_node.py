@@ -450,7 +450,7 @@ def _burn_subtitles_with_overlay(
     # 构建 FFmpeg 命令
     cmd = [
         ffmpeg_path, "-y",
-        "-threads", "1",
+        "-threads", "2",
         "-i", video_path,
         "-i", audio_path,
     ]
@@ -468,9 +468,18 @@ def _burn_subtitles_with_overlay(
         "-crf", "23",
         "-c:a", "aac",
         "-b:a", "128k",
+        "-threads", "2",
         "-shortest",
         output_path,
     ])
+    
+    # 诊断日志：字幕烧录命令
+    logger.info(
+        "[Node7] 字幕烧录开始: cue_count=%d, video=%s, threads=2, "
+        "video_resolution=%dx%d",
+        len(png_files), video_path, video_width, video_height,
+    )
+    logger.info("[Node7] 字幕烧录命令: %s", _sanitize_cmd_for_log(cmd))
     
     # 执行 FFmpeg
     try:
@@ -478,13 +487,23 @@ def _burn_subtitles_with_overlay(
             cmd,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=180,
         )
         result["ffmpeg_returncode"] = proc.returncode
-        result["ffmpeg_stderr_tail"] = proc.stderr[-3000:] if proc.stderr else ""
+        result["ffmpeg_stderr_tail"] = proc.stderr[-8000:] if proc.stderr else ""
         
         if proc.returncode != 0:
-            result["error"] = f"FFmpeg failed with code {proc.returncode}"
+            # 特殊处理 SIGKILL (-9) = OOM kill
+            if proc.returncode == -9:
+                result["error"] = (
+                    f"FFmpeg 被 SIGKILL 终止 (code=-9)，可能原因：内存超限 (OOM)。"
+                    f"字幕数={len(png_files)}, 视频分辨率={video_width}x{video_height}, "
+                    f"stderr 末尾: {proc.stderr[-2000:] if proc.stderr else '(empty)'}"
+                )
+                logger.error("[Node7] 字幕烧录 OOM: cue_count=%d, resolution=%dx%d",
+                    len(png_files), video_width, video_height)
+            else:
+                result["error"] = f"FFmpeg failed with code {proc.returncode}"
             return result
         
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
@@ -500,9 +519,11 @@ def _burn_subtitles_with_overlay(
             # 抽帧
             extract_cmd = [
                 ffmpeg_path, "-y",
+                "-threads", "2",
                 "-ss", str(midpoint),
                 "-i", output_path,
                 "-vframes", "1",
+                "-threads", "2",
                 frame_path,
             ]
             extract_proc = subprocess.run(extract_cmd, capture_output=True, text=True, timeout=30)
