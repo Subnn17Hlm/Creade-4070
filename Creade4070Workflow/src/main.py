@@ -62,6 +62,40 @@ from coze_coding_utils.log.loop_trace import init_run_config, init_agent_config
 # 超时配置常量
 TIMEOUT_SECONDS = 900  # 15分钟
 
+
+def normalize_datetime(dt):
+    """
+    规范化 datetime 为 timezone-aware UTC。
+    
+    - None 保持 None
+    - naive datetime 明确按 UTC 补 timezone.utc
+    - aware datetime 转换为 UTC
+    
+    用于避免 offset-naive 和 offset-aware datetime 混合比较时的错误。
+    """
+    from datetime import datetime, timezone
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # naive datetime，按 UTC 处理
+        return dt.replace(tzinfo=timezone.utc)
+    # aware datetime，转换为 UTC
+    return dt.astimezone(timezone.utc)
+
+
+def format_datetime_iso(dt):
+    """
+    格式化 datetime 为带时区的 ISO 8601 UTC 格式。
+    
+    - None 返回 None
+    - 其他返回带时区的 ISO 8601 字符串
+    """
+    normalized = normalize_datetime(dt)
+    if normalized is None:
+        return None
+    return normalized.isoformat()
+
+
 class GraphService:
     def __init__(self):
         # 用于跟踪正在运行的任务（使用asyncio.Task）
@@ -678,14 +712,14 @@ async def http_get_run_status(
                 "task_id": str(task.task_id),
                 "batch_id": str(task.batch_id),
                 "query_method": query_method,
-                "created_at": task.created_at.isoformat() if task.created_at else None,
+                "created_at": format_datetime_iso(task.created_at),
             }
 
             # 如果已完成，返回完整结果
             if status in ("success", "failed", "timeout"):
                 result_data = task.output_data or {}
                 response["result"] = result_data
-                response["completed_at"] = task.completed_at.isoformat() if task.completed_at else None
+                response["completed_at"] = format_datetime_iso(task.completed_at)
                 if task.final_video_url:
                     response["final_video_url"] = task.final_video_url
                 if task.error_message:
@@ -694,8 +728,11 @@ async def http_get_run_status(
 
             # 检查是否超时（running 状态超过 30 分钟）
             if status == "running" and task.started_at:
-                from datetime import datetime, timedelta
-                running_duration = datetime.utcnow() - task.started_at
+                from datetime import datetime, timedelta, timezone
+                # 使用 timezone-aware UTC datetime 进行比较
+                now_utc = datetime.now(timezone.utc)
+                started_at_utc = normalize_datetime(task.started_at)
+                running_duration = now_utc - started_at_utc
                 if running_duration > timedelta(minutes=30):
                     response["status"] = "timeout"
                     response["message"] = "Task exceeded 30 minutes running time"
