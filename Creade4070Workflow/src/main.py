@@ -1269,23 +1269,26 @@ function WorkflowMonitor() {
         return;
       }
 
-      if (data.error) {
-        setError('加载失败: ' + (data.message || data.error));
+      // 安全解析响应：data 可能为 null（JSON 解析失败）
+      if (!data || typeof data !== 'object') {
+        setError(`响应解析失败: 期望 JSON 对象，实际得到 ${typeof data}\\nRequest URL: ${statusUrl}\\n响应正文: ${raw}`);
         return;
       }
 
+      // 不再将 data.error 视为 API 错误，而是作为任务失败的业务结果
+      // 通过 status 字段判断任务状态
       setLastStatus(data);
 
       // 将状态映射到节点
       const stateMap = {};
       const status = data.status || 'pending';
       // 假设所有节点都是同一个状态（简化处理）
-      if (topology) {
+      if (topology && topology.nodes && Array.isArray(topology.nodes)) {
         topology.nodes.forEach(node => {
           stateMap[node.id] = {
             status: status,
-            error_message: data.error_message,
-            final_video_url: data.final_video_url
+            error_message: data.error || data.error_message || null,
+            final_video_url: data.final_video_url || null
           };
         });
       }
@@ -1297,7 +1300,11 @@ function WorkflowMonitor() {
         setPolling(false);
       }
     } catch (e) {
-      setError(`请求失败: ${e.message}\\nRequest URL: ${statusUrl}`);
+      // 显示详细的异常信息，包括异常名称、消息、请求 URL 和原始响应
+      const errorName = e.name || 'UnknownError';
+      const errorMessage = e.message || String(e);
+      const rawResponse = (typeof raw !== 'undefined' && raw) ? raw : '(无响应)';
+      setError(`请求异常: ${errorName}: ${errorMessage}\\nRequest URL: ${statusUrl}\\n原始响应: ${rawResponse}`);
     } finally {
       setLoading(false);
     }
