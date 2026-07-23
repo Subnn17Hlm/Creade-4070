@@ -536,6 +536,7 @@ async function renderBatchTasks(batchId) {
     }
 
     const data = await res.json();
+    console.log('[BatchPage] 任务列表响应:', { status: res.status, keys: Object.keys(data), tasksCount: Array.isArray(data.tasks) ? data.tasks.length : 'not array' });
     
     // Support multiple response structures: { tasks: [] }, { data: { tasks: [] } }, or direct array
     let tasks;
@@ -554,7 +555,15 @@ async function renderBatchTasks(batchId) {
     tasksDiv.innerHTML = '';
     
     if (tasks.length === 0) {
-      tasksDiv.innerHTML = `<div class="task-empty">暂无任务数据</div>`;
+      // Check if statistics show tasks exist but tasks array is empty
+      const statsEl = document.getElementById('batch-summary');
+      const totalFromStats = statsEl ? (parseInt(statsEl.querySelector('.summary-item.total .value')?.textContent || '0') || 0) : 0;
+      if (totalFromStats > 0) {
+        tasksDiv.innerHTML = `<div class="task-error">统计显示 ${totalFromStats} 条任务，但任务明细未返回。请检查控制台日志。</div>`;
+        console.error('[BatchPage] 统计与任务明细不一致: total_count=' + totalFromStats + ', tasks.length=0, response keys:', Object.keys(data));
+      } else {
+        tasksDiv.innerHTML = `<div class="task-empty">暂无任务数据</div>`;
+      }
       return;
     }
 

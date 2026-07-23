@@ -291,7 +291,6 @@ async def get_batch(
     }
 
 
-@router.get('/{batch_id}/tasks')
 def _serialize_task(task) -> dict:
     """Safely serialize a batch task to dict. Handles null/missing fields."""
     def safe_output_data(od):
@@ -348,6 +347,7 @@ def _serialize_task(task) -> dict:
     }
 
 
+@router.get('/{batch_id}/tasks')
 async def get_batch_tasks(
     batch_id: str,
     status: Optional[str] = Query(None),
