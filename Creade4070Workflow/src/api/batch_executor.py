@@ -617,8 +617,9 @@ class BatchExecutor:
         """
         Retry a single failed task using native async task system.
 
-        This method resets the task to queued and submits it to the native
-        async task system. Returns immediately with HTTP 202.
+        This method submits the task to the native async system FIRST,
+        then updates the task state only after successful submission.
+        If submission fails, the task remains in its original failed state.
 
         Args:
             db: Database session
@@ -631,6 +632,10 @@ class BatchExecutor:
         """
         if async_task_service is None:
             raise ValueError("async_task_service is required for retry")
+
+        # Check async system availability BEFORE any state changes
+        if not getattr(async_task_service, 'runtime', None):
+            raise RuntimeError("Native async task system is not available. Cannot retry task.")
 
         # Fetch batch and task with row lock
         result = await db.execute(
@@ -654,44 +659,59 @@ class BatchExecutor:
                 f"Task {task_id} is in {task.status} status, only failed tasks can be retried"
             )
 
-        # Increment retry count and reset task state
-        task.retry_count += 1
-        task.started_at = None
-        task.completed_at = None
-        task.error_code = None
-        task.error_message = None
-        task.run_id = None
-        task.output_data = None
-        task.final_video_url = None
-        task.warning = None
-        task.async_task_id = None
+        # Check concurrency limit: count running tasks in this batch
+        running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING)
+        concurrency = batch.concurrency or 2
+        if running_count >= concurrency:
+            raise ValueError(
+                f"Concurrency limit reached: {running_count}/{concurrency} tasks running. "
+                f"Wait for a slot to free up before retrying."
+            )
 
-        await db.commit()
+        # Generate new run_id for this retry attempt
+        new_run_id = uuid.uuid4()
 
-        # Update batch counts
-        await self._update_batch_counts(db, batch_id)
-
-        # Set batch to running
-        batch.status = BatchJobStatus.RUNNING
-        batch.completed_at = None
-        await db.commit()
-
-        # Submit to native async task system
+        # Submit to native async task system FIRST (before any state changes)
         try:
-            result = await async_task_service.submit_task(
+            submit_result = await async_task_service.submit_task(
                 db=db,
                 task=task,
                 deadline_sec=1800,  # 30 minutes
             )
-
-            logger.info(f"Task {task_id} submitted to native async system")
-
-            return result
-
         except Exception as e:
             logger.error(f"Failed to submit task {task_id} to async system: {e}")
-            # Task is already marked as failed in submit_task
-            raise
+            # Task remains in FAILED state - no state changes made
+            raise RuntimeError(f"Failed to submit retry task: {e}") from e
+
+        # Submission succeeded - NOW update task state
+        task.retry_count += 1
+        task.status = BatchTaskStatus.QUEUED
+        task.run_id = new_run_id
+        task.started_at = datetime.utcnow()
+        task.completed_at = None
+        task.error_code = None
+        task.error_message = None
+        task.output_data = None
+        task.final_video_url = None
+        task.warning = None
+        task.async_task_id = submit_result.get("async_task_id")
+
+        # Set batch to running
+        batch.status = BatchJobStatus.RUNNING
+        batch.completed_at = None
+
+        await db.commit()
+
+        logger.info(f"Task {task_id} retried and submitted to native async system (run_id={new_run_id})")
+
+        return {
+            "task_id": str(task_id),
+            "status": "queued",
+            "run_id": str(new_run_id),
+            "async_task_id": submit_result.get("async_task_id"),
+            "retry_count": task.retry_count,
+            "message": "Task submitted for retry",
+        }
 
     async def retry_failed(
         self,
@@ -716,6 +736,10 @@ class BatchExecutor:
         if async_task_service is None:
             raise ValueError("async_task_service is required for retry")
 
+        # Check async system availability BEFORE any state changes
+        if not getattr(async_task_service, 'runtime', None):
+            raise RuntimeError("Native async task system is not available. Cannot retry tasks.")
+
         # Fetch batch with row lock
         result = await db.execute(
             select(BatchJob)
@@ -738,45 +762,67 @@ class BatchExecutor:
                 "message": "No failed tasks to retry",
             }
 
-        # Reset all failed tasks and submit to async system
+        # Check concurrency limit: count running tasks in this batch
+        running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING)
+        concurrency = batch.concurrency or 2
+        available_slots = max(0, concurrency - running_count)
+
+        if available_slots == 0:
+            raise ValueError(
+                f"Concurrency limit reached: {running_count}/{concurrency} tasks running. "
+                f"Wait for a slot to free up before retrying."
+            )
+
+        # Only retry up to available_slots tasks
+        tasks_to_retry = failed_tasks[:available_slots]
+        skipped_count = len(failed_tasks) - len(tasks_to_retry)
+
+        # Submit tasks FIRST, then update state only for successful submissions
         submitted_count = 0
-        for task in failed_tasks:
-            # Increment retry count and reset task state
-            task.retry_count += 1
-            task.started_at = None
-            task.completed_at = None
-            task.error_code = None
-            task.error_message = None
-            task.run_id = None
-            task.output_data = None
-            task.final_video_url = None
-            task.warning = None
-            task.async_task_id = None
-
-            await db.commit()
-
-            # Submit to native async task system
+        for task in tasks_to_retry:
+            new_run_id = uuid.uuid4()
+            
+            # Submit to native async task system FIRST
             try:
-                await async_task_service.submit_task(
+                submit_result = await async_task_service.submit_task(
                     db=db,
                     task=task,
                     deadline_sec=1800,  # 30 minutes
                 )
-                submitted_count += 1
             except Exception as e:
                 logger.error(f"Failed to submit task {task.task_id} to async system: {e}")
-                # Task is already marked as failed in submit_task
+                # Task remains in FAILED state - no state changes made
                 continue
 
-        # Update batch counts
-        await self._update_batch_counts(db, batch_id)
+            # Submission succeeded - NOW update task state
+            task.retry_count += 1
+            task.status = BatchTaskStatus.QUEUED
+            task.run_id = new_run_id
+            task.started_at = datetime.utcnow()
+            task.completed_at = None
+            task.error_code = None
+            task.error_message = None
+            task.output_data = None
+            task.final_video_url = None
+            task.warning = None
+            task.async_task_id = submit_result.get("async_task_id")
+            submitted_count += 1
 
-        # Set batch to running
-        batch.status = BatchJobStatus.RUNNING
-        batch.completed_at = None
+        if submitted_count > 0:
+            # Set batch to running
+            batch.status = BatchJobStatus.RUNNING
+            batch.completed_at = None
+
         await db.commit()
 
+        # Update batch counts
+        await self._update_batch_counts_safe(batch_id)
+
         logger.info(f"Submitted {submitted_count}/{len(failed_tasks)} failed tasks to native async system")
+
+        result_msg = f"Submitted {submitted_count} tasks for retry"
+        if skipped_count > 0:
+            result_msg += f" ({skipped_count} skipped due to concurrency limit)"
 
         return {
             "batch_id": str(batch_id),
