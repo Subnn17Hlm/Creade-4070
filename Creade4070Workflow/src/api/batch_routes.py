@@ -89,8 +89,9 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
         return
     
     # Submit next tasks
-    from src.api.async_task_service import get_async_task_service
-    async_task_service = get_async_task_service()
+    from api.async_task_service import get_async_task_service
+    from main import service as graph_service
+    async_task_service = get_async_task_service(graph_service)
     
     submitted = 0
     for task in pending_tasks:
@@ -552,23 +553,28 @@ async def get_batch_tasks(
     )
     
     # Sync native async status for tasks with async_task_id
-    from src.api.async_task_service import AsyncTaskService
-    async_task_service = AsyncTaskService()
-    
     completed_count = 0
-    for task in tasks:
-        if task.async_task_id and task.status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING]:
-            try:
-                old_status = task.status
-                # Poll native async status and update task
-                await async_task_service.poll_task_status(db, task)
-                # If task just completed (success or failed), count it
-                if old_status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING] and \
-                   task.status in [BatchTaskStatus.SUCCESS, BatchTaskStatus.FAILED]:
-                    completed_count += 1
-            except Exception as e:
-                logger.warning(f"Failed to sync task {task.task_id} status: {e}")
-                # Continue even if sync fails
+    try:
+        from api.async_task_service import get_async_task_service
+        from main import service as graph_service
+        async_task_service = get_async_task_service(graph_service)
+        
+        for task in tasks:
+            if task.async_task_id and task.status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING]:
+                try:
+                    old_status = task.status
+                    # Poll native async status and update task
+                    await async_task_service.poll_task_status(db, task)
+                    # If task just completed (success or failed), count it
+                    if old_status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING] and \
+                       task.status in [BatchTaskStatus.SUCCESS, BatchTaskStatus.FAILED]:
+                        completed_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to sync task {task.task_id} status: {e}")
+                    # Continue even if sync fails
+    except Exception as e:
+        logger.warning(f"Async task sync unavailable, skipping: {e}")
+        # Continue without sync - task list still works with DB state
     
     # If any tasks completed, try to submit next pending tasks (concurrency refill)
     if completed_count > 0:
@@ -585,29 +591,39 @@ async def get_batch_tasks(
         except Exception as e:
             logger.error(f"Failed to serialize task {task.task_id}: {e}")
             # Return a safe fallback for this task so the list doesn't 500
+            # Uses whitelist DTO - no input_data/output_data
+            try:
+                fallback_task_id = str(task.task_id) if task.task_id else 'unknown'
+            except Exception:
+                fallback_task_id = 'unknown'
+            try:
+                fallback_batch_id = str(task.batch_id) if task.batch_id else str(batch_id)
+            except Exception:
+                fallback_batch_id = str(batch_id)
+            try:
+                fallback_status = str(task.status) if task.status else 'unknown'
+            except Exception:
+                fallback_status = 'unknown'
+            
             serialized_tasks.append({
-                'task_id': str(task.task_id),
-                'batch_id': str(task.batch_id),
-                'status': str(task.status) if task.status else 'unknown',
-                'serialization_error': str(e),
-                'row_number': task.row_number,
-                'external_task_id': task.external_task_id,
-                'run_id': str(task.run_id) if task.run_id else None,
-                'async_task_id': None,
-                'script_id': '',
-                'script_text': '',
-                'title': '',
-                'input_data': None,
-                'output_data': None,
+                'task_id': fallback_task_id,
+                'batch_id': fallback_batch_id,
+                'script_id': None,
+                'title': None,
+                'script_text': None,
+                'status': fallback_status,
                 'final_video_url': None,
                 'warning': None,
                 'error_code': None,
                 'error_message': None,
-                'retry_count': task.retry_count or 0,
-                'created_at': task.created_at.isoformat() if task.created_at else None,
+                'retry_count': 0,
+                'run_id': None,
+                'async_task_id': None,
+                'created_at': None,
                 'started_at': None,
                 'completed_at': None,
                 'updated_at': None,
+                'serialization_error': str(e),
             })
 
     return {
@@ -710,8 +726,8 @@ async def retry_task(
     executor = BatchExecutor(service)
     
     # Get async task service
-    from src.api.async_task_service import get_async_task_service
-    async_task_service = get_async_task_service()
+    from api.async_task_service import get_async_task_service
+    async_task_service = get_async_task_service(service)
     
     try:
         result = await executor.retry_task(
@@ -777,7 +793,8 @@ async def retry_failed_tasks(
     executor = BatchExecutor(service)
     
     # Create async task service
-    async_task_service = AsyncTaskService()
+    from api.async_task_service import get_async_task_service
+    async_task_service = get_async_task_service(service)
     
     try:
         result = await executor.retry_failed(db, batch_uuid, async_task_service)

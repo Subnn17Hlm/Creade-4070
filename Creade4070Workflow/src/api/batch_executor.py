@@ -101,7 +101,7 @@ class BatchExecutor:
 
         # Use native async task system with concurrency control
         # Only submit up to N tasks (batch.concurrency) initially
-        from src.api.async_task_service import get_async_task_service
+        from api.async_task_service import get_async_task_service
         async_task_service = get_async_task_service(self.graph_service)
         
         concurrency = batch.concurrency or 2
