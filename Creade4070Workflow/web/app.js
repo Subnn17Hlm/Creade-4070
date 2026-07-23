@@ -416,7 +416,7 @@ async function loadBatchStatus(batchId) {
     
     // 显示/隐藏启动按钮
     const startBtn = document.getElementById('batch-start-btn');
-    if (data.status === 'pending') {
+    if (data.status === 'created' || data.status === 'pending') {
       startBtn.style.display = 'inline-block';
       startBtn.disabled = false;
       startBtn.textContent = '启动批次';

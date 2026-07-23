@@ -124,10 +124,33 @@ async def get_batch(
             detail={'error': '批次不存在'},
         )
     
+    # Calculate task counts from actual tasks
+    task_counts = {
+        'pending': 0,
+        'running': 0,
+        'success': 0,
+        'warning': 0,
+        'failed': 0,
+    }
+    
+    if batch.tasks:
+        for task in batch.tasks:
+            status = task.status
+            if status == 'pending':
+                task_counts['pending'] += 1
+            elif status == 'running':
+                task_counts['running'] += 1
+            elif status == 'success':
+                task_counts['success'] += 1
+            elif status == 'failed':
+                task_counts['failed'] += 1
+            # Note: warning status doesn't exist in BatchTaskStatus, but we keep it for future compatibility
+    
     return {
         'batch_id': str(batch.batch_id),
         'status': batch.status,
         'total_count': batch.total_count,
+        'task_counts': task_counts,
         'pending_count': batch.pending_count,
         'running_count': batch.running_count,
         'success_count': batch.success_count,

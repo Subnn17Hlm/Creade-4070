@@ -89,8 +89,11 @@ class BatchService:
         Returns:
             BatchJob or None
         """
+        from sqlalchemy.orm import selectinload
         result = await db.execute(
-            select(BatchJob).where(BatchJob.batch_id == batch_id)
+            select(BatchJob)
+            .where(BatchJob.batch_id == batch_id)
+            .options(selectinload(BatchJob.tasks))
         )
         return result.scalar_one_or_none()
     
