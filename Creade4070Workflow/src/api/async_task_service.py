@@ -193,6 +193,7 @@ class AsyncTaskService:
                         task.status = BatchTaskStatus.SUCCESS
                         task.final_video_url = final_video_url
                         task.warning = warning
+                        task.output_data = native_result  # Save complete output data
                         task.error_message = None
                         task.error_code = None
                         task.completed_at = datetime.utcnow()

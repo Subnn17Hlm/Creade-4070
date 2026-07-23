@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storage.database.db import get_db_session
-from storage.database.batch_models import BatchJob, BatchTask
+from storage.database.batch_models import BatchJob, BatchTask, BatchTaskStatus
 from api.batch_csv import validate_csv, MAX_BATCH_SIZE
 from api.batch_service import BatchService
 from api.batch_executor import BatchExecutor
@@ -207,6 +207,19 @@ async def get_batch_tasks(
         page=page,
         page_size=page_size,
     )
+    
+    # Sync native async status for tasks with async_task_id
+    from src.api.async_task_service import AsyncTaskService
+    async_task_service = AsyncTaskService()
+    
+    for task in tasks:
+        if task.async_task_id and task.status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING]:
+            try:
+                # Poll native async status and update task
+                await async_task_service.poll_task_status(db, task)
+            except Exception as e:
+                logger.warning(f"Failed to sync task {task.task_id} status: {e}")
+                # Continue even if sync fails
     
     return {
         'batch_id': batch_id,
