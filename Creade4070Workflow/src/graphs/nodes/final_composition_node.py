@@ -38,6 +38,44 @@ from graphs.node_trace_utils import write_trace_entered, write_trace_completed, 
 logger = logging.getLogger(__name__)
 
 
+def _validate_bgm_decodable(bgm_path: str, ffmpeg_path: str = "ffmpeg") -> bool:
+    """验证 BGM 文件是否可解码。使用 ffmpeg 尝试解码前 1 秒，不依赖 ffprobe。"""
+    if not os.path.exists(bgm_path):
+        logger.warning("[BGM验证] 文件不存在: %s", bgm_path)
+        return False
+    
+    try:
+        # 使用 ffmpeg 尝试解码前 1 秒
+        test_cmd = [
+            ffmpeg_path, "-i", bgm_path,
+            "-t", "1",  # 只解码 1 秒
+            "-f", "null",  # 不输出
+            "-"
+        ]
+        result = subprocess.run(
+            test_cmd,
+            capture_output=True,
+            timeout=10,
+            check=False
+        )
+        
+        if result.returncode == 0:
+            logger.info("[BGM验证] 文件可解码: %s", bgm_path)
+            return True
+        else:
+            stderr_output = result.stderr.decode('utf-8', errors='replace') if result.stderr else "No stderr"
+            logger.warning("[BGM验证] 文件无法解码: %s, returncode=%d, stderr=%s", 
+                          bgm_path, result.returncode, stderr_output[:200])
+            return False
+            
+    except subprocess.TimeoutExpired:
+        logger.warning("[BGM验证] 解码超时: %s", bgm_path)
+        return False
+    except Exception as e:
+        logger.warning("[BGM验证] 验证异常: %s, error=%s", bgm_path, str(e))
+        return False
+
+
 def _download_bgm(bgm_url: str, temp_dir: str) -> str:
     """下载BGM到本地，支持URL和本地路径。使用安全下载（.part文件 + 校验）"""
     local_bgm = os.path.join(temp_dir, "bgm.mp3")
@@ -1082,40 +1120,79 @@ def final_composition_node(
                 logger.warning("[Node7] BGM 目录不存在")
         
         if bgm_url:
-            try:
-                local_bgm = _download_bgm(bgm_url, temp_dir)
-                bgm_duration = get_media_duration(local_bgm)
-                logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
-                
-                # 混合 TTS + BGM
-                # 使用配置值或默认值 0.15
-                bgm_volume = float(os.getenv("BGM_VOLUME", "0.15"))
-                bgm_mix_cmd = [
-                    ffmpeg_path, "-y",
-                    "-i", subbed_path,
-                    "-i", tts_wav_path,
-                    "-i", local_bgm,
-                    "-filter_complex",
-                    f"[1:a]volume=1.0[tts];[2:a]volume={bgm_volume},aloop=loop=-1:size=2e+09[bgm];[tts][bgm]amix=inputs=2:duration=first:normalize=0[aout]",
-                    "-map", "0:v", "-map", "[aout]",
-                    "-c:v", "copy",
-                    "-c:a", "aac", "-b:a", "128k",
-                    "-ar", "44100",
-                    "-movflags", "+faststart",
-                    "-t", str(video_duration),
-                    mixed_path
-                ]
-                _log_ffmpeg_diagnostics(bgm_mix_cmd, run_dir, "Node7-bgm-mix")
-                run_ffmpeg(bgm_mix_cmd, timeout=180)
-                bgm_used = True
-                logger.info("[Node7] TTS+BGM 混音完成")
-                
-            except Exception as e:
-                error_msg = str(e)
-                logger.error("[Node7] BGM混合失败: %s，仅使用TTS", error_msg)
+            bgm_candidates = []
+            
+            # 如果 bgm_url 是列表，使用所有候选
+            if isinstance(bgm_url, list):
+                bgm_candidates = bgm_url
+            else:
+                bgm_candidates = [bgm_url]
+            
+            bgm_mix_success = False
+            bgm_mix_error = ""
+            
+            # 尝试每个 BGM 候选
+            for bgm_candidate_url in bgm_candidates:
+                try:
+                    local_bgm = _download_bgm(bgm_candidate_url, temp_dir)
+                    
+                    # 验证 BGM 是否可解码
+                    if not _validate_bgm_decodable(local_bgm, ffmpeg_path):
+                        logger.warning("[Node7] BGM 无法解码，尝试下一个: %s", os.path.basename(local_bgm))
+                        bgm_mix_error = f"BGM 无法解码: {os.path.basename(local_bgm)}"
+                        continue
+                    
+                    bgm_duration = get_media_duration(local_bgm)
+                    logger.info("[Node7] BGM时长=%.2fs", bgm_duration)
+                    
+                    # 混合 TTS + BGM
+                    # 使用配置值或默认值 0.15
+                    bgm_volume = float(os.getenv("BGM_VOLUME", "0.15"))
+                    
+                    # 使用 -stream_loop -1 循环 BGM，用 -t 限制时长
+                    bgm_mix_cmd = [
+                        ffmpeg_path, "-y",
+                        "-i", subbed_path,
+                        "-i", tts_wav_path,
+                        "-stream_loop", "-1", "-i", local_bgm,
+                        "-filter_complex",
+                        f"[1:a]volume=1.0[tts];[2:a]volume={bgm_volume}[bgm];[tts][bgm]amix=inputs=2:duration=first:normalize=0[aout]",
+                        "-map", "0:v", "-map", "[aout]",
+                        "-c:v", "copy",
+                        "-c:a", "aac", "-b:a", "128k",
+                        "-ar", "44100",
+                        "-movflags", "+faststart",
+                        "-t", str(video_duration),
+                        mixed_path
+                    ]
+                    _log_ffmpeg_diagnostics(bgm_mix_cmd, run_dir, "Node7-bgm-mix")
+                    
+                    # 捕获 FFmpeg stderr
+                    try:
+                        run_ffmpeg(bgm_mix_cmd, timeout=180)
+                        bgm_used = True
+                        bgm_mix_success = True
+                        logger.info("[Node7] TTS+BGM 混音完成")
+                        break  # 成功，退出候选循环
+                    except subprocess.CalledProcessError as e:
+                        # 捕获完整的 FFmpeg stderr
+                        stderr_output = e.stderr.decode('utf-8', errors='replace') if e.stderr else "No stderr"
+                        error_msg = f"FFmpeg 返回码={e.returncode}, stderr={stderr_output[:500]}"
+                        logger.error("[Node7] BGM混合失败: %s", error_msg)
+                        bgm_mix_error = error_msg
+                        continue  # 尝试下一个 BGM
+                        
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error("[Node7] BGM处理异常: %s", error_msg)
+                    bgm_mix_error = error_msg
+                    continue  # 尝试下一个 BGM
+            
+            # 所有 BGM 候选都失败，降级为 TTS-only
+            if not bgm_mix_success:
+                logger.warning("[Node7] 所有 BGM 候选失败，降级为 TTS-only: %s", bgm_mix_error)
                 bgm_used = False
-                # 添加安全、可理解的错误信息，不暴露内部路径或堆栈
-                bgm_warnings.append("BGM 混音失败，视频已生成但仅包含 TTS 音频")
+                bgm_warnings.append(f"BGM 混音失败（{bgm_mix_error}），视频已生成但仅包含 TTS 音频")
         
         if not bgm_used:
             # 仅使用 TTS

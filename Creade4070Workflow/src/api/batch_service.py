@@ -61,15 +61,23 @@ class BatchService:
         
         # Create tasks
         for row in rows:
+            # Build input_data with all available fields
+            input_data = {
+                'script_text': row['script_text'],
+            }
+            # Add optional fields if present
+            if row.get('script_id'):
+                input_data['script_id'] = row['script_id']
+            if row.get('title'):
+                input_data['title'] = row['title']
+            
             task = BatchTask(
                 task_id=uuid.uuid4(),
                 batch_id=batch_id,
                 row_number=row['row_number'],
                 external_task_id=row['task_id'],
                 status=BatchTaskStatus.PENDING,
-                input_data={
-                    'script_text': row['script_text'],
-                },
+                input_data=input_data,
             )
             db.add(task)
         
