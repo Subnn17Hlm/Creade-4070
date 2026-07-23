@@ -291,20 +291,61 @@ async def get_batch(
     }
 
 
+def _sanitize_json_value(obj):
+    """Recursively sanitize a JSON value to ensure it's serializable.
+    Converts UUID, datetime, Enum to strings. Handles nested dicts/lists.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {str(k): _sanitize_json_value(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_json_value(item) for item in obj]
+    # UUID
+    if hasattr(obj, 'hex') and hasattr(obj, 'version'):
+        return str(obj)
+    # datetime
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    # Enum
+    if hasattr(obj, 'value'):
+        return obj.value
+    # Fallback
+    return str(obj)
+
+
 def _serialize_task(task) -> dict:
     """Safely serialize a batch task to dict. Handles null/missing fields."""
+    import json
+
     def safe_output_data(od):
         if od is None:
             return None
         if isinstance(od, dict):
-            return od
+            return _sanitize_json_value(od)
         if isinstance(od, str):
-            import json
             try:
-                return json.loads(od)
+                parsed = json.loads(od)
+                return _sanitize_json_value(parsed)
             except (json.JSONDecodeError, ValueError):
                 return {"_raw": od}
         return {"_raw": str(od)}
+
+    def safe_input_data(t):
+        """Sanitize input_data to ensure JSON serializable."""
+        if t.input_data is None:
+            return None
+        if isinstance(t.input_data, dict):
+            return _sanitize_json_value(t.input_data)
+        if isinstance(t.input_data, str):
+            try:
+                parsed = json.loads(t.input_data)
+                return _sanitize_json_value(parsed)
+            except (json.JSONDecodeError, ValueError):
+                return {"_raw": t.input_data}
+        return {"_raw": str(t.input_data)}
 
     def safe_final_video_url(t):
         if t.final_video_url:
@@ -317,10 +358,18 @@ def _serialize_task(task) -> dict:
     def safe_input_field(t, field, default=''):
         try:
             if t.input_data and isinstance(t.input_data, dict):
-                return t.input_data.get(field, default)
+                val = t.input_data.get(field, default)
+                return val if val is not None else default
         except Exception:
             pass
         return default
+
+    def safe_status(t):
+        """Get status value, handling Enum."""
+        s = t.status
+        if hasattr(s, 'value'):
+            return s.value
+        return str(s) if s else None
 
     return {
         'task_id': str(task.task_id),
@@ -329,11 +378,11 @@ def _serialize_task(task) -> dict:
         'external_task_id': task.external_task_id,
         'run_id': str(task.run_id) if task.run_id else None,
         'async_task_id': task.async_task_id if task.async_task_id else None,
-        'status': task.status,
+        'status': safe_status(task),
         'script_id': safe_input_field(task, 'script_id'),
         'script_text': safe_input_field(task, 'script_text'),
         'title': safe_input_field(task, 'title'),
-        'input_data': task.input_data,
+        'input_data': safe_input_data(task),
         'output_data': safe_output_data(task.output_data),
         'final_video_url': safe_final_video_url(task),
         'warning': getattr(task, 'warning', None),
@@ -417,9 +466,42 @@ async def get_batch_tasks(
         except Exception as e:
             logger.warning(f"Failed to refill batch slots: {e}")
     
+    # Serialize tasks with per-task error handling
+    serialized_tasks = []
+    for task in tasks:
+        try:
+            serialized_tasks.append(_serialize_task(task))
+        except Exception as e:
+            logger.error(f"Failed to serialize task {task.task_id}: {e}")
+            # Return a safe fallback for this task so the list doesn't 500
+            serialized_tasks.append({
+                'task_id': str(task.task_id),
+                'batch_id': str(task.batch_id),
+                'status': str(task.status) if task.status else 'unknown',
+                'serialization_error': str(e),
+                'row_number': task.row_number,
+                'external_task_id': task.external_task_id,
+                'run_id': str(task.run_id) if task.run_id else None,
+                'async_task_id': None,
+                'script_id': '',
+                'script_text': '',
+                'title': '',
+                'input_data': None,
+                'output_data': None,
+                'final_video_url': None,
+                'warning': None,
+                'error_code': None,
+                'error_message': None,
+                'retry_count': task.retry_count or 0,
+                'created_at': task.created_at.isoformat() if task.created_at else None,
+                'started_at': None,
+                'completed_at': None,
+                'updated_at': None,
+            })
+
     return {
         'batch_id': batch_id,
-        'tasks': [_serialize_task(task) for task in tasks],
+        'tasks': serialized_tasks,
         'pagination': {
             'page': page,
             'page_size': page_size,

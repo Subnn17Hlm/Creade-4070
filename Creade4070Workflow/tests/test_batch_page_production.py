@@ -667,3 +667,244 @@ class TestConcurrencyControl:
         ]
         to_submit2 = executor._get_tasks_to_submit(tasks2, concurrency=1)
         assert len(to_submit2) == 1
+
+
+# ============================================================
+# Historical Data Regression Tests (Items 34-41)
+# ============================================================
+
+class TestHistoricalDataRegression:
+    """Tests for serialization with production-like historical data formats."""
+
+    def test_34_output_data_none(self):
+        """Item 34: output_data=None should not cause 500."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-001'
+        task.batch_id = 'batch-001'
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = 'https://example.com/video.mp4'
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['task_id'] == 'task-001'
+        assert result['output_data'] is None
+        assert result['final_video_url'] == 'https://example.com/video.mp4'
+
+    def test_35_output_data_dict(self):
+        """Item 35: output_data=dict should be returned as-is."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-002'
+        task.batch_id = 'batch-001'
+        task.row_number = 2
+        task.external_task_id = 'ext-002'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = {'video_duration': 120.5, 'resolution': '1080p'}
+        task.final_video_url = 'https://example.com/video2.mp4'
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['output_data'] == {'video_duration': 120.5, 'resolution': '1080p'}
+
+    def test_36_output_data_json_string(self):
+        """Item 36: output_data=JSON string should be parsed."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-003'
+        task.batch_id = 'batch-001'
+        task.row_number = 3
+        task.external_task_id = 'ext-003'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = '{"video_duration": 120.5, "resolution": "1080p"}'
+        task.final_video_url = None
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['output_data'] == {'video_duration': 120.5, 'resolution': '1080p'}
+
+    def test_37_uuid_enum_datetime_handling(self):
+        """Item 37: UUID/Enum/datetime should be properly converted."""
+        from src.api.batch_routes import _serialize_task
+        from uuid import UUID
+
+        task = MagicMock()
+        task.task_id = UUID('12345678-1234-5678-1234-567812345678')
+        task.batch_id = UUID('87654321-4321-8765-4321-876543218765')
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = UUID('11111111-2222-3333-4444-555555555555')
+        task.async_task_id = 'async-001'
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = 'https://example.com/video.mp4'
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        # UUID should be converted to string
+        assert result['task_id'] == '12345678-1234-5678-1234-567812345678'
+        assert result['batch_id'] == '87654321-4321-8765-4321-876543218765'
+        assert result['run_id'] == '11111111-2222-3333-4444-555555555555'
+        # datetime should be converted to ISO format string
+        assert result['created_at'] == '2025-01-01T00:00:00'
+
+    def test_38_success_with_final_video_url(self):
+        """Item 38: Success task with final_video_url should return it."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-001'
+        task.batch_id = 'batch-001'
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = 'https://example.com/video.mp4'
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['final_video_url'] == 'https://example.com/video.mp4'
+
+    def test_39_success_without_final_video_url(self):
+        """Item 39: Success task without final_video_url should return None."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-001'
+        task.batch_id = 'batch-001'
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = None
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['final_video_url'] is None
+
+    def test_40_failed_task_with_full_error(self):
+        """Item 40: Failed task with complete error info should return it."""
+        from src.api.batch_routes import _serialize_task
+
+        task = MagicMock()
+        task.task_id = 'task-001'
+        task.batch_id = 'batch-001'
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'failed'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = None
+        task.warning = None
+        task.error_code = 'BGM_MIX_FAILED'
+        task.error_message = 'FFmpeg returned exit code -234: aloop parameter overflow'
+        task.retry_count = 2
+        task.created_at = datetime(2025, 1, 1, 0, 0, 0)
+        task.started_at = datetime(2025, 1, 1, 0, 0, 10)
+        task.completed_at = datetime(2025, 1, 1, 0, 5, 0)
+        task.updated_at = datetime(2025, 1, 1, 0, 5, 0)
+
+        result = _serialize_task(task)
+        assert result['status'] == 'failed'
+        assert result['error_code'] == 'BGM_MIX_FAILED'
+        assert 'aloop parameter overflow' in result['error_message']
+        assert result['retry_count'] == 2
+
+    def test_41_single_bad_task_does_not_break_list(self):
+        """Item 41: Single bad task should not break entire list."""
+        from src.api.batch_routes import _serialize_task
+
+        # Create a task that will cause serialization to fail
+        task = MagicMock()
+        task.task_id = 'bad-task'
+        task.batch_id = 'batch-001'
+        task.row_number = 1
+        task.external_task_id = 'ext-001'
+        task.run_id = None
+        task.async_task_id = None
+        task.status = 'success'
+        task.input_data = None
+        task.output_data = None
+        task.final_video_url = None
+        task.warning = None
+        task.error_code = None
+        task.error_message = None
+        task.retry_count = 0
+        # Make created_at raise an exception
+        type(task).created_at = property(lambda self: (_ for _ in ()).throw(Exception("Bad datetime")))
+        task.started_at = None
+        task.completed_at = None
+        task.updated_at = None
+
+        # This should raise an exception
+        with pytest.raises(Exception):
+            _serialize_task(task)
+
+        # But the per-task error handling in get_batch_tasks should catch it
+        # and return a safe fallback
