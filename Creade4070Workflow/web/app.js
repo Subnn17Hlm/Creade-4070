@@ -418,18 +418,24 @@ async function loadBatchStatus(batchId) {
     renderBatchSummary(data);
     await renderBatchTasks(batchId);
     
-    // 显示/隐藏启动按钮：基于任务状态，而不仅仅是批次状态
-    // 如果存在 pending/queued 任务且没有 running 任务，显示启动按钮
+    // 显示/隐藏启动按钮：基于统计数据，不依赖任务卡渲染
+    // 条件：total > 0 && waiting > 0 && running == 0
     const startBtn = document.getElementById('batch-start-btn');
     const counts = data.task_counts || {};
-    // created、pending、queued 都视为可启动状态
-    const hasStartable = (counts.pending || 0) + (counts.queued || 0) > 0;
-    const hasRunning = (counts.running || 0) > 0;
+    const totalCount = data.total_count || 0;
+    // waiting 包含 created、pending、queued
+    const waitingCount = (counts.pending || 0) + (counts.queued || 0);
+    const runningCount = counts.running || 0;
     
     // 显示启动按钮的条件：
-    // 1. 批次状态为 created 或 pending
-    // 2. 或者存在 pending/queued 任务且没有 running 任务
-    if (data.status === 'created' || data.status === 'pending' || (hasStartable && !hasRunning)) {
+    // 1. 总数 > 0
+    // 2. 等待数 > 0
+    // 3. 运行数 == 0
+    // 4. 批次状态不是 success/failed/cancelled
+    const shouldShowStartBtn = totalCount > 0 && waitingCount > 0 && runningCount === 0 && 
+                                !['success', 'failed', 'cancelled'].includes(data.status);
+    
+    if (shouldShowStartBtn) {
       startBtn.style.display = 'inline-block';
       startBtn.disabled = false;
       startBtn.textContent = '启动批次';

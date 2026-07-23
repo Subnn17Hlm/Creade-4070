@@ -127,6 +127,7 @@ async def get_batch(
     # Calculate task counts from actual tasks
     task_counts = {
         'pending': 0,
+        'queued': 0,
         'running': 0,
         'success': 0,
         'warning': 0,
@@ -138,6 +139,8 @@ async def get_batch(
             status = task.status
             if status == 'pending':
                 task_counts['pending'] += 1
+            elif status == 'queued':
+                task_counts['queued'] += 1
             elif status == 'running':
                 task_counts['running'] += 1
             elif status == 'success':
