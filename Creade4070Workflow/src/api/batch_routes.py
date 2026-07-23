@@ -2,19 +2,143 @@
 import uuid
 import logging
 from typing import Optional
+from datetime import datetime
 
 from fastapi import APIRouter, UploadFile, File, Form, Header, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 
-from storage.database.db import get_db_session
-from storage.database.batch_models import BatchJob, BatchTask, BatchTaskStatus
+from storage.database.db import get_db_session, get_async_sessionmaker
+from storage.database.batch_models import BatchJob, BatchTask, BatchTaskStatus, BatchJobStatus
 from api.batch_csv import validate_csv, MAX_BATCH_SIZE
 from api.batch_service import BatchService
 from api.batch_executor import BatchExecutor
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/batches', tags=['batches'])
+
+
+async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
+    """
+    Refill batch execution slots: when tasks complete, submit next pending tasks.
+    
+    This ensures concurrency control: only N tasks run at a time.
+    Uses SELECT FOR UPDATE to prevent duplicate submissions from concurrent polls.
+    """
+    # Get batch concurrency
+    result = await db.execute(
+        select(BatchJob).where(BatchJob.batch_id == batch_id)
+    )
+    batch = result.scalar_one_or_none()
+    if not batch:
+        return
+    
+    concurrency = batch.concurrency or 2
+    
+    # Count currently running/queued tasks (active slots)
+    active_result = await db.execute(
+        select(BatchTask).where(
+            and_(
+                BatchTask.batch_id == batch_id,
+                BatchTask.status.in_([BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING]),
+            )
+        )
+    )
+    active_count = len(active_result.scalars().all())
+    
+    # Calculate available slots
+    available_slots = max(0, concurrency - active_count)
+    if available_slots == 0:
+        return
+    
+    # Get pending tasks (ordered by row_number for deterministic ordering)
+    pending_result = await db.execute(
+        select(BatchTask)
+        .where(
+            and_(
+                BatchTask.batch_id == batch_id,
+                BatchTask.status == BatchTaskStatus.PENDING,
+            )
+        )
+        .order_by(BatchTask.row_number)
+        .limit(available_slots)
+    )
+    pending_tasks = list(pending_result.scalars().all())
+    
+    if not pending_tasks:
+        # No more pending tasks - check if batch should be marked complete
+        all_result = await db.execute(
+            select(BatchTask).where(BatchTask.batch_id == batch_id)
+        )
+        all_tasks = list(all_result.scalars().all())
+        has_active = any(t.status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING] for t in all_tasks)
+        if not has_active:
+            # All tasks done
+            success_count = sum(1 for t in all_tasks if t.status == BatchTaskStatus.SUCCESS)
+            failed_count = sum(1 for t in all_tasks if t.status == BatchTaskStatus.FAILED)
+            if failed_count == 0:
+                batch.status = BatchJobStatus.SUCCESS
+            elif success_count == 0:
+                batch.status = BatchJobStatus.FAILED
+            else:
+                batch.status = BatchJobStatus.PARTIAL_FAILED
+            batch.completed_at = datetime.utcnow()
+            await db.commit()
+        return
+    
+    # Submit next tasks
+    from src.api.async_task_service import get_async_task_service
+    async_task_service = get_async_task_service()
+    
+    submitted = 0
+    for task in pending_tasks:
+        try:
+            # Atomically claim the task using a separate session with row lock
+            async with get_async_sessionmaker()() as claim_db:
+                async with claim_db.begin():
+                    claim_result = await claim_db.execute(
+                        select(BatchTask)
+                        .where(BatchTask.task_id == task.task_id)
+                        .with_for_update()
+                    )
+                    locked_task = claim_result.scalar_one_or_none()
+                    if not locked_task or locked_task.status != BatchTaskStatus.PENDING:
+                        continue  # Already claimed by another poll
+                    locked_task.status = BatchTaskStatus.QUEUED
+                    run_id = uuid.uuid4()
+                    locked_task.run_id = run_id
+                    locked_task.started_at = datetime.utcnow()
+            
+            # Submit to native async system
+            await async_task_service.submit_task(
+                db=db,
+                task=task,
+                deadline_sec=1800,
+            )
+            submitted += 1
+        except Exception as e:
+            logger.error(f"Failed to submit task {task.task_id} during refill: {e}")
+            # Mark task as failed
+            try:
+                async with get_async_sessionmaker()() as fail_db:
+                    async with fail_db.begin():
+                        fail_result = await fail_db.execute(
+                            select(BatchTask).where(BatchTask.task_id == task.task_id)
+                        )
+                        fail_task = fail_result.scalar_one_or_none()
+                        if fail_task:
+                            fail_task.status = BatchTaskStatus.FAILED
+                            fail_task.error_code = "SUBMIT_ERROR"
+                            fail_task.error_message = str(e)
+                            fail_task.completed_at = datetime.utcnow()
+            except Exception as inner_e:
+                logger.error(f"Failed to mark task {task.task_id} as failed: {inner_e}")
+            continue
+    
+    if submitted > 0:
+        logger.info(f"Refilled batch {batch_id}: submitted {submitted} more tasks")
 
 
 @router.post('')
@@ -168,6 +292,62 @@ async def get_batch(
 
 
 @router.get('/{batch_id}/tasks')
+def _serialize_task(task) -> dict:
+    """Safely serialize a batch task to dict. Handles null/missing fields."""
+    def safe_output_data(od):
+        if od is None:
+            return None
+        if isinstance(od, dict):
+            return od
+        if isinstance(od, str):
+            import json
+            try:
+                return json.loads(od)
+            except (json.JSONDecodeError, ValueError):
+                return {"_raw": od}
+        return {"_raw": str(od)}
+
+    def safe_final_video_url(t):
+        if t.final_video_url:
+            return t.final_video_url
+        od = safe_output_data(t.output_data)
+        if od and isinstance(od, dict):
+            return od.get("final_video_url") or None
+        return None
+
+    def safe_input_field(t, field, default=''):
+        try:
+            if t.input_data and isinstance(t.input_data, dict):
+                return t.input_data.get(field, default)
+        except Exception:
+            pass
+        return default
+
+    return {
+        'task_id': str(task.task_id),
+        'batch_id': str(task.batch_id),
+        'row_number': task.row_number,
+        'external_task_id': task.external_task_id,
+        'run_id': str(task.run_id) if task.run_id else None,
+        'async_task_id': task.async_task_id if task.async_task_id else None,
+        'status': task.status,
+        'script_id': safe_input_field(task, 'script_id'),
+        'script_text': safe_input_field(task, 'script_text'),
+        'title': safe_input_field(task, 'title'),
+        'input_data': task.input_data,
+        'output_data': safe_output_data(task.output_data),
+        'final_video_url': safe_final_video_url(task),
+        'warning': getattr(task, 'warning', None),
+        'error_code': task.error_code,
+        'error_message': task.error_message,
+        'retry_count': task.retry_count or 0,
+        'created_at': task.created_at.isoformat() if task.created_at else None,
+        'started_at': task.started_at.isoformat() if task.started_at else None,
+        'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+        'updated_at': task.updated_at.isoformat() if getattr(task, 'updated_at', None) else None,
+    }
+
+
 async def get_batch_tasks(
     batch_id: str,
     status: Optional[str] = Query(None),
@@ -215,39 +395,31 @@ async def get_batch_tasks(
     from src.api.async_task_service import AsyncTaskService
     async_task_service = AsyncTaskService()
     
+    completed_count = 0
     for task in tasks:
         if task.async_task_id and task.status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING]:
             try:
+                old_status = task.status
                 # Poll native async status and update task
                 await async_task_service.poll_task_status(db, task)
+                # If task just completed (success or failed), count it
+                if old_status in [BatchTaskStatus.QUEUED, BatchTaskStatus.RUNNING] and \
+                   task.status in [BatchTaskStatus.SUCCESS, BatchTaskStatus.FAILED]:
+                    completed_count += 1
             except Exception as e:
                 logger.warning(f"Failed to sync task {task.task_id} status: {e}")
                 # Continue even if sync fails
     
+    # If any tasks completed, try to submit next pending tasks (concurrency refill)
+    if completed_count > 0:
+        try:
+            await _refill_batch_slots(db, batch_uuid)
+        except Exception as e:
+            logger.warning(f"Failed to refill batch slots: {e}")
+    
     return {
         'batch_id': batch_id,
-        'tasks': [
-            {
-                'task_id': str(task.task_id),
-                'row_number': task.row_number,
-                'external_task_id': task.external_task_id,
-                'run_id': str(task.run_id) if task.run_id else None,
-                'status': task.status,
-                'script_id': task.input_data.get('script_id', '') if task.input_data else '',
-                'script_text': task.input_data.get('script_text', '') if task.input_data else '',
-                'title': task.input_data.get('title', '') if task.input_data else '',
-                'input_data': task.input_data,
-                'output_data': task.output_data,
-                'final_video_url': task.final_video_url,
-                'error_code': task.error_code,
-                'error_message': task.error_message,
-                'retry_count': task.retry_count,
-                'created_at': task.created_at.isoformat() if task.created_at else None,
-                'started_at': task.started_at.isoformat() if task.started_at else None,
-                'completed_at': task.completed_at.isoformat() if task.completed_at else None,
-            }
-            for task in tasks
-        ],
+        'tasks': [_serialize_task(task) for task in tasks],
         'pagination': {
             'page': page,
             'page_size': page_size,

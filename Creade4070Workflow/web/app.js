@@ -358,7 +358,7 @@ function initBatchMonitor() {
     
     // 禁用按钮防止重复点击
     startBtn.disabled = true;
-    startBtn.textContent = '启动中...';
+    startBtn.textContent = '启动中…';
     
     try {
       const res = await fetch(`/api/batches/${currentBatchId}/start`, {
@@ -369,19 +369,49 @@ function initBatchMonitor() {
         body: JSON.stringify({ concurrency: 2 }),
       });
       
-      const data = await res.json();
-      
-      if (res.ok) {
-        alert('批次已启动');
+      // HTTP 200 and 202 both mean success
+      if (res.ok || res.status === 202) {
+        let msg = '批次已启动';
+        try {
+          const data = await res.json();
+          msg = data.message || data.msg || msg;
+        } catch (_) {
+          // Empty response body is OK - still counts as success
+        }
+        showStatusMessage(msg, 'success');
         startBtn.style.display = 'none';
         loadBatchStatus(currentBatchId);
       } else {
-        alert(`启动失败: ${data.error || data.detail || '未知错误'}`);
+        // Extract real error from response
+        let errorMsg = `HTTP ${res.status}`;
+        try {
+          const errData = await res.json();
+          const detail = errData.detail || errData;
+          errorMsg = detail.error || detail.message || errData.error || errData.message || errorMsg;
+        } catch (_) {}
+        
+        showStatusMessage(`启动失败: ${errorMsg}`, 'error');
         startBtn.disabled = false;
         startBtn.textContent = '启动批次';
       }
     } catch (e) {
-      alert(`请求失败: ${e.message}`);
+      // Network error or timeout - check if batch was actually started
+      showStatusMessage(`请求异常: ${e.message}，正在检查状态…`, 'warning');
+      
+      try {
+        const checkRes = await fetch(`/api/batches/${currentBatchId}`);
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          // If batch is already running or has running/queued tasks, it was started
+          if (['running', 'success', 'failed', 'partial_failed'].includes(checkData.status)) {
+            showStatusMessage('批次已在运行中', 'success');
+            startBtn.style.display = 'none';
+            loadBatchStatus(currentBatchId);
+            return;
+          }
+        }
+      } catch (_) {}
+      
       startBtn.disabled = false;
       startBtn.textContent = '启动批次';
     }
@@ -494,32 +524,123 @@ async function renderBatchTasks(batchId) {
 
   try {
     const res = await fetch(`/api/batches/${batchId}/tasks`);
-    if (!res.ok) return;
+    
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}`;
+      try {
+        const errData = await res.json();
+        errorMsg = errData.detail?.error || errData.detail?.message || errData.error || errData.message || errorMsg;
+      } catch (_) {}
+      tasksDiv.innerHTML = `<div class="task-error">获取任务列表失败: ${escapeHtml(errorMsg)}</div>`;
+      return;
+    }
 
     const data = await res.json();
-    const tasks = data.tasks || [];
+    
+    // Support multiple response structures: { tasks: [] }, { data: { tasks: [] } }, or direct array
+    let tasks;
+    if (Array.isArray(data)) {
+      tasks = data;
+    } else if (data && Array.isArray(data.tasks)) {
+      tasks = data.tasks;
+    } else if (data && data.data && Array.isArray(data.data.tasks)) {
+      tasks = data.data.tasks;
+    } else {
+      console.error('Unexpected tasks response structure:', JSON.stringify(data).substring(0, 500));
+      tasksDiv.innerHTML = `<div class="task-error">任务列表响应格式异常，请检查控制台</div>`;
+      return;
+    }
 
     tasksDiv.innerHTML = '';
+    
+    if (tasks.length === 0) {
+      tasksDiv.innerHTML = `<div class="task-empty">暂无任务数据</div>`;
+      return;
+    }
+
     tasks.forEach(task => {
       const status = normalizeTaskStatus(task.status);
       const item = document.createElement('div');
-      item.className = 'task-item';
-      item.innerHTML = `
-        <div class="task-info">
-          <div class="task-id">${task.task_id}</div>
-          <div class="task-text">${escapeHtml(task.script_text || '').substring(0, 50)}${(task.script_text || '').length > 50 ? '...' : ''}</div>
-          <span class="task-status ${status}">${status}</span>
-        </div>
-        <div class="task-actions">
-          ${task.final_video_url ? `<a href="${task.final_video_url}" target="_blank" class="btn btn-secondary">查看视频</a>` : ''}
-          ${status === 'failed' ? `<button class="btn btn-secondary" onclick="retryTask('${batchId}', '${task.task_id}')">重试</button>` : ''}
+      item.className = `task-item task-status-${status}`;
+      item.dataset.taskId = task.task_id;
+      
+      // Build task card content
+      let cardHtml = `
+        <div class="task-header">
+          <span class="task-id" title="${escapeHtml(task.task_id || '')}">${escapeHtml((task.task_id || '').substring(0, 8))}...</span>
+          <span class="task-status-badge ${status}">${statusLabel(status)}</span>
+          ${task.retry_count > 0 ? `<span class="task-retry-count">重试 ${task.retry_count} 次</span>` : ''}
         </div>
       `;
+      
+      // Script info
+      if (task.script_id) {
+        cardHtml += `<div class="task-field"><span class="label">脚本ID:</span> ${escapeHtml(task.script_id)}</div>`;
+      }
+      if (task.title) {
+        cardHtml += `<div class="task-field"><span class="label">标题:</span> ${escapeHtml(task.title)}</div>`;
+      }
+      if (task.script_text) {
+        const snippet = task.script_text.length > 80 ? task.script_text.substring(0, 80) + '...' : task.script_text;
+        cardHtml += `<div class="task-field"><span class="label">脚本:</span> ${escapeHtml(snippet)}</div>`;
+      }
+      
+      // Warning
+      if (task.warning) {
+        cardHtml += `<div class="task-field task-warning"><span class="label">警告:</span> ${escapeHtml(task.warning)}</div>`;
+      }
+      
+      // Error info
+      if (task.error_code) {
+        cardHtml += `<div class="task-field task-error-code"><span class="label">错误码:</span> ${escapeHtml(task.error_code)}</div>`;
+      }
+      if (task.error_message) {
+        cardHtml += `<div class="task-field task-error-msg"><span class="label">错误:</span> ${escapeHtml(task.error_message)}</div>`;
+      }
+      
+      // Actions
+      let actionsHtml = '<div class="task-actions">';
+      
+      if (status === 'success') {
+        if (task.final_video_url) {
+          actionsHtml += `<a href="${escapeHtml(task.final_video_url)}" target="_blank" rel="noopener" class="btn btn-success">查看视频</a>`;
+        } else {
+          actionsHtml += `<span class="task-note">任务成功，但视频地址尚未回写</span>`;
+        }
+      }
+      
+      if (status === 'failed') {
+        actionsHtml += `<button class="btn btn-warning task-retry-btn" data-batch-id="${escapeHtml(batchId)}" data-task-id="${escapeHtml(task.task_id)}">重试</button>`;
+      }
+      
+      actionsHtml += '</div>';
+      
+      item.innerHTML = cardHtml + actionsHtml;
       tasksDiv.appendChild(item);
     });
+    
+    // Attach retry button handlers
+    tasksDiv.querySelectorAll('.task-retry-btn').forEach(btn => {
+      btn.addEventListener('click', () => retryTask(btn.dataset.batchId, btn.dataset.taskId, btn));
+    });
+    
   } catch (e) {
     console.error('Failed to load tasks:', e);
+    tasksDiv.innerHTML = `<div class="task-error">加载任务列表异常: ${escapeHtml(e.message)}</div>`;
   }
+}
+
+function statusLabel(status) {
+  const labels = {
+    'created': '等待',
+    'pending': '等待',
+    'queued': '等待',
+    'running': '运行中',
+    'success': '成功',
+    'failed': '失败',
+    'timeout': '超时',
+  };
+  return labels[status] || status;
 }
 
 /**
@@ -567,36 +688,88 @@ function stopBatchPolling() {
 // ============================================================
 // 任务重试
 // ============================================================
-async function retryTask(batchId, taskId) {
-  if (!confirm('确定要重试这个任务吗？')) return;
+async function retryTask(batchId, taskId, btnElement) {
+  // btnElement is the button that was clicked; if not provided, find it
+  const btn = btnElement || document.querySelector(`.task-retry-btn[data-task-id="${taskId}"]`);
+  if (!btn || btn.disabled) return;
 
-  // 禁用按钮防止重复点击
-  const btn = event.target;
+  // Disable button to prevent duplicate clicks
   const originalText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '重试中...';
+  btn.textContent = '重试中…';
 
   try {
     const res = await fetch(`/api/batches/${batchId}/tasks/${taskId}/retry`, {
       method: 'POST',
     });
 
-    const data = await res.json();
-
+    // HTTP 200 and 202 both mean success
     if (res.ok || res.status === 202) {
-      // 任务已进入队列，显示成功消息
-      alert(data.message || '任务已进入执行队列，请稍后刷新查看结果');
-      // 刷新批次状态
-      loadBatchStatus(batchId);
+      let msg = '任务已进入执行队列';
+      try {
+        const data = await res.json();
+        msg = data.message || data.msg || msg;
+      } catch (_) {
+        // Empty response body is OK
+      }
+      showStatusMessage(msg, 'success');
+      // Update the task card status to queued/pending immediately
+      const taskItem = btn.closest('.task-item');
+      if (taskItem) {
+        const badge = taskItem.querySelector('.task-status-badge');
+        if (badge) {
+          badge.className = 'task-status-badge queued';
+          badge.textContent = '等待';
+        }
+        // Remove retry button
+        btn.remove();
+      }
+      // Refresh batch status after a short delay
+      setTimeout(() => loadBatchStatus(batchId), 1000);
     } else {
-      alert(`重试失败: ${data.error || data.detail || '未知错误'}`);
-      // 恢复按钮状态
+      // Extract real error from response
+      let errorMsg = `HTTP ${res.status}`;
+      try {
+        const errData = await res.json();
+        const detail = errData.detail || errData;
+        errorMsg = detail.error || detail.message || errData.error || errData.message || errorMsg;
+      } catch (_) {}
+      
+      showStatusMessage(`重试失败: ${errorMsg}`, 'error');
+      // Restore button
       btn.disabled = false;
       btn.textContent = originalText;
     }
   } catch (e) {
-    alert(`请求失败: ${e.message}`);
-    // 恢复按钮状态
+    // Network error or timeout - check if task was actually submitted
+    showStatusMessage(`请求异常: ${e.message}，正在检查任务状态…`, 'warning');
+    
+    try {
+      // Re-fetch task status to check if it was actually submitted
+      const checkRes = await fetch(`/api/batches/${batchId}/tasks`);
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        const tasks = checkData.tasks || [];
+        const task = tasks.find(t => t.task_id === taskId);
+        if (task && ['queued', 'running'].includes(task.status)) {
+          showStatusMessage('任务已进入队列', 'success');
+          // Update UI
+          const taskItem = btn.closest('.task-item');
+          if (taskItem) {
+            const badge = taskItem.querySelector('.task-status-badge');
+            if (badge) {
+              badge.className = 'task-status-badge queued';
+              badge.textContent = '等待';
+            }
+            btn.remove();
+          }
+          setTimeout(() => loadBatchStatus(batchId), 1000);
+          return;
+        }
+      }
+    } catch (_) {}
+    
+    // Restore button
     btn.disabled = false;
     btn.textContent = originalText;
   }
@@ -608,40 +781,81 @@ async function retryTask(batchId, taskId) {
 async function exportBatchCsv(batchId) {
   try {
     const res = await fetch(`/api/batches/${batchId}/tasks`);
+    
     if (!res.ok) {
-      alert('获取任务列表失败');
+      let errorMsg = `HTTP ${res.status}`;
+      try {
+        const errData = await res.json();
+        errorMsg = errData.detail?.error || errData.error || errData.message || errorMsg;
+      } catch (_) {}
+      showStatusMessage(`导出失败: ${errorMsg}`, 'error');
       return;
     }
 
     const data = await res.json();
-    const tasks = data.tasks || [];
+    
+    // Support multiple response structures
+    let tasks;
+    if (Array.isArray(data)) {
+      tasks = data;
+    } else if (data && Array.isArray(data.tasks)) {
+      tasks = data.tasks;
+    } else if (data && data.data && Array.isArray(data.data.tasks)) {
+      tasks = data.data.tasks;
+    } else {
+      showStatusMessage('导出失败: 任务列表响应格式异常', 'error');
+      return;
+    }
 
-    // 构建 CSV
-    const headers = ['task_id', 'script_id', 'script_text', 'status', 'final_video_url', 'error_message'];
+    // CSV headers - full fields
+    const headers = [
+      'task_id', 'batch_id', 'script_id', 'title', 'script_text',
+      'status', 'final_video_url', 'warning', 'error_code', 'error_message',
+      'retry_count', 'run_id', 'async_task_id',
+      'created_at', 'started_at', 'completed_at', 'updated_at'
+    ];
+    
+    // Build CSV with proper escaping
+    const csvEscape = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      // Always wrap in quotes if contains comma, double-quote, newline, or CJK
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
     const lines = [headers.join(',')];
-
+    
     tasks.forEach(task => {
-      const line = headers.map(h => {
-        const val = task[h] || '';
-        if (val.includes(',') || val.includes('\n')) {
-          return `"${val.replace(/"/g, '""')}"`;
+      const row = headers.map(h => {
+        let val = task[h];
+        // Handle nested objects
+        if (val !== null && val !== undefined && typeof val === 'object') {
+          val = JSON.stringify(val);
         }
-        return val;
-      }).join(',');
-      lines.push(line);
+        return csvEscape(val);
+      });
+      lines.push(row.join(','));
     });
 
-    // 下载
-    const csvContent = lines.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    // UTF-8 BOM for Excel compatibility
+    const csvContent = '\uFEFF' + lines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `batch_${batchId}_results.csv`;
+    const now = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    a.download = `batch_${batchId}_${now}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    showStatusMessage(`已导出 ${tasks.length} 条任务`, 'success');
   } catch (e) {
-    alert(`导出失败: ${e.message}`);
+    showStatusMessage(`导出异常: ${e.message}`, 'error');
   }
 }
 

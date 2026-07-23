@@ -51,6 +51,9 @@ class BatchExecutor:
     async def start_batch(self, db: AsyncSession, batch_id: uuid.UUID) -> Dict[str, Any]:
         """
         Start executing a batch job.
+        
+        Only submits up to N tasks (concurrency limit) to the native async system.
+        Remaining tasks stay as pending/queued until slots free up.
 
         Args:
             db: Database session
@@ -96,18 +99,58 @@ class BatchExecutor:
                 "message": "No pending tasks to execute",
             }
 
-        # Execute tasks with concurrency control
-        await self._execute_batch_tasks(db, batch)
+        # Use native async task system with concurrency control
+        # Only submit up to N tasks (batch.concurrency) initially
+        from src.api.async_task_service import get_async_task_service
+        async_task_service = get_async_task_service(self.graph_service)
+        
+        concurrency = batch.concurrency or 2
+        submitted_count = 0
+        
+        for task in pending_tasks[:concurrency]:
+            try:
+                # Atomically claim the task
+                async with get_async_sessionmaker()() as claim_db:
+                    async with claim_db.begin():
+                        claim_result = await claim_db.execute(
+                            select(BatchTask)
+                            .where(BatchTask.task_id == task.task_id)
+                            .with_for_update()
+                        )
+                        locked_task = claim_result.scalar_one_or_none()
+                        if not locked_task or locked_task.status != BatchTaskStatus.PENDING:
+                            continue
+                        locked_task.status = BatchTaskStatus.QUEUED
+                        run_id = uuid.uuid4()
+                        locked_task.run_id = run_id
+                        locked_task.started_at = datetime.utcnow()
+                
+                # Submit to native async system
+                await async_task_service.submit_task(
+                    db=db,
+                    task=task,
+                    deadline_sec=1800,
+                )
+                submitted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to submit task {task.task_id} to async system: {e}")
+                # Mark task as failed
+                await self._mark_task_failed(task.task_id, batch_id, "SUBMIT_ERROR", str(e))
+                continue
 
-        # Refresh and get final status
-        await db.refresh(batch)
+        # Update batch counts
+        await self._update_batch_counts_safe(batch_id)
+
+        logger.info(f"Batch {batch_id} started: submitted {submitted_count}/{len(pending_tasks)} tasks (concurrency={concurrency})")
 
         return {
             "batch_id": str(batch_id),
             "status": batch.status,
             "total_count": batch.total_count,
-            "success_count": batch.success_count,
-            "failed_count": batch.failed_count,
+            "submitted_count": submitted_count,
+            "pending_count": len(pending_tasks) - submitted_count,
+            "concurrency": concurrency,
+            "message": f"已提交 {submitted_count} 个任务到异步执行队列，剩余 {len(pending_tasks) - submitted_count} 个等待中",
         }
 
     async def _execute_batch_tasks(self, db: AsyncSession, batch: BatchJob):
@@ -706,3 +749,35 @@ class BatchExecutor:
         batch.failed_count = len(failed_result.scalars().all())
 
         await db.commit()
+
+    # ------------------------------------------------------------------
+    # Helper methods for testing and reuse
+    # ------------------------------------------------------------------
+
+    def _can_retry_task(self, task) -> bool:
+        """Check if a task can be retried (only failed tasks)."""
+        return task.status == 'failed'
+
+    def _increment_retry_count(self, task) -> int:
+        """Increment retry count and return new value."""
+        new_count = (task.retry_count or 0) + 1
+        task.retry_count = new_count
+        return new_count
+
+    def _get_tasks_to_submit(self, tasks, concurrency: int) -> list:
+        """
+        Get tasks that should be submitted to the async system.
+        Only returns pending tasks that don't already have an async_task_id,
+        limited by the concurrency setting minus currently running tasks.
+        """
+        running_count = sum(1 for t in tasks if t.status in ('running', 'queued') and t.async_task_id)
+        available_slots = max(0, concurrency - running_count)
+
+        to_submit = []
+        for task in tasks:
+            if len(to_submit) >= available_slots:
+                break
+            if task.status in ('pending', 'created') and not task.async_task_id:
+                to_submit.append(task)
+
+        return to_submit
