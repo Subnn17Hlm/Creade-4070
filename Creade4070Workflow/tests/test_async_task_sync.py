@@ -244,9 +244,8 @@ class TestRetryCountIncrement:
 
     @pytest.mark.asyncio
     async def test_retry_count_increments_not_resets(self):
-        """Test that retry_count increments from existing value."""
+        """Test that retry_count increments from existing value (using fallback path)."""
         from src.api.batch_executor import BatchExecutor
-        from src.api.async_task_service import AsyncTaskService
         from src.storage.database.batch_models import BatchJob
         
         # Create mock task with retry_count=3
@@ -272,28 +271,24 @@ class TestRetryCountIncrement:
         mock_result.scalar_one_or_none = MagicMock(return_value=batch)
         mock_db.execute = AsyncMock(return_value=mock_result)
         
-        # Create mock async task service
-        mock_async_service = AsyncMock()
-        mock_async_service.submit_task = AsyncMock(return_value={
-            "async_task_id": "new-async-id",
-            "run_id": "new-run-id",
-        })
-        
         # Create executor
         mock_graph_service = AsyncMock()
         executor = BatchExecutor(mock_graph_service)
         
-        # Retry task
-        result = await executor.retry_task(mock_db, batch.batch_id, task.task_id, mock_async_service)
+        # Mock _execute_single_task_with_semaphore to avoid actual execution
+        with patch.object(executor, '_execute_single_task_with_semaphore', new_callable=AsyncMock) as mock_trigger:
+            mock_trigger.return_value = {"success": True, "message": "Task queued for retry"}
+            # Retry task (uses fallback path since native async is not available)
+            result = await executor.retry_task(mock_db, batch.batch_id, task.task_id)
         
         # Verify retry_count is 4 (not 1)
         assert task.retry_count == 4
-        # The result comes from async_task_service.submit_task, which returns async_task_id and run_id
-        assert result["async_task_id"] == "new-async-id"
+        # Verify status is PENDING (fallback path)
+        assert task.status == BatchTaskStatus.PENDING
 
     @pytest.mark.asyncio
     async def test_retry_count_starts_at_1_for_first_retry(self):
-        """Test that retry_count starts at 1 for first retry."""
+        """Test that retry_count starts at 1 for first retry (using fallback path)."""
         from src.api.batch_executor import BatchExecutor
         from src.storage.database.batch_models import BatchJob
         
@@ -320,24 +315,20 @@ class TestRetryCountIncrement:
         mock_result.scalar_one_or_none = MagicMock(return_value=batch)
         mock_db.execute = AsyncMock(return_value=mock_result)
         
-        # Create mock async task service
-        mock_async_service = AsyncMock()
-        mock_async_service.submit_task = AsyncMock(return_value={
-            "async_task_id": "new-async-id",
-            "run_id": "new-run-id",
-        })
-        
         # Create executor
         mock_graph_service = AsyncMock()
         executor = BatchExecutor(mock_graph_service)
         
-        # Retry task
-        result = await executor.retry_task(mock_db, batch.batch_id, task.task_id, mock_async_service)
+        # Mock _execute_single_task_with_semaphore to avoid actual execution
+        with patch.object(executor, '_execute_single_task_with_semaphore', new_callable=AsyncMock) as mock_trigger:
+            mock_trigger.return_value = {"success": True, "message": "Task queued for retry"}
+            # Retry task (uses fallback path since native async is not available)
+            result = await executor.retry_task(mock_db, batch.batch_id, task.task_id)
         
         # Verify retry_count is 1
         assert task.retry_count == 1
-        # The result comes from async_task_service.submit_task, which returns async_task_id and run_id
-        assert result["async_task_id"] == "new-async-id"
+        # Verify status is PENDING (fallback path)
+        assert task.status == BatchTaskStatus.PENDING
 
 
 class TestStatusSyncInBatchTasksEndpoint:

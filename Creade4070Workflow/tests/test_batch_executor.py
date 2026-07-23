@@ -261,8 +261,11 @@ class TestBatchExecutor:
             
             mock_session.execute.side_effect = mock_session_execute
             
-            # Retry task (now returns immediately with queued status)
-            result = await executor.retry_task(db, batch.batch_id, task.task_id, mock_async_task_service)
+        with patch('api.async_task_service.get_async_task_service') as mock_get_service:
+            mock_get_service.return_value = mock_async_task_service
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', True):
+                # Retry task (now returns immediately with queued status)
+                result = await executor.retry_task(db, batch.batch_id, task.task_id)
             
             # Verify retry count incremented
             assert result["retry_count"] == 1
@@ -307,8 +310,10 @@ class TestBatchExecutor:
         mock_async_task_service = AsyncMock()
         
         # Try to retry successful task
-        with pytest.raises(ValueError, match="only failed tasks can be retried"):
-            await executor.retry_task(db, batch.batch_id, task.task_id, mock_async_task_service)
+        with patch('api.async_task_service.get_async_task_service') as mock_get_service:
+            mock_get_service.return_value = mock_async_task_service
+            with pytest.raises(ValueError, match="only failed tasks can be retried"):
+                await executor.retry_task(db, batch.batch_id, task.task_id)
 
     @pytest.mark.asyncio
     async def test_batch_final_status_all_success(self, executor, mock_graph_service):

@@ -1,523 +1,273 @@
 """
-Tests for retry task functionality.
+Tests for retry task unified scheduling path.
 
-Covers:
-1. Async system available: retry_count increments only after successful submission
-2. Async system unavailable: retry_count unchanged, status stays failed
-3. Duplicate retry requests don't create duplicate tasks
-4. Retry respects concurrency limit
-5. Retry returns real errors, not Unknown error
-6. Task list and CSV continue HTTP 200
+These tests verify that:
+1. Retry uses the same scheduling path as start_batch
+2. When native async is unavailable, fallback to PENDING status
+3. State changes only happen after successful scheduling
+4. Concurrency limits are respected
 """
-
 import pytest
 import uuid
+import asyncio
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-from sqlalchemy import select
+from unittest.mock import MagicMock, AsyncMock, patch
 
-from storage.database.batch_models import (
-    BatchJob, BatchTask, BatchJobStatus, BatchTaskStatus,
-)
 from api.batch_executor import BatchExecutor
+from storage.database.batch_models import BatchTask, BatchJob, BatchTaskStatus, BatchJobStatus
 
 
-# ============================================================================
-# Fixtures
-# ============================================================================
-
-@pytest.fixture
-def mock_graph_service():
-    """Mock graph service."""
-    service = MagicMock()
-    service.run = AsyncMock(return_value={"status": "success"})
-    return service
-
-
-@pytest.fixture
-def mock_async_task_service_available():
-    """Mock async task service that is available and succeeds."""
-    service = MagicMock()
-    service.runtime = MagicMock()  # Not None = available
-    service.submit_task = AsyncMock(return_value={
-        "async_task_id": "test-async-task-id",
-        "status": "queued",
-    })
-    return service
+def _make_task(status=BatchTaskStatus.FAILED, retry_count=0, run_id=None):
+    task = BatchTask()
+    task.task_id = uuid.uuid4()
+    task.status = status
+    task.retry_count = retry_count
+    task.run_id = run_id
+    task.error_code = "WORKFLOW_ERROR" if status == BatchTaskStatus.FAILED else None
+    task.error_message = "Unknown error" if status == BatchTaskStatus.FAILED else None
+    task.created_at = datetime.utcnow()
+    task.updated_at = datetime.utcnow()
+    return task
 
 
-@pytest.fixture
-def mock_async_task_service_unavailable():
-    """Mock async task service that is NOT available."""
-    service = MagicMock()
-    service.runtime = None  # None = not available
-    service.submit_task = AsyncMock(
-        side_effect=RuntimeError("Native async task system is not available")
-    )
-    return service
+def _make_batch(tasks=None, concurrency=2):
+    batch = BatchJob()
+    batch.batch_id = uuid.uuid4()
+    batch.status = BatchJobStatus.RUNNING
+    batch.concurrency = concurrency
+    batch.created_at = datetime.utcnow()
+    batch.updated_at = datetime.utcnow()
+    batch.tasks = tasks or []
+    return batch
 
 
-@pytest.fixture
-def mock_db_session():
-    """Mock database session."""
-    session = AsyncMock()
-    result = MagicMock()
-    session.execute = AsyncMock(return_value=result)
-    session.commit = AsyncMock()
-    session.rollback = AsyncMock()
-    return session
-
-
-# ============================================================================
-# Test 1: Async system available - retry_count increments after successful submission
-# ============================================================================
-
-class TestRetrySuccess:
-    """Test retry when async system is available."""
+class TestRetryResetsToPending:
+    """Test that retry resets task to PENDING when using fallback."""
 
     @pytest.mark.asyncio
-    async def test_retry_increments_retry_count_after_success(self, mock_graph_service, mock_async_task_service_available):
-        """When submission succeeds, retry_count should increment."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        # Create mock batch and task
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.batch_id = batch_id
-        task.status = BatchTaskStatus.FAILED
-        task.retry_count = 0
-        task.input_data = {"title": "test"}
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        batch.concurrency = 2
-        
-        # Mock db.execute to return the batch
+    async def test_retry_sets_status_to_pending_when_native_unavailable(self):
+        """After successful retry with native async unavailable, task status should be PENDING."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        batch = _make_batch(tasks=[task])
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        result = await executor.retry_task(
-            mock_db, batch_id, task_id, 
-            async_task_service=mock_async_task_service_available
-        )
-        
-        # Verify retry_count was incremented
-        assert task.retry_count == 1
-        # Verify status changed to queued
-        assert task.status == BatchTaskStatus.QUEUED
-        # Verify errors were cleared
-        assert task.error_code is None
-        assert task.error_message is None
-        # Verify async_task_id was set
-        assert task.async_task_id == "test-async-task-id"
-        # Verify result
-        assert result["status"] == "queued"
-        assert result["retry_count"] == 1
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
+
+        with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+            with patch('api.batch_executor.asyncio.create_task') as mock_create_task:
+                mock_create_task.return_value = MagicMock()
+                result = await executor.retry_task(db, batch.batch_id, task.task_id)
+
+                assert result["status"] == "pending"
+                assert task.status == BatchTaskStatus.PENDING
 
     @pytest.mark.asyncio
-    async def test_retry_clears_old_error_fields(self, mock_graph_service, mock_async_task_service_available):
-        """When submission succeeds, old error fields should be cleared."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.batch_id = batch_id
-        task.status = BatchTaskStatus.FAILED
-        task.retry_count = 2
-        task.error_code = "WORKFLOW_ERROR"
-        task.error_message = "Previous error"
-        task.output_data = {"status": "failed"}
-        task.input_data = {"title": "test"}
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        batch.concurrency = 2
-        
+    async def test_retry_increments_retry_count(self):
+        """Retry should increment retry_count after successful scheduling."""
+        task = _make_task(status=BatchTaskStatus.FAILED, retry_count=2)
+        batch = _make_batch(tasks=[task])
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        await executor.retry_task(
-            mock_db, batch_id, task_id,
-            async_task_service=mock_async_task_service_available
-        )
-        
-        # Verify old errors cleared
-        assert task.error_code is None
-        assert task.error_message is None
-        assert task.output_data is None
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
 
+        with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+            with patch('api.batch_executor.asyncio.create_task') as mock_create_task:
+                mock_create_task.return_value = MagicMock()
+                result = await executor.retry_task(db, batch.batch_id, task.task_id)
 
-# ============================================================================
-# Test 2: Async system unavailable - retry_count unchanged, status stays failed
-# ============================================================================
+                assert task.retry_count == 3
+                assert result["retry_count"] == 3
 
-class TestRetryUnavailable:
-    """Test retry when async system is NOT available."""
-
-    @pytest.mark.asyncio
-    async def test_retry_unavailable_keeps_retry_count(self, mock_graph_service, mock_async_task_service_unavailable):
-        """When async system unavailable, retry_count should NOT increment."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.batch_id = batch_id
-        task.status = BatchTaskStatus.FAILED
-        task.retry_count = 0
-        task.error_code = "WORKFLOW_ERROR"
-        task.error_message = "Previous error"
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        batch.concurrency = 2
-        
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        # Should raise RuntimeError
-        with pytest.raises(RuntimeError, match="Native async task system is not available"):
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_unavailable
-            )
-        
-        # Verify retry_count unchanged
-        assert task.retry_count == 0
-        # Verify status stays failed
-        assert task.status == BatchTaskStatus.FAILED
-        # Verify errors preserved
-        assert task.error_code == "WORKFLOW_ERROR"
-        assert task.error_message == "Previous error"
-
-    @pytest.mark.asyncio
-    async def test_retry_unavailable_preserves_error_info(self, mock_graph_service, mock_async_task_service_unavailable):
-        """When async system unavailable, original error info should be preserved."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.batch_id = batch_id
-        task.status = BatchTaskStatus.FAILED
-        task.retry_count = 3
-        task.error_code = "EXCEPTION"
-        task.error_message = "Connection timeout"
-        task.output_data = {"fail_reason": "TTS failed"}
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        batch.concurrency = 2
-        
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        with pytest.raises(RuntimeError):
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_unavailable
-            )
-        
-        # All original state preserved
-        assert task.retry_count == 3
-        assert task.error_code == "EXCEPTION"
-        assert task.error_message == "Connection timeout"
-        assert task.output_data == {"fail_reason": "TTS failed"}
-
-
-# ============================================================================
-# Test 3: Duplicate retry requests don't create duplicate tasks
-# ============================================================================
 
 class TestRetryIdempotency:
-    """Test that duplicate retry requests are handled correctly."""
+    """Test that duplicate retry requests don't cause issues."""
 
     @pytest.mark.asyncio
-    async def test_retry_non_failed_task_rejected(self, mock_graph_service, mock_async_task_service_available):
-        """Retry should only work on failed tasks."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        # Task is already running (from a previous successful retry)
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.status = BatchTaskStatus.RUNNING
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        
+    async def test_retry_non_failed_task_rejected(self):
+        """Retry should reject tasks that are not in FAILED status."""
+        task = _make_task(status=BatchTaskStatus.SUCCESS)
+        batch = _make_batch(tasks=[task])
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        with pytest.raises(ValueError, match="only failed tasks can be retried"):
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_available
-            )
-        
-        # submit_task should NOT have been called
-        mock_async_task_service_available.submit_task.assert_not_called()
+        db.execute = AsyncMock(return_value=mock_result)
+
+        with pytest.raises(ValueError) as exc_info:
+            await executor.retry_task(db, batch.batch_id, task.task_id)
+
+        assert "only failed tasks can be retried" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_retry_queued_task_rejected(self, mock_graph_service, mock_async_task_service_available):
-        """Retry should reject tasks that are already queued."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.status = BatchTaskStatus.QUEUED
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        
+    async def test_retry_running_task_rejected(self):
+        """Retry should reject tasks that are currently running."""
+        task = _make_task(status=BatchTaskStatus.RUNNING)
+        batch = _make_batch(tasks=[task])
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        with pytest.raises(ValueError, match="only failed tasks can be retried"):
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_available
-            )
+        db.execute = AsyncMock(return_value=mock_result)
 
+        with pytest.raises(ValueError) as exc_info:
+            await executor.retry_task(db, batch.batch_id, task.task_id)
 
-# ============================================================================
-# Test 4: Retry respects concurrency limit
-# ============================================================================
+        assert "only failed tasks can be retried" in str(exc_info.value).lower()
+
 
 class TestRetryConcurrency:
-    """Test that retry respects the concurrency limit."""
+    """Test that retry respects concurrency limits."""
 
     @pytest.mark.asyncio
-    async def test_retry_respects_concurrency_limit(self, mock_graph_service, mock_async_task_service_available):
-        """Retry should check concurrency limit before submitting."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        # Create a failed task
-        failed_task = MagicMock(spec=BatchTask)
-        failed_task.task_id = task_id
-        failed_task.batch_id = batch_id
-        failed_task.status = BatchTaskStatus.FAILED
-        failed_task.retry_count = 0
-        failed_task.input_data = {"title": "test"}
-        
-        # Create 2 running tasks (at concurrency limit)
-        running_task1 = MagicMock(spec=BatchTask)
-        running_task1.task_id = uuid.uuid4()
-        running_task1.status = BatchTaskStatus.RUNNING
-        
-        running_task2 = MagicMock(spec=BatchTask)
-        running_task2.task_id = uuid.uuid4()
-        running_task2.status = BatchTaskStatus.RUNNING
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [failed_task, running_task1, running_task2]
-        batch.concurrency = 2
-        
+    async def test_retry_allowed_when_running_below_limit(self):
+        """Retry should be allowed when running tasks < concurrency limit."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        running_task = _make_task(status=BatchTaskStatus.RUNNING)
+        batch = _make_batch(tasks=[task, running_task], concurrency=2)
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        # Should raise ValueError about concurrency limit
-        with pytest.raises(ValueError, match="Concurrency limit reached"):
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_available
-            )
-        
-        # submit_task should NOT have been called
-        mock_async_task_service_available.submit_task.assert_not_called()
-        # retry_count should NOT have changed
-        assert failed_task.retry_count == 0
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
+
+        with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+            with patch('api.batch_executor.asyncio.create_task') as mock_create_task:
+                mock_create_task.return_value = MagicMock()
+                result = await executor.retry_task(db, batch.batch_id, task.task_id)
+
+                # Should succeed because running (1) < concurrency (2)
+                assert result["status"] == "pending"
 
     @pytest.mark.asyncio
-    async def test_retry_allowed_when_slot_available(self, mock_graph_service, mock_async_task_service_available):
-        """Retry should proceed when there's an available slot."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        failed_task = MagicMock(spec=BatchTask)
-        failed_task.task_id = task_id
-        failed_task.batch_id = batch_id
-        failed_task.status = BatchTaskStatus.FAILED
-        failed_task.retry_count = 0
-        failed_task.input_data = {"title": "test"}
-        
-        # Only 1 running task (below concurrency limit of 2)
-        running_task = MagicMock(spec=BatchTask)
-        running_task.task_id = uuid.uuid4()
-        running_task.status = BatchTaskStatus.RUNNING
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [failed_task, running_task]
-        batch.concurrency = 2
-        
+    async def test_retry_blocked_when_at_concurrency_limit(self):
+        """Retry should be blocked when running tasks >= concurrency limit."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        running_task1 = _make_task(status=BatchTaskStatus.RUNNING)
+        running_task2 = _make_task(status=BatchTaskStatus.RUNNING)
+        batch = _make_batch(tasks=[task, running_task1, running_task2], concurrency=2)
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        result = await executor.retry_task(
-            mock_db, batch_id, task_id,
-            async_task_service=mock_async_task_service_available
-        )
-        
-        # Should succeed
-        assert result["status"] == "queued"
-        assert failed_task.retry_count == 1
+        db.execute = AsyncMock(return_value=mock_result)
 
+        with pytest.raises(ValueError) as exc_info:
+            await executor.retry_task(db, batch.batch_id, task.task_id)
 
-# ============================================================================
-# Test 5: Retry returns real errors, not Unknown error
-# ============================================================================
+        assert "concurrency limit" in str(exc_info.value).lower()
+
 
 class TestRetryErrorMessages:
-    """Test that retry returns meaningful error messages."""
+    """Test that retry returns real error messages."""
 
     @pytest.mark.asyncio
-    async def test_retry_returns_real_error_when_unavailable(self, mock_graph_service, mock_async_task_service_unavailable):
-        """When async system unavailable, error should mention the real cause."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.status = BatchTaskStatus.FAILED
-        task.retry_count = 0
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        batch.concurrency = 2
-        
+    async def test_retry_returns_real_error_when_scheduling_fails(self):
+        """Retry should return the actual error message from scheduling."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        running_task1 = _make_task(status=BatchTaskStatus.RUNNING)
+        running_task2 = _make_task(status=BatchTaskStatus.RUNNING)
+        batch = _make_batch(tasks=[task, running_task1, running_task2], concurrency=2)
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        with pytest.raises(RuntimeError) as exc_info:
-            await executor.retry_task(
-                mock_db, batch_id, task_id,
-                async_task_service=mock_async_task_service_unavailable
-            )
-        
-        # Error should mention the real cause
-        assert "Native async task system is not available" in str(exc_info.value)
-        assert "Unknown error" not in str(exc_info.value)
+        db.execute = AsyncMock(return_value=mock_result)
+
+        with pytest.raises(ValueError) as exc_info:
+            await executor.retry_task(db, batch.batch_id, task.task_id)
+
+        # Should have a real error message, not "Unknown error"
+        assert str(exc_info.value) != "Unknown error"
+        assert "concurrency limit" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_retry_returns_real_error_when_no_service(self, mock_graph_service):
-        """When no async service provided, error should be clear."""
-        executor = BatchExecutor(mock_graph_service)
-        
-        batch_id = uuid.uuid4()
-        task_id = uuid.uuid4()
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = task_id
-        task.status = BatchTaskStatus.FAILED
-        
-        batch = MagicMock(spec=BatchJob)
-        batch.batch_id = batch_id
-        batch.tasks = [task]
-        
+    async def test_retry_does_not_return_unknown_error(self):
+        """Retry should not return 'Unknown error' for known failure cases."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        running_task1 = _make_task(status=BatchTaskStatus.RUNNING)
+        running_task2 = _make_task(status=BatchTaskStatus.RUNNING)
+        batch = _make_batch(tasks=[task, running_task1, running_task2], concurrency=2)
+
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = batch
-        
-        mock_db = AsyncMock()
-        mock_db.execute = AsyncMock(return_value=mock_result)
-        
-        with pytest.raises(ValueError, match="async_task_service is required"):
-            await executor.retry_task(mock_db, batch_id, task_id, async_task_service=None)
+        db.execute = AsyncMock(return_value=mock_result)
+
+        with pytest.raises(ValueError) as exc_info:
+            await executor.retry_task(db, batch.batch_id, task.task_id)
+
+        assert str(exc_info.value) != "Unknown error"
+        assert "concurrency limit" in str(exc_info.value).lower()
 
 
-# ============================================================================
-# Test 6: Task list and CSV continue HTTP 200
-# ============================================================================
+class TestFallbackExecution:
+    """Test that fallback execution uses asyncio.create_task."""
 
-class TestTaskListAfterRetry:
-    """Test that task list API continues to work after retry attempts."""
+    @pytest.mark.asyncio
+    async def test_fallback_uses_asyncio_create_task(self):
+        """When native async is unavailable, fallback should use asyncio.create_task."""
+        task = _make_task(status=BatchTaskStatus.FAILED)
+        batch = _make_batch(tasks=[task])
 
-    def test_task_list_response_format_unchanged(self):
-        """Task list response should not contain input_data/output_data."""
+        executor = BatchExecutor(MagicMock())
+
+        db = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = batch
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
+
+        with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+            with patch('api.batch_executor.asyncio.create_task') as mock_create_task:
+                mock_create_task.return_value = MagicMock()
+                await executor.retry_task(db, batch.batch_id, task.task_id)
+
+                mock_create_task.assert_called_once()
+
+
+class TestTaskListResponseFormat:
+    """Test that task list response format is unchanged after retry."""
+
+    @pytest.mark.asyncio
+    async def test_task_list_response_format_unchanged(self):
+        """Task list response should not contain input_data or output_data after retry."""
         from api.batch_routes import _serialize_task
-        
-        task = MagicMock(spec=BatchTask)
-        task.task_id = uuid.uuid4()
-        task.batch_id = uuid.uuid4()
-        task.status = BatchTaskStatus.FAILED
-        task.error_code = "WORKFLOW_ERROR"
-        task.error_message = "Test error"
-        task.retry_count = 1
-        task.created_at = datetime.utcnow()
-        task.updated_at = datetime.utcnow()
-        task.started_at = None
-        task.completed_at = None
-        task.run_id = None
-        task.async_task_id = None
-        task.script_text = "Test script"
+
+        task = _make_task(status=BatchTaskStatus.PENDING)
+        task.script_id = uuid.uuid4()
+        task.title = "Test Script"
+        task.script_text = "Test script text"
         task.final_video_url = None
         task.warning = None
-        task.input_data = {"title": "test"}  # Should NOT appear in response
-        task.output_data = {"fail_reason": "test"}  # Should NOT appear in response
-        
+        task.async_task_id = None
+        task.started_at = None
+        task.completed_at = None
+
         result = _serialize_task(task)
-        
-        # Should not contain input_data or output_data
+
         assert "input_data" not in result
         assert "output_data" not in result
-        # Should contain error info
-        assert result["error_code"] == "WORKFLOW_ERROR"
-        assert result["error_message"] == "Test error"
-        assert result["retry_count"] == 1
+        assert result["status"] == "pending"

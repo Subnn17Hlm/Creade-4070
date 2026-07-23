@@ -725,13 +725,9 @@ async def retry_task(
     from main import service
     executor = BatchExecutor(service)
     
-    # Get async task service
-    from api.async_task_service import get_async_task_service
-    async_task_service = get_async_task_service(service)
-    
     try:
         result = await executor.retry_task(
-            db, batch_uuid, task_uuid, async_task_service=async_task_service
+            db, batch_uuid, task_uuid
         )
         return result
     except ValueError as e:
@@ -792,12 +788,8 @@ async def retry_failed_tasks(
     from main import service
     executor = BatchExecutor(service)
     
-    # Create async task service
-    from api.async_task_service import get_async_task_service
-    async_task_service = get_async_task_service(service)
-    
     try:
-        result = await executor.retry_failed(db, batch_uuid, async_task_service)
+        result = await executor.retry_failed(db, batch_uuid)
         return result
     except ValueError as e:
         raise HTTPException(
