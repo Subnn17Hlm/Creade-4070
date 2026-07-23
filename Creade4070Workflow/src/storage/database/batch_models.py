@@ -34,6 +34,7 @@ class BatchJobStatus(str, Enum):
 class BatchTaskStatus(str, Enum):
     """批次任务项状态"""
     PENDING = "pending"
+    QUEUED = "queued"  # 已提交到异步队列，等待执行
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
@@ -89,10 +90,12 @@ class BatchTask(Base):
     row_number = Column(Integer, nullable=False)
     external_task_id = Column(String(255), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    async_task_id = Column(String(255), nullable=True, index=True)  # 原生异步任务 ID
     status = Column(String(20), nullable=False, default="pending", index=True)
     input_data = Column(JSON, nullable=False)
     output_data = Column(JSON, nullable=True)
     final_video_url = Column(Text, nullable=True)
+    warning = Column(Text, nullable=True)  # 降级警告信息
     error_code = Column(String(50), nullable=True)
     error_message = Column(Text, nullable=True)
     retry_count = Column(Integer, nullable=False, default=0)
@@ -119,9 +122,11 @@ class BatchTask(Base):
             "row_number": self.row_number,
             "external_task_id": self.external_task_id,
             "run_id": str(self.run_id) if self.run_id else None,
+            "async_task_id": self.async_task_id,
             "status": self.status,
             "input_data": self.input_data,
             "final_video_url": self.final_video_url,
+            "warning": self.warning,
             "error_code": self.error_code,
             "error_message": self.error_message,
             "retry_count": self.retry_count,

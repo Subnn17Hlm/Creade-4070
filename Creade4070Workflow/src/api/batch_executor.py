@@ -436,26 +436,37 @@ class BatchExecutor:
             f"(success={success_count}, failed={failed_count})"
         )
 
-    async def retry_task(self, db: AsyncSession, batch_id: uuid.UUID, task_id: uuid.UUID) -> Dict[str, Any]:
+    async def retry_task(
+        self,
+        db: AsyncSession,
+        batch_id: uuid.UUID,
+        task_id: uuid.UUID,
+        async_task_service: "AsyncTaskService" = None,
+    ) -> Dict[str, Any]:
         """
-        Retry a single failed task asynchronously.
+        Retry a single failed task using native async task system.
 
-        This method resets the task to pending and creates a background task
-        to execute it. Returns immediately with HTTP 202.
+        This method resets the task to queued and submits it to the native
+        async task system. Returns immediately with HTTP 202.
 
         Args:
             db: Database session
             batch_id: Batch job ID
             task_id: Task ID to retry
+            async_task_service: AsyncTaskService instance for native async submission
 
         Returns:
             Result with task status (queued for execution)
         """
-        # Fetch batch and task
+        if async_task_service is None:
+            raise ValueError("async_task_service is required for retry")
+
+        # Fetch batch and task with row lock
         result = await db.execute(
             select(BatchJob)
             .where(BatchJob.batch_id == batch_id)
             .options(selectinload(BatchJob.tasks))
+            .with_for_update()
         )
         batch = result.scalar_one_or_none()
 
@@ -466,11 +477,13 @@ class BatchExecutor:
         if not task:
             raise ValueError(f"Task {task_id} not found in batch {batch_id}")
 
+        # Only allow retry for failed tasks
         if task.status != BatchTaskStatus.FAILED:
-            raise ValueError(f"Task {task_id} is not in FAILED status")
+            raise ValueError(
+                f"Task {task_id} is in {task.status} status, only failed tasks can be retried"
+            )
 
-        # Reset task to pending
-        task.status = BatchTaskStatus.PENDING
+        # Increment retry count and reset task state
         task.retry_count += 1
         task.started_at = None
         task.completed_at = None
@@ -479,6 +492,8 @@ class BatchExecutor:
         task.run_id = None
         task.output_data = None
         task.final_video_url = None
+        task.warning = None
+        task.async_task_id = None
 
         await db.commit()
 
@@ -490,40 +505,52 @@ class BatchExecutor:
         batch.completed_at = None
         await db.commit()
 
-        # Create background task to execute asynchronously
-        async_task = asyncio.create_task(
-            self._execute_single_task_with_semaphore(batch, task)
-        )
-        self._running_tasks[str(task_id)] = async_task
+        # Submit to native async task system
+        try:
+            result = await async_task_service.submit_task(
+                db=db,
+                task=task,
+                deadline_sec=1800,  # 30 minutes
+            )
 
-        logger.info(f"Task {task_id} queued for retry execution")
+            logger.info(f"Task {task_id} submitted to native async system")
 
-        return {
-            "task_id": str(task_id),
-            "status": "queued",
-            "retry_count": task.retry_count,
-            "message": "任务已进入执行队列",
-        }
+            return result
 
-    async def retry_failed(self, db: AsyncSession, batch_id: uuid.UUID) -> Dict[str, Any]:
+        except Exception as e:
+            logger.error(f"Failed to submit task {task_id} to async system: {e}")
+            # Task is already marked as failed in submit_task
+            raise
+
+    async def retry_failed(
+        self,
+        db: AsyncSession,
+        batch_id: uuid.UUID,
+        async_task_service: "AsyncTaskService" = None,
+    ) -> Dict[str, Any]:
         """
-        Retry all failed tasks in a batch asynchronously.
+        Retry all failed tasks in a batch using native async task system.
 
-        This method resets failed tasks to pending and creates background tasks
-        to execute them. Returns immediately with HTTP 202.
+        This method resets failed tasks to queued and submits them to the native
+        async task system. Returns immediately with HTTP 202.
 
         Args:
             db: Database session
             batch_id: Batch job ID
+            async_task_service: AsyncTaskService instance for native async submission
 
         Returns:
             Result with retried task count (queued for execution)
         """
-        # Fetch batch
+        if async_task_service is None:
+            raise ValueError("async_task_service is required for retry")
+
+        # Fetch batch with row lock
         result = await db.execute(
             select(BatchJob)
             .where(BatchJob.batch_id == batch_id)
             .options(selectinload(BatchJob.tasks))
+            .with_for_update()
         )
         batch = result.scalar_one_or_none()
 
@@ -540,9 +567,10 @@ class BatchExecutor:
                 "message": "No failed tasks to retry",
             }
 
-        # Reset all failed tasks to pending
+        # Reset all failed tasks and submit to async system
+        submitted_count = 0
         for task in failed_tasks:
-            task.status = BatchTaskStatus.PENDING
+            # Increment retry count and reset task state
             task.retry_count += 1
             task.started_at = None
             task.completed_at = None
@@ -551,8 +579,23 @@ class BatchExecutor:
             task.run_id = None
             task.output_data = None
             task.final_video_url = None
+            task.warning = None
+            task.async_task_id = None
 
-        await db.commit()
+            await db.commit()
+
+            # Submit to native async task system
+            try:
+                await async_task_service.submit_task(
+                    db=db,
+                    task=task,
+                    deadline_sec=1800,  # 30 minutes
+                )
+                submitted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to submit task {task.task_id} to async system: {e}")
+                # Task is already marked as failed in submit_task
+                continue
 
         # Update batch counts
         await self._update_batch_counts(db, batch_id)
@@ -562,22 +605,13 @@ class BatchExecutor:
         batch.completed_at = None
         await db.commit()
 
-        # Create background tasks to execute asynchronously
-        async_tasks = []
-        for task in failed_tasks:
-            async_task = asyncio.create_task(
-                self._execute_single_task_with_semaphore(batch, task)
-            )
-            async_tasks.append(async_task)
-            self._running_tasks[str(task.task_id)] = async_task
-
-        logger.info(f"Queued {len(failed_tasks)} failed tasks for retry execution")
+        logger.info(f"Submitted {submitted_count}/{len(failed_tasks)} failed tasks to native async system")
 
         return {
             "batch_id": str(batch_id),
-            "retried_count": len(failed_tasks),
+            "retried_count": submitted_count,
             "status": "queued",
-            "message": f"{len(failed_tasks)} 个任务已进入执行队列",
+            "message": f"{submitted_count} 个任务已进入异步执行队列",
         }
 
     async def recover_stuck_tasks(self, db: AsyncSession) -> Dict[str, Any]:

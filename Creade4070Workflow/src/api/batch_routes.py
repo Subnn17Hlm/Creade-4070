@@ -295,10 +295,10 @@ async def retry_task(
     task_id: str,
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Retry a failed task asynchronously.
+    """Retry a failed task using native async task system.
     
-    This endpoint queues the task for execution and returns immediately.
-    The task will be executed in the background.
+    This endpoint submits the task to the native async task system and returns immediately.
+    The task will be executed by the platform's async task runtime.
     
     Args:
         batch_id: Batch job ID
@@ -328,18 +328,32 @@ async def retry_task(
     from main import service
     executor = BatchExecutor(service)
     
+    # Get async task service
+    from src.api.async_task_service import get_async_task_service
+    async_task_service = get_async_task_service()
+    
     try:
-        result = await executor.retry_task(db, batch_uuid, task_uuid)
+        result = await executor.retry_task(
+            db, batch_uuid, task_uuid, async_task_service=async_task_service
+        )
         return result
     except ValueError as e:
+        error_msg = str(e)
+        # Return 409 for status conflicts
+        if "status" in error_msg and "only failed tasks can be retried" in error_msg:
+            raise HTTPException(
+                status_code=409,
+                detail={'error': error_msg},
+            )
         raise HTTPException(
             status_code=400,
-            detail={'error': str(e)},
+            detail={'error': error_msg},
         )
     except Exception as e:
+        logger.error(f"Failed to retry task {task_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail={'error': f'重试任务失败: {str(e)}'},
+            detail={'error': f'重试失败: {str(e)}'},
         )
 
 
@@ -348,13 +362,15 @@ async def retry_failed_tasks(
     batch_id: str,
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Retry all failed tasks in a batch asynchronously.
+    """Retry all failed tasks in a batch using native async task system.
     
-    This endpoint queues failed tasks for execution and returns immediately.
-    The tasks will be executed in the background.
+    This endpoint queues failed tasks for execution using the native async task
+    system and returns immediately. The tasks will be executed in the background
+    by the platform's async task runtime.
     
     Args:
         batch_id: Batch job ID
+        db: Database session
         
     Returns:
         Retry result (HTTP 202 Accepted)
@@ -379,8 +395,11 @@ async def retry_failed_tasks(
     from main import service
     executor = BatchExecutor(service)
     
+    # Create async task service
+    async_task_service = AsyncTaskService()
+    
     try:
-        result = await executor.retry_failed(db, batch_uuid)
+        result = await executor.retry_failed(db, batch_uuid, async_task_service)
         return result
     except ValueError as e:
         raise HTTPException(

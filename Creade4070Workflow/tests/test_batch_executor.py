@@ -191,7 +191,7 @@ class TestBatchExecutor:
 
     @pytest.mark.asyncio
     async def test_retry_failed_task(self, executor, mock_graph_service):
-        """Test retrying a failed task asynchronously."""
+        """Test retrying a failed task using native async task system."""
         db = AsyncMock()
         
         batch = BatchJob(
@@ -238,6 +238,17 @@ class TestBatchExecutor:
             "final_video_url": "https://example.com/video.mp4",
         }
         
+        # Create mock async task service
+        mock_async_task_service = AsyncMock()
+        mock_async_task_service.submit_task = AsyncMock(return_value={
+            "task_id": str(task.task_id),
+            "async_task_id": "test-async-task-id",
+            "run_id": "test-run-id",
+            "status": "queued",
+            "retry_count": 1,
+            "message": "任务已进入异步执行队列",
+        })
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = AsyncMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
@@ -251,19 +262,15 @@ class TestBatchExecutor:
             mock_session.execute.side_effect = mock_session_execute
             
             # Retry task (now returns immediately with queued status)
-            result = await executor.retry_task(db, batch.batch_id, task.task_id)
+            result = await executor.retry_task(db, batch.batch_id, task.task_id, mock_async_task_service)
             
             # Verify retry count incremented
             assert result["retry_count"] == 1
             # Task should be queued for execution
             assert result["status"] == "queued"
             assert "message" in result
-            
-            # Wait a bit for background task to start
-            await asyncio.sleep(0.1)
-            
-            # Verify the background task was created
-            assert str(task.task_id) in executor._running_tasks
+            # Verify async task service was called
+            mock_async_task_service.submit_task.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_retry_non_failed_task_rejected(self, executor):
@@ -296,9 +303,12 @@ class TestBatchExecutor:
         result.scalar_one_or_none.return_value = batch
         db.execute.return_value = result
         
+        # Create mock async task service
+        mock_async_task_service = AsyncMock()
+        
         # Try to retry successful task
-        with pytest.raises(ValueError, match="is not in FAILED status"):
-            await executor.retry_task(db, batch.batch_id, task.task_id)
+        with pytest.raises(ValueError, match="only failed tasks can be retried"):
+            await executor.retry_task(db, batch.batch_id, task.task_id, mock_async_task_service)
 
     @pytest.mark.asyncio
     async def test_batch_final_status_all_success(self, executor, mock_graph_service):
