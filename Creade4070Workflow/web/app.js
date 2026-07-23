@@ -563,19 +563,35 @@ function stopBatchPolling() {
 async function retryTask(batchId, taskId) {
   if (!confirm('确定要重试这个任务吗？')) return;
 
+  // 禁用按钮防止重复点击
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '重试中...';
+
   try {
     const res = await fetch(`/api/batches/${batchId}/tasks/${taskId}/retry`, {
       method: 'POST',
     });
 
-    if (res.ok) {
+    const data = await res.json();
+
+    if (res.ok || res.status === 202) {
+      // 任务已进入队列，显示成功消息
+      alert(data.message || '任务已进入执行队列，请稍后刷新查看结果');
+      // 刷新批次状态
       loadBatchStatus(batchId);
     } else {
-      const data = await res.json();
       alert(`重试失败: ${data.error || data.detail || '未知错误'}`);
+      // 恢复按钮状态
+      btn.disabled = false;
+      btn.textContent = originalText;
     }
   } catch (e) {
     alert(`请求失败: ${e.message}`);
+    // 恢复按钮状态
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 }
 

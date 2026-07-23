@@ -289,20 +289,23 @@ async def start_batch(
         )
 
 
-@router.post('/{batch_id}/tasks/{task_id}/retry')
+@router.post('/{batch_id}/tasks/{task_id}/retry', status_code=202)
 async def retry_task(
     batch_id: str,
     task_id: str,
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Retry a failed task.
+    """Retry a failed task asynchronously.
+    
+    This endpoint queues the task for execution and returns immediately.
+    The task will be executed in the background.
     
     Args:
         batch_id: Batch job ID
         task_id: Task ID to retry
         
     Returns:
-        Task retry result
+        Task retry result (HTTP 202 Accepted)
     """
     try:
         batch_uuid = uuid.UUID(batch_id)
@@ -340,18 +343,21 @@ async def retry_task(
         )
 
 
-@router.post('/{batch_id}/retry-failed')
+@router.post('/{batch_id}/retry-failed', status_code=202)
 async def retry_failed_tasks(
     batch_id: str,
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Retry all failed tasks in a batch.
+    """Retry all failed tasks in a batch asynchronously.
+    
+    This endpoint queues failed tasks for execution and returns immediately.
+    The tasks will be executed in the background.
     
     Args:
         batch_id: Batch job ID
         
     Returns:
-        Retry result
+        Retry result (HTTP 202 Accepted)
     """
     try:
         batch_uuid = uuid.UUID(batch_id)
@@ -374,7 +380,7 @@ async def retry_failed_tasks(
     executor = BatchExecutor(service)
     
     try:
-        result = await executor.retry_failed_tasks(db, batch_uuid)
+        result = await executor.retry_failed(db, batch_uuid)
         return result
     except ValueError as e:
         raise HTTPException(

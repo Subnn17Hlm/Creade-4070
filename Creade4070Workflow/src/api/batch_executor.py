@@ -438,7 +438,10 @@ class BatchExecutor:
 
     async def retry_task(self, db: AsyncSession, batch_id: uuid.UUID, task_id: uuid.UUID) -> Dict[str, Any]:
         """
-        Retry a single failed task.
+        Retry a single failed task asynchronously.
+
+        This method resets the task to pending and creates a background task
+        to execute it. Returns immediately with HTTP 202.
 
         Args:
             db: Database session
@@ -446,7 +449,7 @@ class BatchExecutor:
             task_id: Task ID to retry
 
         Returns:
-            Result with task status
+            Result with task status (queued for execution)
         """
         # Fetch batch and task
         result = await db.execute(
@@ -487,28 +490,34 @@ class BatchExecutor:
         batch.completed_at = None
         await db.commit()
 
-        # Execute the task
-        await self._execute_single_task_with_semaphore(batch, task)
+        # Create background task to execute asynchronously
+        async_task = asyncio.create_task(
+            self._execute_single_task_with_semaphore(batch, task)
+        )
+        self._running_tasks[str(task_id)] = async_task
 
-        # Refresh and get final status
-        await db.refresh(task)
+        logger.info(f"Task {task_id} queued for retry execution")
 
         return {
             "task_id": str(task_id),
-            "status": task.status,
+            "status": "queued",
             "retry_count": task.retry_count,
+            "message": "任务已进入执行队列",
         }
 
     async def retry_failed(self, db: AsyncSession, batch_id: uuid.UUID) -> Dict[str, Any]:
         """
-        Retry all failed tasks in a batch.
+        Retry all failed tasks in a batch asynchronously.
+
+        This method resets failed tasks to pending and creates background tasks
+        to execute them. Returns immediately with HTTP 202.
 
         Args:
             db: Database session
             batch_id: Batch job ID
 
         Returns:
-            Result with retried task count
+            Result with retried task count (queued for execution)
         """
         # Fetch batch
         result = await db.execute(
@@ -553,18 +562,22 @@ class BatchExecutor:
         batch.completed_at = None
         await db.commit()
 
-        # Execute all retried tasks
-        await self._execute_batch_tasks(db, batch)
+        # Create background tasks to execute asynchronously
+        async_tasks = []
+        for task in failed_tasks:
+            async_task = asyncio.create_task(
+                self._execute_single_task_with_semaphore(batch, task)
+            )
+            async_tasks.append(async_task)
+            self._running_tasks[str(task.task_id)] = async_task
 
-        # Refresh and get final status
-        await db.refresh(batch)
+        logger.info(f"Queued {len(failed_tasks)} failed tasks for retry execution")
 
         return {
             "batch_id": str(batch_id),
             "retried_count": len(failed_tasks),
-            "status": batch.status,
-            "success_count": batch.success_count,
-            "failed_count": batch.failed_count,
+            "status": "queued",
+            "message": f"{len(failed_tasks)} 个任务已进入执行队列",
         }
 
     async def recover_stuck_tasks(self, db: AsyncSession) -> Dict[str, Any]:
