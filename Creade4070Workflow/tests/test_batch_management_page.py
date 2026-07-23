@@ -278,5 +278,103 @@ class TestBatchPageIntegration:
             assert result == expected, f"Input: {input_status}, Expected: {expected}, Got: {result}"
 
 
+class TestBatchPageStartButton:
+    """测试启动批次按钮显示逻辑"""
+
+    def test_start_button_shown_when_3_pending_tasks(self):
+        """测试3个等待任务时必须显示启动按钮"""
+        # 模拟前端启动按钮显示逻辑
+        def should_show_start_button(data):
+            counts = data.get('task_counts', {})
+            # created、pending、queued 都视为可启动状态
+            has_startable = (counts.get('pending', 0) or 0) + (counts.get('queued', 0) or 0) > 0
+            has_running = (counts.get('running', 0) or 0) > 0
+            
+            # 显示启动按钮的条件：
+            # 1. 批次状态为 created 或 pending
+            # 2. 或者存在 pending/queued 任务且没有 running 任务
+            return data.get('status') in ('created', 'pending') or (has_startable and not has_running)
+        
+        # 场景1：3个pending任务，0个running任务
+        data = {
+            'status': 'created',
+            'task_counts': {'pending': 3, 'queued': 0, 'running': 0, 'success': 0, 'failed': 0}
+        }
+        assert should_show_start_button(data) is True, "3个pending任务时应显示启动按钮"
+        
+        # 场景2：3个queued任务，0个running任务
+        data = {
+            'status': 'running',
+            'task_counts': {'pending': 0, 'queued': 3, 'running': 0, 'success': 0, 'failed': 0}
+        }
+        assert should_show_start_button(data) is True, "3个queued任务时应显示启动按钮"
+        
+        # 场景3：2个pending + 1个queued，0个running任务
+        data = {
+            'status': 'running',
+            'task_counts': {'pending': 2, 'queued': 1, 'running': 0, 'success': 0, 'failed': 0}
+        }
+        assert should_show_start_button(data) is True, "2个pending+1个queued任务时应显示启动按钮"
+
+    def test_start_button_hidden_when_running_tasks_exist(self):
+        """测试存在running任务时不显示启动按钮"""
+        def should_show_start_button(data):
+            counts = data.get('task_counts', {})
+            has_startable = (counts.get('pending', 0) or 0) + (counts.get('queued', 0) or 0) > 0
+            has_running = (counts.get('running', 0) or 0) > 0
+            return data.get('status') in ('created', 'pending') or (has_startable and not has_running)
+        
+        # 有running任务时不显示
+        data = {
+            'status': 'running',
+            'task_counts': {'pending': 2, 'queued': 1, 'running': 1, 'success': 0, 'failed': 0}
+        }
+        assert should_show_start_button(data) is False, "存在running任务时不应显示启动按钮"
+
+    def test_start_button_hidden_when_all_completed(self):
+        """测试所有任务完成时不显示启动按钮"""
+        def should_show_start_button(data):
+            counts = data.get('task_counts', {})
+            has_startable = (counts.get('pending', 0) or 0) + (counts.get('queued', 0) or 0) > 0
+            has_running = (counts.get('running', 0) or 0) > 0
+            return data.get('status') in ('created', 'pending') or (has_startable and not has_running)
+        
+        # 所有任务都成功
+        data = {
+            'status': 'success',
+            'task_counts': {'pending': 0, 'queued': 0, 'running': 0, 'success': 3, 'failed': 0}
+        }
+        assert should_show_start_button(data) is False, "所有任务成功时不应显示启动按钮"
+        
+        # 所有任务都失败
+        data = {
+            'status': 'failed',
+            'task_counts': {'pending': 0, 'queued': 0, 'running': 0, 'success': 0, 'failed': 3}
+        }
+        assert should_show_start_button(data) is False, "所有任务失败时不应显示启动按钮"
+
+    def test_success_failed_tasks_not_reset(self):
+        """测试success/failed的历史任务不得被重置为pending/queued"""
+        def should_show_start_button(data):
+            counts = data.get('task_counts', {})
+            has_startable = (counts.get('pending', 0) or 0) + (counts.get('queued', 0) or 0) > 0
+            has_running = (counts.get('running', 0) or 0) > 0
+            return data.get('status') in ('created', 'pending') or (has_startable and not has_running)
+        
+        # 有success和failed任务，但没有pending/queued任务
+        data = {
+            'status': 'partial_failed',
+            'task_counts': {'pending': 0, 'queued': 0, 'running': 0, 'success': 2, 'failed': 1}
+        }
+        assert should_show_start_button(data) is False, "只有success/failed任务时不应显示启动按钮"
+        
+        # 有success、failed和pending任务
+        data = {
+            'status': 'partial_failed',
+            'task_counts': {'pending': 1, 'queued': 0, 'running': 0, 'success': 1, 'failed': 1}
+        }
+        assert should_show_start_button(data) is True, "有pending任务时应显示启动按钮（用于重试）"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

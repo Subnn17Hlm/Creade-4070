@@ -419,16 +419,17 @@ async function loadBatchStatus(batchId) {
     await renderBatchTasks(batchId);
     
     // 显示/隐藏启动按钮：基于任务状态，而不仅仅是批次状态
-    // 如果存在 pending 任务且没有 running 任务，显示启动按钮
+    // 如果存在 pending/queued 任务且没有 running 任务，显示启动按钮
     const startBtn = document.getElementById('batch-start-btn');
     const counts = data.task_counts || {};
-    const hasPending = (counts.pending || 0) > 0;
+    // created、pending、queued 都视为可启动状态
+    const hasStartable = (counts.pending || 0) + (counts.queued || 0) > 0;
     const hasRunning = (counts.running || 0) > 0;
     
     // 显示启动按钮的条件：
     // 1. 批次状态为 created 或 pending
-    // 2. 或者存在 pending 任务且没有 running 任务
-    if (data.status === 'created' || data.status === 'pending' || (hasPending && !hasRunning)) {
+    // 2. 或者存在 pending/queued 任务且没有 running 任务
+    if (data.status === 'created' || data.status === 'pending' || (hasStartable && !hasRunning)) {
       startBtn.style.display = 'inline-block';
       startBtn.disabled = false;
       startBtn.textContent = '启动批次';
