@@ -363,6 +363,10 @@ function initBatchMonitor() {
     try {
       const res = await fetch(`/api/batches/${currentBatchId}/start`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ concurrency: 2 }),
       });
       
       const data = await res.json();
@@ -414,9 +418,17 @@ async function loadBatchStatus(batchId) {
     renderBatchSummary(data);
     await renderBatchTasks(batchId);
     
-    // 显示/隐藏启动按钮
+    // 显示/隐藏启动按钮：基于任务状态，而不仅仅是批次状态
+    // 如果存在 pending 任务且没有 running 任务，显示启动按钮
     const startBtn = document.getElementById('batch-start-btn');
-    if (data.status === 'created' || data.status === 'pending') {
+    const counts = data.task_counts || {};
+    const hasPending = (counts.pending || 0) > 0;
+    const hasRunning = (counts.running || 0) > 0;
+    
+    // 显示启动按钮的条件：
+    // 1. 批次状态为 created 或 pending
+    // 2. 或者存在 pending 任务且没有 running 任务
+    if (data.status === 'created' || data.status === 'pending' || (hasPending && !hasRunning)) {
       startBtn.style.display = 'inline-block';
       startBtn.disabled = false;
       startBtn.textContent = '启动批次';
