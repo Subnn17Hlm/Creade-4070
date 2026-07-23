@@ -291,109 +291,220 @@ async def get_batch(
     }
 
 
-def _sanitize_json_value(obj):
-    """Recursively sanitize a JSON value to ensure it's serializable.
-    Converts UUID, datetime, Enum to strings. Handles nested dicts/lists.
-    """
-    if obj is None:
-        return None
-    if isinstance(obj, (str, int, float, bool)):
-        return obj
-    if isinstance(obj, dict):
-        return {str(k): _sanitize_json_value(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        return [_sanitize_json_value(item) for item in obj]
-    # UUID
-    if hasattr(obj, 'hex') and hasattr(obj, 'version'):
-        return str(obj)
-    # datetime
-    if hasattr(obj, 'isoformat'):
-        return obj.isoformat()
-    # Enum
-    if hasattr(obj, 'value'):
-        return obj.value
-    # Fallback
-    return str(obj)
-
-
 def _serialize_task(task) -> dict:
-    """Safely serialize a batch task to dict. Handles null/missing fields."""
+    """Serialize a batch task using strict whitelist DTO.
+    Only returns scalar fields needed by page and CSV.
+    Never returns input_data, output_data, or ORM objects.
+    """
     import json
 
-    def safe_output_data(od):
-        if od is None:
-            return None
-        if isinstance(od, dict):
-            return _sanitize_json_value(od)
-        if isinstance(od, str):
-            try:
-                parsed = json.loads(od)
-                return _sanitize_json_value(parsed)
-            except (json.JSONDecodeError, ValueError):
-                return {"_raw": od}
-        return {"_raw": str(od)}
+    errors = []
 
-    def safe_input_data(t):
-        """Sanitize input_data to ensure JSON serializable."""
-        if t.input_data is None:
+    def safe_str(value, field_name=''):
+        """Convert value to string safely."""
+        if value is None:
             return None
-        if isinstance(t.input_data, dict):
-            return _sanitize_json_value(t.input_data)
-        if isinstance(t.input_data, str):
-            try:
-                parsed = json.loads(t.input_data)
-                return _sanitize_json_value(parsed)
-            except (json.JSONDecodeError, ValueError):
-                return {"_raw": t.input_data}
-        return {"_raw": str(t.input_data)}
+        try:
+            return str(value)
+        except Exception as e:
+            errors.append(f"{field_name}: {e}")
+            return None
 
-    def safe_final_video_url(t):
+    def safe_int(value, field_name='', default=0):
+        """Convert value to int safely."""
+        if value is None:
+            return default
+        try:
+            return int(value)
+        except Exception as e:
+            errors.append(f"{field_name}: {e}")
+            return default
+
+    def safe_datetime(value, field_name=''):
+        """Convert datetime to ISO string safely."""
+        if value is None:
+            return None
+        try:
+            if hasattr(value, 'isoformat'):
+                return value.isoformat()
+            return str(value)
+        except Exception as e:
+            errors.append(f"{field_name}: {e}")
+            return None
+
+    def safe_extract_final_video_url(t):
+        """Extract final_video_url: prefer DB field, fallback to output_data."""
+        # Priority 1: DB field
         if t.final_video_url:
-            return t.final_video_url
-        od = safe_output_data(t.output_data)
-        if od and isinstance(od, dict):
-            return od.get("final_video_url") or None
+            return str(t.final_video_url)
+        # Priority 2: output_data (internal only, never returned in response)
+        try:
+            od = t.output_data
+            if od is None:
+                return None
+            if isinstance(od, str):
+                try:
+                    od = json.loads(od)
+                except (json.JSONDecodeError, ValueError):
+                    return None
+            if isinstance(od, dict):
+                url = od.get('final_video_url')
+                if url and isinstance(url, str):
+                    return url
+        except Exception:
+            pass
         return None
 
-    def safe_input_field(t, field, default=''):
+    def safe_extract_input_field(t, field, default=''):
+        """Extract field from input_data (internal only, never returned in response)."""
         try:
             if t.input_data and isinstance(t.input_data, dict):
                 val = t.input_data.get(field, default)
-                return val if val is not None else default
+                if val is None:
+                    return default
+                return str(val)
         except Exception:
             pass
         return default
 
-    def safe_status(t):
-        """Get status value, handling Enum."""
-        s = t.status
-        if hasattr(s, 'value'):
-            return s.value
-        return str(s) if s else None
+    # Build whitelist DTO - only scalar fields
+    result = {}
 
-    return {
-        'task_id': str(task.task_id),
-        'batch_id': str(task.batch_id),
-        'row_number': task.row_number,
-        'external_task_id': task.external_task_id,
-        'run_id': str(task.run_id) if task.run_id else None,
-        'async_task_id': task.async_task_id if task.async_task_id else None,
-        'status': safe_status(task),
-        'script_id': safe_input_field(task, 'script_id'),
-        'script_text': safe_input_field(task, 'script_text'),
-        'title': safe_input_field(task, 'title'),
-        'input_data': safe_input_data(task),
-        'output_data': safe_output_data(task.output_data),
-        'final_video_url': safe_final_video_url(task),
-        'warning': getattr(task, 'warning', None),
-        'error_code': task.error_code,
-        'error_message': task.error_message,
-        'retry_count': task.retry_count or 0,
-        'created_at': task.created_at.isoformat() if task.created_at else None,
-        'started_at': task.started_at.isoformat() if task.started_at else None,
-        'completed_at': task.completed_at.isoformat() if task.completed_at else None,
-        'updated_at': task.updated_at.isoformat() if getattr(task, 'updated_at', None) else None,
-    }
+    # task_id (required)
+    try:
+        result['task_id'] = safe_str(t.task_id if (t := task) else None, 'task_id')
+    except Exception as e:
+        errors.append(f"task_id: {e}")
+        result['task_id'] = None
+
+    # batch_id
+    try:
+        result['batch_id'] = safe_str(task.batch_id, 'batch_id')
+    except Exception as e:
+        errors.append(f"batch_id: {e}")
+        result['batch_id'] = None
+
+    # script_id - prefer DB field, fallback to input_data
+    try:
+        script_id = getattr(task, 'script_id', None)
+        if not script_id:
+            script_id = safe_extract_input_field(task, 'script_id')
+        result['script_id'] = safe_str(script_id, 'script_id') or None
+    except Exception as e:
+        errors.append(f"script_id: {e}")
+        result['script_id'] = None
+
+    # title - prefer DB field, fallback to input_data
+    try:
+        title = getattr(task, 'title', None)
+        if not title:
+            title = safe_extract_input_field(task, 'title')
+        result['title'] = safe_str(title, 'title') or None
+    except Exception as e:
+        errors.append(f"title: {e}")
+        result['title'] = None
+
+    # script_text - prefer DB field, fallback to input_data
+    try:
+        script_text = getattr(task, 'script_text', None)
+        if not script_text:
+            script_text = safe_extract_input_field(task, 'script_text')
+        result['script_text'] = safe_str(script_text, 'script_text') or None
+    except Exception as e:
+        errors.append(f"script_text: {e}")
+        result['script_text'] = None
+
+    # status (required)
+    try:
+        status = task.status
+        if hasattr(status, 'value'):
+            status = status.value
+        result['status'] = str(status)
+    except Exception as e:
+        errors.append(f"status: {e}")
+        result['status'] = 'unknown'
+
+    # final_video_url
+    try:
+        result['final_video_url'] = safe_extract_final_video_url(task)
+    except Exception as e:
+        errors.append(f"final_video_url: {e}")
+        result['final_video_url'] = None
+
+    # warning
+    try:
+        result['warning'] = safe_str(getattr(task, 'warning', None), 'warning')
+    except Exception as e:
+        errors.append(f"warning: {e}")
+        result['warning'] = None
+
+    # error_code
+    try:
+        result['error_code'] = safe_str(getattr(task, 'error_code', None), 'error_code')
+    except Exception as e:
+        errors.append(f"error_code: {e}")
+        result['error_code'] = None
+
+    # error_message
+    try:
+        result['error_message'] = safe_str(getattr(task, 'error_message', None), 'error_message')
+    except Exception as e:
+        errors.append(f"error_message: {e}")
+        result['error_message'] = None
+
+    # retry_count
+    try:
+        result['retry_count'] = safe_int(getattr(task, 'retry_count', 0), 'retry_count')
+    except Exception as e:
+        errors.append(f"retry_count: {e}")
+        result['retry_count'] = 0
+
+    # run_id
+    try:
+        result['run_id'] = safe_str(getattr(task, 'run_id', None), 'run_id')
+    except Exception as e:
+        errors.append(f"run_id: {e}")
+        result['run_id'] = None
+
+    # async_task_id
+    try:
+        result['async_task_id'] = safe_str(getattr(task, 'async_task_id', None), 'async_task_id')
+    except Exception as e:
+        errors.append(f"async_task_id: {e}")
+        result['async_task_id'] = None
+
+    # created_at
+    try:
+        result['created_at'] = safe_datetime(getattr(task, 'created_at', None), 'created_at')
+    except Exception as e:
+        errors.append(f"created_at: {e}")
+        result['created_at'] = None
+
+    # started_at
+    try:
+        result['started_at'] = safe_datetime(getattr(task, 'started_at', None), 'started_at')
+    except Exception as e:
+        errors.append(f"started_at: {e}")
+        result['started_at'] = None
+
+    # completed_at
+    try:
+        result['completed_at'] = safe_datetime(getattr(task, 'completed_at', None), 'completed_at')
+    except Exception as e:
+        errors.append(f"completed_at: {e}")
+        result['completed_at'] = None
+
+    # updated_at
+    try:
+        result['updated_at'] = safe_datetime(getattr(task, 'updated_at', None), 'updated_at')
+    except Exception as e:
+        errors.append(f"updated_at: {e}")
+        result['updated_at'] = None
+
+    # serialization_error
+    result['serialization_error'] = '; '.join(errors) if errors else None
+
+    return result
 
 
 @router.get('/{batch_id}/tasks')
