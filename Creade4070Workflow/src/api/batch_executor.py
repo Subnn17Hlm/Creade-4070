@@ -29,6 +29,88 @@ TASK_RUNNING_TIMEOUT_MINUTES = 30  # Timeout for running tasks
 # Logger
 logger = logging.getLogger(__name__)
 
+# Maximum length for error_message stored in DB
+MAX_ERROR_MESSAGE_LENGTH = 2000
+
+
+def _sanitize_error_message(raw) -> str:
+    """Sanitize error message to a safe, JSON-serializable string.
+    
+    - Always returns a string
+    - Strips non-string types to their str() representation
+    - Truncates to MAX_ERROR_MESSAGE_LENGTH
+    - Never returns empty string (falls back to 'Unknown error')
+    """
+    if raw is None:
+        return "Unknown error"
+    if isinstance(raw, str):
+        msg = raw.strip()
+    else:
+        # Convert non-string to string safely
+        try:
+            msg = str(raw).strip()
+        except Exception:
+            msg = "Unknown error"
+    
+    if not msg:
+        return "Unknown error"
+    
+    # Truncate to prevent oversized DB writes
+    if len(msg) > MAX_ERROR_MESSAGE_LENGTH:
+        msg = msg[:MAX_ERROR_MESSAGE_LENGTH] + "...[truncated]"
+    
+    return msg
+
+
+def _extract_diagnostic_fields(result: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Extract minimal JSON-safe diagnostic fields from workflow result.
+    
+    Only extracts: status, failed_node, fail_reason, error_code.
+    Converts UUID to str, datetime to ISO, Enum to value.
+    Returns None if result is None.
+    """
+    if not result:
+        return None
+    
+    def _safe_str(val) -> Optional[str]:
+        if val is None:
+            return None
+        if isinstance(val, str):
+            return val
+        if isinstance(val, (int, float, bool)):
+            return str(val)
+        if isinstance(val, uuid.UUID):
+            return str(val)
+        if isinstance(val, datetime):
+            return val.isoformat()
+        if hasattr(val, 'value'):  # Enum
+            return str(val.value)
+        return str(val)
+    
+    diagnostic = {}
+    
+    # status
+    status = result.get("status")
+    if status is not None:
+        diagnostic["status"] = _safe_str(status)
+    
+    # failed_node (failure_category in quality check)
+    failed_node = result.get("failure_category") or result.get("failed_node")
+    if failed_node is not None:
+        diagnostic["failed_node"] = _safe_str(failed_node)
+    
+    # fail_reason
+    fail_reason = result.get("fail_reason") or result.get("error") or result.get("message")
+    if fail_reason is not None:
+        diagnostic["fail_reason"] = _safe_str(fail_reason)
+    
+    # error_code (from workflow, not our internal code)
+    error_code = result.get("error_code")
+    if error_code is not None:
+        diagnostic["error_code"] = _safe_str(error_code)
+    
+    return diagnostic if diagnostic else None
+
 
 class BatchExecutor:
     """
@@ -282,15 +364,30 @@ class BatchExecutor:
                 workflow_success = True
                 logger.info(f"Task {task_id} completed successfully")
             else:
-                workflow_error = workflow_result.get("error", "Unknown error")
-                logger.error(f"Task {task_id} failed: {workflow_error}")
+                # Extract error from multiple possible fields (fail_reason > error > message)
+                raw_error = (
+                    workflow_result.get("fail_reason")
+                    or workflow_result.get("error")
+                    or workflow_result.get("message")
+                    or None
+                )
+                workflow_error = _sanitize_error_message(raw_error)
+                
+                # Structured failure log
+                logger.error(
+                    f"Task {task_id} failed: "
+                    f"batch_id={batch_id}, run_id={run_id}, "
+                    f"status={workflow_result.get('status', 'unknown')}, "
+                    f"failed_node={workflow_result.get('failure_category', 'unknown')}, "
+                    f"fail_reason={workflow_error}"
+                )
 
         except asyncio.CancelledError:
             workflow_error = "Task was cancelled"
             logger.warning(f"Task {task_id} was cancelled")
 
         except Exception as e:
-            workflow_error = str(e)
+            workflow_error = _sanitize_error_message(str(e))
             logger.error(f"Task {task_id} exception: {e}", exc_info=True)
 
         # Step 3: Update final status with a NEW short-lived session (with retry)
@@ -345,11 +442,42 @@ class BatchExecutor:
                             task.completed_at = datetime.utcnow()
                             task.final_video_url = result.get("final_video_url") if result else None
                             task.output_data = result
+                            # Preserve warnings from quality check
+                            warnings = result.get("warnings") if result else None
+                            if warnings and isinstance(warnings, list):
+                                task.warning = "; ".join(str(w) for w in warnings)
                         else:
-                            task.status = BatchTaskStatus.FAILED
-                            task.completed_at = datetime.utcnow()
-                            task.error_code = "WORKFLOW_ERROR" if result else "EXCEPTION"
-                            task.error_message = str(error) if error else "Unknown error"
+                            # Check if video was actually generated despite status != "success"
+                            # e.g. quality check returned "failed" but final_video_url exists
+                            final_video_url = result.get("final_video_url") if result else None
+                            if final_video_url:
+                                # Video exists - treat as success with warning
+                                task.status = BatchTaskStatus.SUCCESS
+                                task.completed_at = datetime.utcnow()
+                                task.final_video_url = final_video_url
+                                task.output_data = result
+                                # Build warning from fail_reason
+                                fail_reason = (
+                                    result.get("fail_reason")
+                                    or result.get("error")
+                                    or result.get("message")
+                                    or "Quality check flagged issues"
+                                )
+                                task.warning = f"视频已生成但存在质量告警: {fail_reason}"
+                                logger.warning(
+                                    f"Task {task_id} has final_video_url but status={result.get('status')}, "
+                                    f"keeping as SUCCESS with warning"
+                                )
+                            else:
+                                # True failure - no video generated
+                                task.status = BatchTaskStatus.FAILED
+                                task.completed_at = datetime.utcnow()
+                                task.error_code = "WORKFLOW_ERROR" if result else "EXCEPTION"
+                                task.error_message = _sanitize_error_message(error)
+                                # Save minimal diagnostic fields (not full output_data)
+                                diagnostic = _extract_diagnostic_fields(result)
+                                if diagnostic:
+                                    task.output_data = diagnostic
 
                     # Session is closed here, connection released
                     return
