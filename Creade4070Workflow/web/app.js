@@ -473,8 +473,8 @@ async function loadBatchStatus(batchId) {
       startBtn.style.display = 'none';
     }
 
-    // 如果批次已完成，停止轮询
-    if (['success', 'failed', 'cancelled'].includes(data.status)) {
+    // 如果批次已完成或无活动任务，停止轮询
+    if (isBatchTerminal(data)) {
       stopBatchPolling();
     }
   } catch (e) {
@@ -679,12 +679,49 @@ function normalizeTaskStatus(status) {
 // ============================================================
 // 轮询控制
 // ============================================================
+let visibilityHandler = null;
+let beforeUnloadHandler = null;
+
 function startBatchPolling(batchId) {
-  stopBatchPolling(); // 先停止已有的轮询
+  stopBatchPolling(); // 先停止已有的轮询，防止重复创建
   
   pollingTimer = setInterval(() => {
     loadBatchStatus(batchId);
   }, 3000); // 每 3 秒轮询一次
+  
+  // 页面可见性变化处理：隐藏时暂停，可见时立即刷新
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+  }
+  visibilityHandler = () => {
+    if (document.hidden) {
+      // 页面隐藏时停止轮询
+      if (pollingTimer) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
+    } else {
+      // 页面重新可见时立即刷新一次
+      loadBatchStatus(batchId);
+      // 如果还需要轮询（有 pending/running 任务），重新启动
+      const counts = lastBatchStatus?.task_counts || {};
+      const pendingCount = (counts.pending || 0) + (counts.queued || 0);
+      const runningCount = counts.running || 0;
+      if (pendingCount > 0 || runningCount > 0) {
+        startBatchPolling(batchId);
+      }
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
+  
+  // 页面卸载时清理定时器
+  if (beforeUnloadHandler) {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+  }
+  beforeUnloadHandler = () => {
+    stopBatchPolling();
+  };
+  window.addEventListener('beforeunload', beforeUnloadHandler);
 }
 
 function stopBatchPolling() {
@@ -692,6 +729,31 @@ function stopBatchPolling() {
     clearInterval(pollingTimer);
     pollingTimer = null;
   }
+  // 清理事件监听器
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    visibilityHandler = null;
+  }
+  if (beforeUnloadHandler) {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    beforeUnloadHandler = null;
+  }
+}
+
+// 判断批次是否处于终止状态（无需继续轮询）
+function isBatchTerminal(data) {
+  // 批次状态为终态
+  if (['success', 'failed', 'cancelled', 'partial_failed'].includes(data.status)) {
+    return true;
+  }
+  // 没有 pending/running 任务
+  const counts = data.task_counts || {};
+  const pendingCount = (counts.pending || 0) + (counts.queued || 0);
+  const runningCount = counts.running || 0;
+  if (pendingCount === 0 && runningCount === 0) {
+    return true;
+  }
+  return false;
 }
 
 // ============================================================
