@@ -395,3 +395,343 @@ class TestStartBatchResponseFields:
         assert result["native_async_count"] == 0
         assert result["fallback_count"] == 1
         assert result["remaining_count"] == 0
+
+
+class TestFallbackExecutionSignature:
+    """Test that fallback calls _execute_claimed_task with correct parameters."""
+
+    @pytest.mark.asyncio
+    async def test_fallback_calls_execute_claimed_task(self):
+        """Fallback must call _execute_claimed_task(batch_id, task_id, run_id), not _execute_single_task."""
+        from api.batch_executor import submit_task_to_execution
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+        run_id = uuid.uuid4()
+        
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,  # Already claimed by start_batch
+            input_data={"script_text": "Test"},
+            run_id=run_id,
+        )
+        
+        mock_graph_service = AsyncMock()
+        
+        # Track calls to _execute_claimed_task
+        calls = []
+        
+        async def mock_execute(self, batch_id, task_id, run_id):
+            calls.append({"batch_id": batch_id, "task_id": task_id, "run_id": run_id})
+        
+        # Keep patch active while waiting for background task
+        with patch.object(BatchExecutor, '_execute_claimed_task', mock_execute):
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+                    mock_session = AsyncMock()
+                    mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+                    
+                    success, method = await submit_task_to_execution(
+                        db=db,
+                        task=task,
+                        graph_service=mock_graph_service,
+                        run_id=run_id,
+                    )
+                    
+                    assert success is True
+                    assert method == "fallback"
+                    
+                    # Give the background task a chance to run (while patch is still active)
+                    import asyncio
+                    await asyncio.sleep(0.3)
+        
+        # Verify _execute_claimed_task was called with correct parameters
+        assert len(calls) == 1, f"Expected 1 call, got {len(calls)}"
+        assert calls[0]["batch_id"] == batch_id
+        assert calls[0]["task_id"] == task_id
+        assert calls[0]["run_id"] == run_id
+
+    @pytest.mark.asyncio
+    async def test_fallback_exception_reverts_task_to_pending(self):
+        """If background task throws exception, task must be reverted to PENDING."""
+        from api.batch_executor import submit_task_to_execution
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+        run_id = uuid.uuid4()
+        
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            input_data={"script_text": "Test"},
+            run_id=run_id,
+        )
+        
+        mock_graph_service = AsyncMock()
+        
+        async def mock_execute_crash(self, batch_id, task_id, run_id):
+            raise RuntimeError("Simulated crash")
+        
+        # Set up the revert session mock
+        # We need begin() to return an async context manager, not a coroutine
+        class MockBeginContextManager:
+            async def __aenter__(self):
+                return None
+            async def __aexit__(self, *args):
+                return None
+        
+        mock_revert_session = MagicMock()  # Use MagicMock, not AsyncMock
+        mock_revert_session.begin.return_value = MockBeginContextManager()
+        
+        # execute() is async, so we need it to be an AsyncMock
+        task_result = MagicMock()
+        task_result.scalar_one_or_none.return_value = task
+        mock_revert_session.execute = AsyncMock(return_value=task_result)
+        
+        # Keep patch active while waiting for background task
+        with patch.object(BatchExecutor, '_execute_claimed_task', mock_execute_crash):
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                # Patch get_async_sessionmaker in storage.database.db (where it's imported from)
+                with patch('storage.database.db.get_async_sessionmaker') as mock_sessionmaker:
+                    mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_revert_session
+                    
+                    success, method = await submit_task_to_execution(
+                        db=db,
+                        task=task,
+                        graph_service=mock_graph_service,
+                        run_id=run_id,
+                    )
+                    
+                    assert success is True
+                    assert method == "fallback"
+                    
+                    # Give the background task time to fail and revert (while patch is still active)
+                    import asyncio
+                    await asyncio.sleep(0.5)
+        
+        # Verify task was reverted to PENDING
+        assert task.status == BatchTaskStatus.PENDING, \
+            f"Expected task to be reverted to PENDING, got {task.status}"
+        assert task.error_code == "FALLBACK_EXCEPTION"
+
+
+class TestOrphanTaskRecovery:
+    """Test that orphaned RUNNING tasks are detected and recovered."""
+
+    @pytest.fixture
+    def mock_graph_service(self):
+        service = AsyncMock()
+        service.run = AsyncMock(return_value={
+            "status": "success",
+            "final_video_url": "https://example.com/video.mp4",
+        })
+        return service
+
+    @pytest.fixture
+    def executor(self, mock_graph_service):
+        return BatchExecutor(mock_graph_service)
+
+    @pytest.mark.asyncio
+    async def test_orphan_running_task_is_recovered(self, executor, mock_graph_service):
+        """Task RUNNING for > 30 minutes should be reset to PENDING."""
+        from datetime import timedelta
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # Create an orphan task: RUNNING for 45 minutes
+        orphan_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.utcnow() - timedelta(minutes=45),
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [orphan_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            count_result = MagicMock()
+            count_result.scalar.return_value = 0
+            mock_session.execute.return_value = count_result
+            
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                result = await executor.start_batch(db, batch_id)
+        
+        # The orphan should have been recovered to PENDING, then submitted
+        assert result["submitted_count"] == 1, \
+            f"Expected orphan to be recovered and submitted, got submitted_count={result['submitted_count']}"
+        assert result["fallback_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_recent_running_task_is_not_recovered(self, executor, mock_graph_service):
+        """Task RUNNING for < 30 minutes should NOT be reset."""
+        from datetime import timedelta
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # Create a recent running task: RUNNING for 5 minutes
+        recent_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.utcnow() - timedelta(minutes=5),
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [recent_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            # Should return "already running" since there's 1 running task
+            result = await executor.start_batch(db, batch_id)
+        
+        # Should NOT submit because there's already a running task
+        assert result["submitted_count"] == 0
+        assert "already" in result["message"].lower() or "running" in result["message"].lower()
+        
+        # Task should still be RUNNING
+        assert recent_task.status == BatchTaskStatus.RUNNING
+
+
+class TestExecuteClaimedTask:
+    """Test _execute_claimed_task method directly."""
+
+    @pytest.fixture
+    def mock_graph_service(self):
+        service = AsyncMock()
+        service.run = AsyncMock(return_value={
+            "status": "success",
+            "final_video_url": "https://example.com/video.mp4",
+        })
+        return service
+
+    @pytest.fixture
+    def executor(self, mock_graph_service):
+        return BatchExecutor(mock_graph_service)
+
+    @pytest.mark.asyncio
+    async def test_execute_claimed_task_runs_workflow(self, executor, mock_graph_service):
+        """_execute_claimed_task should run the workflow and update status."""
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+        run_id = uuid.uuid4()
+        
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            run_id=run_id,
+            started_at=datetime.utcnow(),
+            input_data={"script_text": "Test script"},
+        )
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            # Mock fetch query
+            task_result = MagicMock()
+            task_result.scalar_one_or_none.return_value = task
+            mock_session.execute.return_value = task_result
+            
+            # Mock context manager for begin()
+            mock_cm = AsyncMock()
+            mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_cm.__aexit__ = AsyncMock(return_value=None)
+            mock_session.begin.return_value = mock_cm
+            
+            with patch('coze_coding_utils.runtime_ctx.context.new_context') as mock_ctx:
+                mock_ctx_instance = MagicMock()
+                mock_ctx.return_value = mock_ctx_instance
+                
+                await executor._execute_claimed_task(
+                    batch_id=batch_id,
+                    task_id=task_id,
+                    run_id=run_id,
+                )
+        
+        # Verify workflow was called with correct input
+        mock_graph_service.run.assert_called_once()
+        call_args = mock_graph_service.run.call_args
+        workflow_input = call_args[0][0]
+        assert workflow_input["script_text"] == "Test script"
+        assert workflow_input["run_id"] == str(run_id)
+        assert workflow_input["script_source"] == "manual"
+
+    @pytest.mark.asyncio
+    async def test_execute_claimed_task_skips_non_running(self, executor, mock_graph_service):
+        """_execute_claimed_task should skip if task is no longer RUNNING."""
+        batch_id = uuid.uuid4()
+        task_id = uuid.uuid4()
+        run_id = uuid.uuid4()
+        
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.SUCCESS,  # Already completed
+            input_data={"script_text": "Test"},
+        )
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            task_result = MagicMock()
+            task_result.scalar_one_or_none.return_value = task
+            mock_session.execute.return_value = task_result
+            
+            await executor._execute_claimed_task(
+                batch_id=batch_id,
+                task_id=task_id,
+                run_id=run_id,
+            )
+        
+        # Workflow should NOT have been called
+        mock_graph_service.run.assert_not_called()

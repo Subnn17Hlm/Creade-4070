@@ -154,14 +154,40 @@ async def submit_task_to_execution(
     try:
         from storage.database.db import get_async_sessionmaker
         
+        # Capture task info before entering background (task object may be detached from session)
+        captured_task_id = task.task_id
+        captured_batch_id = task.batch_id
+        captured_run_id = run_id
+        captured_graph_service = graph_service
+        
         async def _run_task_in_background():
             """Background task runner that creates its own DB session."""
-            async with get_async_sessionmaker()() as bg_db:
-                executor = BatchExecutor(graph_service)
+            try:
+                executor = BatchExecutor(captured_graph_service)
+                await executor._execute_claimed_task(
+                    batch_id=captured_batch_id,
+                    task_id=captured_task_id,
+                    run_id=captured_run_id,
+                )
+            except Exception as e:
+                logger.error(f"Background task {captured_task_id} failed with exception: {e}", exc_info=True)
+                # Revert task to PENDING so it can be retried
                 try:
-                    await executor._execute_single_task(bg_db, task, run_id)
-                except Exception as e:
-                    logger.error(f"Background task {task.task_id} failed: {e}")
+                    async with get_async_sessionmaker()() as revert_db:
+                        async with revert_db.begin():
+                            result = await revert_db.execute(
+                                select(BatchTask).where(BatchTask.task_id == captured_task_id)
+                            )
+                            revert_task = result.scalar_one_or_none()
+                            if revert_task and revert_task.status == BatchTaskStatus.RUNNING:
+                                revert_task.status = BatchTaskStatus.PENDING
+                                revert_task.run_id = None
+                                revert_task.started_at = None
+                                revert_task.error_code = "FALLBACK_EXCEPTION"
+                                revert_task.error_message = f"Background execution failed: {str(e)[:500]}"
+                                logger.info(f"Reverted task {captured_task_id} to PENDING after background failure")
+                except Exception as revert_err:
+                    logger.error(f"Failed to revert task {captured_task_id}: {revert_err}")
         
         asyncio.create_task(_run_task_in_background())
         logger.info(f"Starting task {task.task_id} via asyncio.create_task fallback, run_id={run_id}")
@@ -270,7 +296,30 @@ class BatchExecutor:
         if not batch:
             raise ValueError(f"Batch {batch_id} not found")
 
-        # Count real task statistics from database
+        # Detect and recover orphaned RUNNING tasks (running > 30 minutes with no progress)
+        orphan_timeout = timedelta(minutes=30)
+        now = datetime.utcnow()
+        orphan_count = 0
+        for t in batch.tasks:
+            if t.status == BatchTaskStatus.RUNNING and t.started_at:
+                running_duration = now - t.started_at
+                if running_duration > orphan_timeout:
+                    logger.warning(
+                        f"Detected orphan task {t.task_id}: RUNNING for {running_duration}, "
+                        f"resetting to PENDING for recovery"
+                    )
+                    t.status = BatchTaskStatus.PENDING
+                    t.run_id = None
+                    t.started_at = None
+                    t.error_code = "ORPHAN_RECOVERY"
+                    t.error_message = f"Task was RUNNING for {running_duration} with no progress, reset for retry"
+                    orphan_count += 1
+        
+        if orphan_count > 0:
+            await db.commit()
+            logger.info(f"Recovered {orphan_count} orphan task(s) for batch {batch_id}")
+
+        # Count real task statistics from database (after orphan recovery)
         pending_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.PENDING)
         running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING)
         success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS)
@@ -625,6 +674,113 @@ class BatchExecutor:
         await self._trigger_next_pending_task(batch_id)
 
         logger.info(f"Task {task_id} execution completed")
+
+    async def _execute_claimed_task(
+        self,
+        batch_id: uuid.UUID,
+        task_id: uuid.UUID,
+        run_id: uuid.UUID,
+    ):
+        """
+        Execute a task that has already been claimed (status=RUNNING, run_id set).
+        
+        This is used by the fallback path in submit_task_to_execution where the task
+        has already been set to RUNNING by start_batch, so we skip the claiming step
+        and go directly to workflow execution.
+        
+        Args:
+            batch_id: Batch job ID
+            task_id: Task ID
+            run_id: Run ID for this execution (already assigned by start_batch)
+        """
+        logger.info(f"Executing claimed task {task_id} for batch {batch_id}, run_id={run_id}")
+        
+        # Fetch task and batch info using short-lived sessions
+        task_input = None
+        try:
+            async with get_async_sessionmaker()() as fetch_db:
+                result = await fetch_db.execute(
+                    select(BatchTask).where(BatchTask.task_id == task_id)
+                )
+                task = result.scalar_one_or_none()
+                if not task:
+                    logger.error(f"Task {task_id} not found in database")
+                    return
+                
+                # Verify task is still RUNNING (not reverted by another process)
+                if task.status != BatchTaskStatus.RUNNING:
+                    logger.warning(
+                        f"Task {task_id} is no longer RUNNING (status={task.status}), skipping execution"
+                    )
+                    return
+                
+                # Capture input data before session closes
+                task_input = task.input_data or {}
+        except Exception as e:
+            logger.error(f"Failed to fetch task {task_id} for execution: {e}", exc_info=True)
+            return
+        
+        # Run the workflow WITHOUT holding any database session
+        workflow_result = None
+        workflow_error = None
+        workflow_success = False
+        
+        try:
+            workflow_input = {
+                "script_text": task_input.get("script_text", ""),
+                "run_id": str(run_id),
+                "script_source": "manual",
+            }
+            
+            from coze_coding_utils.runtime_ctx.context import new_context
+            ctx = new_context("batch_task")
+            ctx.run_id = str(run_id)
+            
+            logger.info(f"Running workflow for claimed task {task_id} with run_id {run_id}")
+            workflow_result = await self.graph_service.run(workflow_input, ctx)
+            
+            if workflow_result.get("status") == "success":
+                workflow_success = True
+                logger.info(f"Claimed task {task_id} completed successfully")
+            else:
+                raw_error = (
+                    workflow_result.get("fail_reason")
+                    or workflow_result.get("error")
+                    or workflow_result.get("message")
+                    or None
+                )
+                workflow_error = _sanitize_error_message(raw_error)
+                logger.error(
+                    f"Claimed task {task_id} failed: "
+                    f"batch_id={batch_id}, run_id={run_id}, "
+                    f"status={workflow_result.get('status', 'unknown')}, "
+                    f"fail_reason={workflow_error}"
+                )
+        
+        except asyncio.CancelledError:
+            workflow_error = "Task was cancelled"
+            logger.warning(f"Claimed task {task_id} was cancelled")
+        
+        except Exception as e:
+            workflow_error = _sanitize_error_message(str(e))
+            logger.error(f"Claimed task {task_id} exception: {e}", exc_info=True)
+        
+        # Update final status
+        await self._update_task_final_status(
+            task_id=task_id,
+            batch_id=batch_id,
+            success=workflow_success,
+            result=workflow_result,
+            error=workflow_error,
+        )
+        
+        # Update batch counts
+        await self._update_batch_counts_safe(batch_id)
+        
+        # Trigger next pending task
+        await self._trigger_next_pending_task(batch_id)
+        
+        logger.info(f"Claimed task {task_id} execution completed")
 
     async def _trigger_next_pending_task(self, batch_id: uuid.UUID):
         """
