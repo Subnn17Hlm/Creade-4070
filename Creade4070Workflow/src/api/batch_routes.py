@@ -112,7 +112,7 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
                     locked_task.started_at = datetime.utcnow()
             
             # Use unified submission function (native async or fallback)
-            success = await submit_task_to_execution(
+            success, method = await submit_task_to_execution(
                 db=claim_db,
                 task=locked_task,
                 graph_service=graph_service,
@@ -120,6 +120,7 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
             )
             if success:
                 submitted += 1
+                logger.info(f"Starting task {locked_task.task_id} via {method}, run_id={run_id}")
             else:
                 # Mark task as failed if submission failed
                 async with get_async_sessionmaker()() as fail_db:

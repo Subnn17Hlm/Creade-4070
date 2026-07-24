@@ -117,7 +117,7 @@ async def submit_task_to_execution(
     task: BatchTask,
     graph_service: "GraphService",
     run_id: uuid.UUID,
-) -> bool:
+) -> tuple[bool, str]:
     """
     Unified task submission function.
     
@@ -131,7 +131,7 @@ async def submit_task_to_execution(
         run_id: Run ID for this execution
         
     Returns:
-        True if submitted successfully, False otherwise
+        Tuple of (success: bool, method: str) where method is "native", "fallback", or "none"
     """
     from api.async_task_service import get_async_task_service, ASYNC_TASKS_AVAILABLE
     
@@ -146,7 +146,7 @@ async def submit_task_to_execution(
                     deadline_sec=1800,
                 )
                 logger.info(f"Submitted task {task.task_id} to native async system")
-                return True
+                return True, "native"
         except Exception as e:
             logger.warning(f"Native async submit failed for task {task.task_id}: {e}, trying fallback")
     
@@ -164,11 +164,11 @@ async def submit_task_to_execution(
                     logger.error(f"Background task {task.task_id} failed: {e}")
         
         asyncio.create_task(_run_task_in_background())
-        logger.info(f"Submitted task {task.task_id} via asyncio.create_task fallback")
-        return True
+        logger.info(f"Starting task {task.task_id} via asyncio.create_task fallback, run_id={run_id}")
+        return True, "fallback"
     except Exception as e:
         logger.error(f"Fallback submit failed for task {task.task_id}: {e}")
-        return False
+        return False, "none"
 
 
 async def update_batch_counts(db: AsyncSession, batch_id: uuid.UUID) -> None:
@@ -331,41 +331,127 @@ class BatchExecutor:
         async_task_service = get_async_task_service(self.graph_service)
         
         concurrency = batch.concurrency or 2
-        submitted_count = 0
         
-        # Use unified submission function for all tasks
-        tasks_to_submit = pending_tasks[:concurrency]
+        # Calculate available slots using real running count from this same query
+        real_running_count = running_count  # Already computed from batch.tasks above
+        real_pending_count = pending_count  # Already computed from batch.tasks above
+        available_slots = max(0, concurrency - real_running_count)
+        
+        logger.info(
+            f"start_batch {batch_id}: "
+            f"real_pending_count={real_pending_count}, real_running_count={real_running_count}, "
+            f"concurrency={concurrency}, available_slots={available_slots}"
+        )
+        
+        if available_slots == 0:
+            return {
+                "batch_id": str(batch_id),
+                "status": batch.status,
+                "submitted_count": 0,
+                "message": f"No available slots (running={real_running_count}, concurrency={concurrency})",
+                "statistics": {
+                    "pending": real_pending_count,
+                    "running": real_running_count,
+                    "success": success_count,
+                    "failed": failed_count,
+                },
+            }
+        
+        # Get pending tasks
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
+        
+        # Select tasks to submit (up to available_slots)
+        tasks_to_submit = pending_tasks[:available_slots]
+        selected_task_ids = [str(t.task_id) for t in tasks_to_submit]
+        
+        logger.info(
+            f"start_batch {batch_id}: selected {len(tasks_to_submit)} tasks: {selected_task_ids}"
+        )
+        
+        if not tasks_to_submit:
+            return {
+                "batch_id": str(batch_id),
+                "status": batch.status,
+                "submitted_count": 0,
+                "message": "No pending tasks to execute",
+                "statistics": {
+                    "pending": real_pending_count,
+                    "running": real_running_count,
+                    "success": success_count,
+                    "failed": failed_count,
+                },
+            }
+        
+        submitted_count = 0
+        native_async_count = 0
+        fallback_count = 0
+        
         for task in tasks_to_submit:
             try:
-                success = await submit_task_to_execution(
+                # Generate run_id for this task execution
+                run_id = uuid.uuid4()
+                task.run_id = run_id
+                task.started_at = datetime.utcnow()
+                task.status = BatchTaskStatus.RUNNING
+                
+                success, method = await submit_task_to_execution(
                     db=db,
                     task=task,
-                    batch_id=batch_id,
                     graph_service=self.graph_service,
-                    async_task_service=async_task_service,
-                    executor=self,
+                    run_id=run_id,
                 )
                 if success:
                     submitted_count += 1
+                    if method == "native":
+                        native_async_count += 1
+                    elif method == "fallback":
+                        fallback_count += 1
+                    logger.info(f"Starting task {task.task_id} via {method}, run_id={run_id}")
+                else:
+                    logger.error(f"Failed to submit task {task.task_id}: submit_task_to_execution returned False")
+                    # Revert task status
+                    task.status = BatchTaskStatus.PENDING
+                    task.run_id = None
+                    task.started_at = None
             except Exception as e:
                 logger.error(f"Failed to submit task {task.task_id}: {e}")
-                # Mark task as failed
-                await self._mark_task_failed(task.task_id, batch_id, "SUBMIT_ERROR", str(e))
+                # Revert task status
+                task.status = BatchTaskStatus.PENDING
+                task.run_id = None
+                task.started_at = None
                 continue
-
+        
+        await db.commit()
+        
         # Update batch counts
         await self._update_batch_counts_safe(batch_id)
-
-        logger.info(f"Batch {batch_id} started: submitted {submitted_count}/{len(pending_tasks)} tasks (concurrency={concurrency})")
-
+        
+        remaining_count = real_pending_count - submitted_count
+        
+        logger.info(
+            f"Batch {batch_id} started: "
+            f"selected_count={len(tasks_to_submit)}, submitted_count={submitted_count}, "
+            f"native_async_count={native_async_count}, fallback_count={fallback_count}, "
+            f"remaining_count={remaining_count}"
+        )
+        
         return {
             "batch_id": str(batch_id),
             "status": batch.status,
             "total_count": batch.total_count,
+            "selected_count": len(tasks_to_submit),
             "submitted_count": submitted_count,
-            "pending_count": len(pending_tasks) - submitted_count,
+            "native_async_count": native_async_count,
+            "fallback_count": fallback_count,
+            "remaining_count": remaining_count,
             "concurrency": concurrency,
-            "message": f"已提交 {submitted_count} 个任务到异步执行队列，剩余 {len(pending_tasks) - submitted_count} 个等待中",
+            "statistics": {
+                "pending": real_pending_count - submitted_count,
+                "running": real_running_count + submitted_count,
+                "success": success_count,
+                "failed": failed_count,
+            },
+            "message": f"已提交 {submitted_count} 个任务（native={native_async_count}, fallback={fallback_count}），剩余 {remaining_count} 个等待中",
         }
 
     async def _execute_batch_tasks(self, db: AsyncSession, batch: BatchJob):
@@ -588,17 +674,22 @@ class BatchExecutor:
                 from api.async_task_service import get_async_task_service
                 async_task_service = get_async_task_service(self.graph_service)
 
+                # Generate run_id for this task execution
+                run_id = uuid.uuid4()
+                task.run_id = run_id
+                task.started_at = datetime.utcnow()
+                task.status = BatchTaskStatus.RUNNING
+                await db.commit()
+
                 # Submit the task using unified function
-                success = await submit_task_to_execution(
+                success, method = await submit_task_to_execution(
                     db=db,
                     task=task,
-                    batch_id=batch_id,
                     graph_service=self.graph_service,
-                    async_task_service=async_task_service,
-                    executor=self,
+                    run_id=run_id,
                 )
                 if success:
-                    logger.info(f"Triggered next pending task {task.task_id} for batch {batch_id}")
+                    logger.info(f"Starting task {task.task_id} via {method}, run_id={run_id}")
                 else:
                     logger.warning(f"Failed to trigger next pending task {task.task_id}")
 
