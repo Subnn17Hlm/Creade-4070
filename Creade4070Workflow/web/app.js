@@ -358,7 +358,8 @@ function initBatchMonitor() {
     
     // 禁用按钮防止重复点击
     startBtn.disabled = true;
-    startBtn.textContent = '启动中…';
+    const originalText = startBtn.textContent;
+    startBtn.textContent = '处理中…';
     
     try {
       const res = await fetch(`/api/batches/${currentBatchId}/start`, {
@@ -371,15 +372,31 @@ function initBatchMonitor() {
       
       // HTTP 200 and 202 both mean success
       if (res.ok || res.status === 202) {
-        let msg = '批次已启动';
+        let data = {};
         try {
-          const data = await res.json();
-          msg = data.message || data.msg || msg;
+          data = await res.json();
         } catch (_) {
-          // Empty response body is OK - still counts as success
+          // Empty response body is OK
         }
+        
+        // Build detailed message from response
+        const parts = [];
+        if (data.message) parts.push(data.message);
+        if (data.selected_count !== undefined) parts.push(`选择: ${data.selected_count}`);
+        if (data.submitted_count !== undefined) parts.push(`提交: ${data.submitted_count}`);
+        if (data.native_async_count > 0) parts.push(`native: ${data.native_async_count}`);
+        if (data.fallback_count > 0) parts.push(`fallback: ${data.fallback_count}`);
+        if (data.remaining_count !== undefined && data.remaining_count > 0) parts.push(`剩余: ${data.remaining_count}`);
+        
+        if (data.statistics) {
+          const s = data.statistics;
+          parts.push(`[pending=${s.pending||0}, running=${s.running||0}, success=${s.success||0}, failed=${s.failed||0}]`);
+        }
+        
+        const msg = parts.length > 0 ? parts.join(' | ') : '操作完成';
         showStatusMessage(msg, 'success');
-        startBtn.style.display = 'none';
+        
+        // Don't hide button - let the polling update decide
         loadBatchStatus(currentBatchId);
       } else {
         // Extract real error from response
@@ -390,9 +407,9 @@ function initBatchMonitor() {
           errorMsg = detail.error || detail.message || errData.error || errData.message || errorMsg;
         } catch (_) {}
         
-        showStatusMessage(`启动失败: ${errorMsg}`, 'error');
+        showStatusMessage(`操作失败: ${errorMsg}`, 'error');
         startBtn.disabled = false;
-        startBtn.textContent = '启动批次';
+        startBtn.textContent = originalText;
       }
     } catch (e) {
       // Network error or timeout - check if batch was actually started
@@ -405,7 +422,6 @@ function initBatchMonitor() {
           // If batch is already running or has running/queued tasks, it was started
           if (['running', 'success', 'failed', 'partial_failed'].includes(checkData.status)) {
             showStatusMessage('批次已在运行中', 'success');
-            startBtn.style.display = 'none';
             loadBatchStatus(currentBatchId);
             return;
           }
@@ -413,7 +429,7 @@ function initBatchMonitor() {
       } catch (_) {}
       
       startBtn.disabled = false;
-      startBtn.textContent = '启动批次';
+      startBtn.textContent = originalText;
     }
   });
 }
@@ -448,27 +464,43 @@ async function loadBatchStatus(batchId) {
     renderBatchSummary(data);
     await renderBatchTasks(batchId);
     
-    // 显示/隐藏启动按钮：基于统计数据，不依赖任务卡渲染
-    // 条件：total > 0 && waiting > 0 && running == 0
+    // 显示/隐藏启动/恢复按钮：对未终态批次始终保留入口
     const startBtn = document.getElementById('batch-start-btn');
     const counts = data.task_counts || {};
     const totalCount = data.total_count || 0;
     // waiting 包含 created、pending、queued
     const waitingCount = (counts.pending || 0) + (counts.queued || 0);
     const runningCount = counts.running || 0;
+    const successCount = counts.success || 0;
+    const failedCount = counts.failed || 0;
+    const isTerminal = ['success', 'failed', 'cancelled', 'partial_failed'].includes(data.status);
     
-    // 显示启动按钮的条件：
-    // 1. 总数 > 0
-    // 2. 等待数 > 0
-    // 3. 运行数 == 0
-    // 4. 批次状态不是 success/failed/cancelled
-    const shouldShowStartBtn = totalCount > 0 && waitingCount > 0 && runningCount === 0 && 
-                                !['success', 'failed', 'cancelled'].includes(data.status);
+    // 显示按钮的条件：批次未终态 且 总数 > 0
+    // 不再因 running > 0 就隐藏，因为可能有孤儿任务需要恢复
+    const shouldShowStartBtn = !isTerminal && totalCount > 0;
     
     if (shouldShowStartBtn) {
       startBtn.style.display = 'inline-block';
       startBtn.disabled = false;
-      startBtn.textContent = '启动批次';
+      
+      // 根据状态设置按钮文本
+      if (runningCount > 0 && waitingCount === 0) {
+        // 有运行中任务但无等待任务 - 可能是孤儿任务，显示恢复入口
+        startBtn.textContent = '检查/恢复调度';
+        startBtn.className = 'btn btn-warning';
+      } else if (runningCount > 0 && waitingCount > 0) {
+        // 有运行中任务且有等待任务 - 可能是补位或恢复
+        startBtn.textContent = '检查/恢复调度';
+        startBtn.className = 'btn btn-warning';
+      } else if (waitingCount > 0 && runningCount === 0) {
+        // 有等待任务且无运行任务 - 正常启动
+        startBtn.textContent = '启动批次';
+        startBtn.className = 'btn btn-primary';
+      } else {
+        // 其他情况
+        startBtn.textContent = '检查/恢复调度';
+        startBtn.className = 'btn btn-warning';
+      }
     } else {
       startBtn.style.display = 'none';
     }

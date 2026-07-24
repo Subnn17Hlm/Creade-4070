@@ -284,3 +284,103 @@ class TestApiResponsesForPolling:
         # 检查前端是否使用 pending 和 running
         assert 'pending' in content, "前端应该使用 pending"
         assert 'running' in content, "前端应该使用 running"
+
+
+class TestRecoveryButtonVisibility:
+    """测试恢复调度按钮可见性"""
+    
+    def test_recovery_button_text_exists(self):
+        """测试恢复调度按钮文本存在"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        assert '检查/恢复调度' in content, "应该有'检查/恢复调度'按钮文本"
+    
+    def test_button_not_hidden_when_running_gt_0(self):
+        """测试 running>0 时按钮不被隐藏"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # The old logic was: runningCount === 0 was required to show button
+        # The new logic should NOT require runningCount === 0
+        # Check that shouldShowStartBtn does NOT include runningCount === 0
+        # Find the shouldShowStartBtn assignment
+        match = re.search(r'shouldShowStartBtn\s*=\s*([^;]+);', content)
+        assert match, "should find shouldShowStartBtn assignment"
+        
+        condition = match.group(1)
+        # The condition should NOT contain runningCount === 0
+        assert 'runningCount === 0' not in condition, \
+            "Button should be visible even when running > 0 (for orphan recovery)"
+    
+    def test_button_shown_for_non_terminal_batches(self):
+        """测试非终态批次始终显示按钮"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # Check that isTerminal is used in the condition
+        assert 'isTerminal' in content, "should use isTerminal check"
+        assert '!isTerminal' in content, "button should be shown when NOT terminal"
+    
+    def test_button_disabled_during_click(self):
+        """测试按钮点击期间禁用"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # Find the click handler
+        assert 'startBtn.disabled = true' in content, "button should be disabled during click"
+        assert '处理中' in content, "button should show loading text"
+    
+    def test_response_details_displayed(self):
+        """测试响应详情显示给用户"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # Check that response fields are displayed
+        assert 'submitted_count' in content, "should display submitted_count"
+        assert 'remaining_count' in content, "should display remaining_count"
+        assert 'statistics' in content, "should display statistics"
+    
+    def test_btn_warning_class_exists(self):
+        """测试 btn-warning CSS 类存在"""
+        with open('/workspace/projects/Creade4070Workflow/web/styles.css', 'r') as f:
+            content = f.read()
+        
+        assert '.btn-warning' in content, "btn-warning class should exist in CSS"
+
+
+class TestRecoveryButtonScenarios:
+    """测试恢复调度按钮场景"""
+    
+    def test_running_1_pending_0_shows_recovery_button(self):
+        """场景：running=1, pending=0 时显示恢复按钮"""
+        # This simulates the orphan scenario
+        # The button should be visible because batch is not terminal
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # Verify the logic: shouldShowStartBtn = !isTerminal && totalCount > 0
+        # With running=1, pending=0, status=running -> isTerminal=False, totalCount>0
+        # So button should be shown
+        assert '!isTerminal' in content
+        assert 'totalCount > 0' in content
+    
+    def test_recent_running_no_double_submit(self):
+        """场景：近期真实运行任务不会重复提交（后端幂等）"""
+        # This is tested in test_start_batch_regression.py
+        # Here we just verify the frontend calls the correct endpoint
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        assert '/api/batches/${currentBatchId}/start' in content or \
+               '/api/batches/${' in content, "should call start endpoint"
+    
+    def test_double_click_prevented(self):
+        """场景：连续点击不会重复执行"""
+        with open('/workspace/projects/Creade4070Workflow/web/app.js', 'r') as f:
+            content = f.read()
+        
+        # Button is disabled at the start of click handler
+        assert 'startBtn.disabled = true' in content
+        # And re-enabled on error
+        assert 'startBtn.disabled = false' in content
