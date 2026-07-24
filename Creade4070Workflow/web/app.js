@@ -746,8 +746,16 @@ function isBatchTerminal(data) {
   if (['success', 'failed', 'cancelled', 'partial_failed'].includes(data.status)) {
     return true;
   }
-  // 没有 pending/running 任务
-  const counts = data.task_counts || {};
+  // 没有 pending/running 任务（使用 task_counts 或 lastTaskList 作为兜底）
+  let counts = data.task_counts || {};
+  // 如果 task_counts 不可用，使用 lastTaskList 的 statistics 作为兜底
+  if (!data.task_counts && lastTaskList && lastTaskList.statistics) {
+    counts = {
+      pending: lastTaskList.statistics.pending_count || 0,
+      queued: lastTaskList.statistics.queued_count || 0,
+      running: lastTaskList.statistics.running_count || 0
+    };
+  }
   const pendingCount = (counts.pending || 0) + (counts.queued || 0);
   const runningCount = counts.running || 0;
   if (pendingCount === 0 && runningCount === 0) {
