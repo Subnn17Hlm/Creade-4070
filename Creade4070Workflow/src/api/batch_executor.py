@@ -491,7 +491,7 @@ class BatchExecutor:
 
         # Detect and recover orphaned RUNNING tasks (running > 30 minutes with no progress)
         orphan_timeout = timedelta(minutes=30)
-        now = utc_now()
+        now = datetime.now(timezone.utc)  # Use aware datetime for comparison
         orphan_count = 0
         for t in batch.tasks:
             if t.status == BatchTaskStatus.RUNNING and t.started_at:

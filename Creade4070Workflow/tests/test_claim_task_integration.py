@@ -294,3 +294,114 @@ async def test_claim_task_diagnostic_info_with_real_database(real_db_session, re
         assert diagnostic["actual_status"] == BatchTaskStatus.PENDING.value
         assert diagnostic["status_matches_pending"] is True
         assert diagnostic["update_rowcount"] == 1
+
+
+@pytest.mark.asyncio
+async def test_auto_fill_after_task_completion(real_db_session, real_db_engine):
+    """
+    Regression test: 并发2、共6条，前2条完成后必须自动变为 running=2、pending=2。
+    
+    This test verifies that:
+    1. Initial state: 6 PENDING tasks, concurrency=2
+    2. After start_batch: 2 RUNNING, 4 PENDING
+    3. After completing 2 tasks: 2 RUNNING (auto-filled), 2 PENDING
+    """
+    from api.batch_executor import BatchExecutor
+    
+    # Create a batch job
+    batch_id = uuid.uuid4()
+    batch = BatchJob(
+        batch_id=batch_id,
+        status=BatchJobStatus.CREATED,
+        total_count=6,
+        pending_count=6,
+        running_count=0,
+        success_count=0,
+        failed_count=0,
+        concurrency=2,
+    )
+    real_db_session.add(batch)
+    
+    # Create 6 PENDING tasks
+    task_ids = []
+    for i in range(6):
+        task_id = uuid.uuid4()
+        task_ids.append(task_id)
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=i + 1,
+            external_task_id=f"external_{i}",
+            status=BatchTaskStatus.PENDING.value,
+            input_data={"test": f"data_{i}"},
+        )
+        real_db_session.add(task)
+    
+    await real_db_session.commit()
+    await real_db_session.close()
+    
+    # Mock get_async_sessionmaker to return our real session factory
+    session_factory = async_sessionmaker(
+        real_db_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    
+    # Create a mock graph service
+    mock_graph_service = AsyncMock()
+    executor = BatchExecutor(graph_service=mock_graph_service)
+    
+    # Mock submit_task_to_execution to return success without actually executing
+    async def mock_submit_task_to_execution(db, task, graph_service, run_id):
+        return True, "mock"
+    
+    # Patch get_async_sessionmaker in both locations where it's imported
+    with patch('storage.database.db.get_async_sessionmaker', return_value=session_factory):
+        with patch('api.batch_executor.get_async_sessionmaker', return_value=session_factory):
+            with patch('api.batch_executor.submit_task_to_execution', side_effect=mock_submit_task_to_execution):
+                # Start the batch - should claim 2 tasks
+                async with session_factory() as db:
+                    result = await executor.start_batch(db, batch_id)
+                    assert result["submitted_count"] == 2, f"Expected 2 submitted, got {result['submitted_count']}"
+                
+                # Verify state: 2 RUNNING, 4 PENDING
+                async with session_factory() as verify_db:
+                    result = await verify_db.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )
+                    tasks = result.scalars().all()
+                    running_count = sum(1 for t in tasks if t.status == BatchTaskStatus.RUNNING.value)
+                    pending_count = sum(1 for t in tasks if t.status == BatchTaskStatus.PENDING.value)
+                    assert running_count == 2, f"Expected 2 RUNNING after start, got {running_count}"
+                    assert pending_count == 4, f"Expected 4 PENDING after start, got {pending_count}"
+                    
+                    # Get the running task IDs
+                    running_task_ids = [t.task_id for t in tasks if t.status == BatchTaskStatus.RUNNING.value]
+                
+                # Simulate completion of 2 tasks
+                for task_id in running_task_ids:
+                    async with session_factory() as complete_db:
+                        result = await complete_db.execute(
+                            select(BatchTask).where(BatchTask.task_id == task_id)
+                        )
+                        task = result.scalar_one()
+                        task.status = BatchTaskStatus.SUCCESS.value
+                        task.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        await complete_db.commit()
+                    
+                    # Trigger next pending task
+                    await executor._trigger_next_pending_task(batch_id)
+                
+                # Verify final state: 2 RUNNING (auto-filled), 2 PENDING
+                async with session_factory() as final_db:
+                    result = await final_db.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )
+                    tasks = result.scalars().all()
+                    running_count = sum(1 for t in tasks if t.status == BatchTaskStatus.RUNNING.value)
+                    pending_count = sum(1 for t in tasks if t.status == BatchTaskStatus.PENDING.value)
+                    success_count = sum(1 for t in tasks if t.status == BatchTaskStatus.SUCCESS.value)
+                    
+                    assert success_count == 2, f"Expected 2 SUCCESS, got {success_count}"
+                    assert running_count == 2, f"Expected 2 RUNNING after auto-fill, got {running_count}"
+                    assert pending_count == 2, f"Expected 2 PENDING after auto-fill, got {pending_count}"
