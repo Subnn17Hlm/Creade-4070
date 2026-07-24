@@ -112,6 +112,121 @@ def _extract_diagnostic_fields(result: Optional[Dict[str, Any]]) -> Optional[Dic
     return diagnostic if diagnostic else None
 
 
+async def submit_task_to_execution(
+    db: AsyncSession,
+    task: BatchTask,
+    graph_service: "GraphService",
+    run_id: uuid.UUID,
+) -> bool:
+    """
+    Unified task submission function.
+    
+    Tries native async system first, falls back to asyncio.create_task if unavailable.
+    This ensures tasks can be executed regardless of whether the native async system is available.
+    
+    Args:
+        db: Database session
+        task: Task to submit
+        graph_service: GraphService for running workflows
+        run_id: Run ID for this execution
+        
+    Returns:
+        True if submitted successfully, False otherwise
+    """
+    from api.async_task_service import get_async_task_service, ASYNC_TASKS_AVAILABLE
+    
+    # Try native async system first
+    if ASYNC_TASKS_AVAILABLE:
+        try:
+            async_task_service = get_async_task_service(graph_service)
+            if async_task_service.runtime is not None:
+                await async_task_service.submit_task(
+                    task_id=str(task.task_id),
+                    input_data=task.input_data or {},
+                    deadline_sec=1800,
+                )
+                logger.info(f"Submitted task {task.task_id} to native async system")
+                return True
+        except Exception as e:
+            logger.warning(f"Native async submit failed for task {task.task_id}: {e}, trying fallback")
+    
+    # Fallback: use asyncio.create_task
+    try:
+        from storage.database.db import get_async_sessionmaker
+        
+        async def _run_task_in_background():
+            """Background task runner that creates its own DB session."""
+            async with get_async_sessionmaker()() as bg_db:
+                executor = BatchExecutor(graph_service)
+                try:
+                    await executor._execute_single_task(bg_db, task, run_id)
+                except Exception as e:
+                    logger.error(f"Background task {task.task_id} failed: {e}")
+        
+        asyncio.create_task(_run_task_in_background())
+        logger.info(f"Submitted task {task.task_id} via asyncio.create_task fallback")
+        return True
+    except Exception as e:
+        logger.error(f"Fallback submit failed for task {task.task_id}: {e}")
+        return False
+
+
+async def update_batch_counts(db: AsyncSession, batch_id: uuid.UUID) -> None:
+    """
+    Update batch job counts based on actual task statuses.
+    
+    This ensures the batch job's pending_count, running_count, etc. are always
+    in sync with the actual task statuses.
+    """
+    from storage.database.batch_models import BatchJob, BatchTask, BatchTaskStatus, BatchJobStatus
+    
+    # Count tasks by status
+    result = await db.execute(
+        select(BatchTask).where(BatchTask.batch_id == batch_id)
+    )
+    tasks = list(result.scalars().all())
+    
+    pending_count = sum(1 for t in tasks if t.status == BatchTaskStatus.PENDING)
+    queued_count = sum(1 for t in tasks if t.status == BatchTaskStatus.QUEUED)
+    running_count = sum(1 for t in tasks if t.status == BatchTaskStatus.RUNNING)
+    success_count = sum(1 for t in tasks if t.status == BatchTaskStatus.SUCCESS)
+    warning_count = sum(1 for t in tasks if t.status == BatchTaskStatus.WARNING)
+    failed_count = sum(1 for t in tasks if t.status == BatchTaskStatus.FAILED)
+    
+    # Update batch job
+    batch_result = await db.execute(
+        select(BatchJob).where(BatchJob.batch_id == batch_id)
+    )
+    batch = batch_result.scalar_one_or_none()
+    if batch:
+        batch.pending_count = pending_count
+        batch.running_count = running_count + queued_count  # queued counts as running
+        batch.success_count = success_count
+        batch.warning_count = warning_count
+        batch.failed_count = failed_count
+        
+        # Update batch status based on task completion
+        total = len(tasks)
+        completed = success_count + warning_count + failed_count
+        
+        if completed == total and total > 0:
+            # All tasks completed
+            if failed_count == 0:
+                batch.status = BatchJobStatus.SUCCESS
+            elif success_count == 0 and warning_count == 0:
+                batch.status = BatchJobStatus.FAILED
+            else:
+                batch.status = BatchJobStatus.PARTIAL_FAILED
+            batch.completed_at = datetime.utcnow()
+        elif running_count > 0 or queued_count > 0:
+            batch.status = BatchJobStatus.RUNNING
+        elif pending_count > 0:
+            batch.status = BatchJobStatus.RUNNING  # Still has pending tasks
+        
+        await db.commit()
+        logger.info(f"Updated batch {batch_id} counts: pending={pending_count}, running={running_count}, success={success_count}, failed={failed_count}")
+
+
 class BatchExecutor:
     """
     Executes batch tasks with concurrency control and state management.
@@ -181,60 +296,32 @@ class BatchExecutor:
                 "message": "No pending tasks to execute",
             }
 
-        # Check if native async task system is available
-        from api.async_task_service import get_async_task_service, ASYNC_TASKS_AVAILABLE
+        # Get async task service (may be None if not available)
+        from api.async_task_service import get_async_task_service
         async_task_service = get_async_task_service(self.graph_service)
-        use_native_async = ASYNC_TASKS_AVAILABLE and async_task_service.runtime is not None
         
         concurrency = batch.concurrency or 2
         submitted_count = 0
         
-        if use_native_async:
-            # Use native async task system with concurrency control
-            # Only submit up to N tasks (batch.concurrency) initially
-            for task in pending_tasks[:concurrency]:
-                try:
-                    # Atomically claim the task
-                    async with get_async_sessionmaker()() as claim_db:
-                        async with claim_db.begin():
-                            claim_result = await claim_db.execute(
-                                select(BatchTask)
-                                .where(BatchTask.task_id == task.task_id)
-                                .with_for_update()
-                            )
-                            locked_task = claim_result.scalar_one_or_none()
-                            if not locked_task or locked_task.status != BatchTaskStatus.PENDING:
-                                continue
-                            locked_task.status = BatchTaskStatus.QUEUED
-                            run_id = uuid.uuid4()
-                            locked_task.run_id = run_id
-                            locked_task.started_at = datetime.utcnow()
-                    
-                    # Submit to native async system
-                    await async_task_service.submit_task(
-                        db=db,
-                        task=task,
-                        deadline_sec=1800,
-                    )
-                    submitted_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to submit task {task.task_id} to async system: {e}")
-                    # Mark task as failed
-                    await self._mark_task_failed(task.task_id, batch_id, "SUBMIT_ERROR", str(e))
-                    continue
-        else:
-            # Fallback: execute tasks directly using asyncio.create_task
-            # This is the path used when native async system is not available
-            logger.info(f"Native async system not available, using direct execution fallback for batch {batch_id}")
-            tasks_to_execute = pending_tasks[:concurrency]
-            
-            for task in tasks_to_execute:
-                # Create a background task to execute the workflow
-                asyncio.create_task(
-                    self._execute_single_task_with_semaphore(batch, task),
-                    name=f"batch_task_{task.task_id}"
+        # Use unified submission function for all tasks
+        tasks_to_submit = pending_tasks[:concurrency]
+        for task in tasks_to_submit:
+            try:
+                success = await submit_task_to_execution(
+                    db=db,
+                    task=task,
+                    batch_id=batch_id,
+                    graph_service=self.graph_service,
+                    async_task_service=async_task_service,
+                    executor=self,
                 )
-                submitted_count += 1
+                if success:
+                    submitted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to submit task {task.task_id}: {e}")
+                # Mark task as failed
+                await self._mark_task_failed(task.task_id, batch_id, "SUBMIT_ERROR", str(e))
+                continue
 
         # Update batch counts
         await self._update_batch_counts_safe(batch_id)
@@ -418,7 +505,75 @@ class BatchExecutor:
         # Step 4: Update batch counts with a NEW short-lived session
         await self._update_batch_counts_safe(batch_id)
 
+        # Step 5: Trigger next pending task if there's capacity
+        await self._trigger_next_pending_task(batch_id)
+
         logger.info(f"Task {task_id} execution completed")
+
+    async def _trigger_next_pending_task(self, batch_id: uuid.UUID):
+        """
+        Trigger the next pending task if there's capacity in the concurrency slot.
+        This is called after a task completes to ensure pending tasks are picked up.
+        """
+        try:
+            async with get_async_sessionmaker()() as db:
+                # Get batch with current task counts
+                result = await db.execute(
+                    select(BatchJob).where(BatchJob.batch_id == batch_id)
+                )
+                batch = result.scalar_one_or_none()
+                if not batch:
+                    return
+
+                # Get current running count from actual tasks
+                running_result = await db.execute(
+                    select(func.count())
+                    .select_from(BatchTask)
+                    .where(
+                        BatchTask.batch_id == batch_id,
+                        BatchTask.status.in_([BatchTaskStatus.RUNNING, BatchTaskStatus.QUEUED])
+                    )
+                )
+                running_count = running_result.scalar() or 0
+
+                concurrency = batch.concurrency or 2
+                if running_count >= concurrency:
+                    return  # No capacity
+
+                # Get next pending task
+                pending_result = await db.execute(
+                    select(BatchTask)
+                    .where(
+                        BatchTask.batch_id == batch_id,
+                        BatchTask.status == BatchTaskStatus.PENDING
+                    )
+                    .order_by(BatchTask.created_at)
+                    .limit(1)
+                )
+                task = pending_result.scalar_one_or_none()
+                if not task:
+                    return  # No pending tasks
+
+                # Get async task service
+                from api.async_task_service import get_async_task_service
+                async_task_service = get_async_task_service(self.graph_service)
+
+                # Submit the task using unified function
+                success = await submit_task_to_execution(
+                    db=db,
+                    task=task,
+                    batch_id=batch_id,
+                    graph_service=self.graph_service,
+                    async_task_service=async_task_service,
+                    executor=self,
+                )
+                if success:
+                    logger.info(f"Triggered next pending task {task.task_id} for batch {batch_id}")
+                else:
+                    logger.warning(f"Failed to trigger next pending task {task.task_id}")
+
+        except Exception as e:
+            logger.error(f"Error triggering next pending task for batch {batch_id}: {e}")
 
     async def _update_task_final_status(
         self,
@@ -549,6 +704,7 @@ class BatchExecutor:
     async def _update_batch_counts_safe(self, batch_id: uuid.UUID):
         """
         Update batch counts with a new short-lived session.
+        Updates all counts: pending, running, success, warning, failed.
 
         Args:
             batch_id: Batch ID
@@ -565,6 +721,26 @@ class BatchExecutor:
                         return
 
                     # Count tasks by status
+                    pending_result = await count_db.execute(
+                        select(BatchTask).where(
+                            and_(
+                                BatchTask.batch_id == batch_id,
+                                BatchTask.status == BatchTaskStatus.PENDING,
+                            )
+                        )
+                    )
+                    batch.pending_count = len(pending_result.scalars().all())
+
+                    running_result = await count_db.execute(
+                        select(BatchTask).where(
+                            and_(
+                                BatchTask.batch_id == batch_id,
+                                BatchTask.status == BatchTaskStatus.RUNNING,
+                            )
+                        )
+                    )
+                    batch.running_count = len(running_result.scalars().all())
+
                     success_result = await count_db.execute(
                         select(BatchTask).where(
                             and_(
@@ -584,6 +760,15 @@ class BatchExecutor:
                         )
                     )
                     batch.failed_count = len(failed_result.scalars().all())
+
+                    # Update batch status based on counts
+                    if batch.pending_count == 0 and batch.running_count == 0:
+                        if batch.failed_count > 0:
+                            batch.status = BatchJobStatus.PARTIAL_FAILED if batch.success_count > 0 else BatchJobStatus.FAILED
+                        else:
+                            batch.status = BatchJobStatus.SUCCESS
+                    elif batch.running_count > 0 or batch.pending_count > 0:
+                        batch.status = BatchJobStatus.RUNNING
                 # Session is closed here
         except Exception as e:
             logger.error(f"Failed to update batch {batch_id} counts: {e}", exc_info=True)

@@ -88,10 +88,9 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
             await db.commit()
         return
     
-    # Submit next tasks
-    from api.async_task_service import get_async_task_service
+    # Submit next tasks using unified submission function
+    from api.batch_executor import submit_task_to_execution, update_batch_counts
     from main import service as graph_service
-    async_task_service = get_async_task_service(graph_service)
     
     submitted = 0
     for task in pending_tasks:
@@ -112,13 +111,28 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
                     locked_task.run_id = run_id
                     locked_task.started_at = datetime.utcnow()
             
-            # Submit to native async system
-            await async_task_service.submit_task(
-                db=db,
-                task=task,
-                deadline_sec=1800,
+            # Use unified submission function (native async or fallback)
+            success = await submit_task_to_execution(
+                db=claim_db,
+                task=locked_task,
+                graph_service=graph_service,
+                run_id=run_id,
             )
-            submitted += 1
+            if success:
+                submitted += 1
+            else:
+                # Mark task as failed if submission failed
+                async with get_async_sessionmaker()() as fail_db:
+                    async with fail_db.begin():
+                        fail_result = await fail_db.execute(
+                            select(BatchTask).where(BatchTask.task_id == task.task_id)
+                        )
+                        fail_task = fail_result.scalar_one_or_none()
+                        if fail_task:
+                            fail_task.status = BatchTaskStatus.FAILED
+                            fail_task.error_code = "SUBMIT_ERROR"
+                            fail_task.error_message = "Failed to submit task to execution system"
+                            fail_task.completed_at = datetime.utcnow()
         except Exception as e:
             logger.error(f"Failed to submit task {task.task_id} during refill: {e}")
             # Mark task as failed
@@ -140,6 +154,9 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
     
     if submitted > 0:
         logger.info(f"Refilled batch {batch_id}: submitted {submitted} more tasks")
+        # Update batch counts after successful submission
+        async with get_async_sessionmaker()() as count_db:
+            await update_batch_counts(count_db, batch_id)
 
 
 @router.post('')
