@@ -89,68 +89,51 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
         return
     
     # Submit next tasks using unified submission function
-    from api.batch_executor import submit_task_to_execution, update_batch_counts
+    from api.batch_executor import submit_task_to_execution, update_batch_counts, claim_task_for_execution, _revert_task_to_pending
     from main import service as graph_service
     
     submitted = 0
     for task in pending_tasks:
         try:
-            # Atomically claim the task using a separate session with row lock
+            # Atomically claim the task (PENDING → RUNNING)
+            run_id = uuid.uuid4()
             async with get_async_sessionmaker()() as claim_db:
-                async with claim_db.begin():
-                    claim_result = await claim_db.execute(
-                        select(BatchTask)
-                        .where(BatchTask.task_id == task.task_id)
-                        .with_for_update()
-                    )
-                    locked_task = claim_result.scalar_one_or_none()
-                    if not locked_task or locked_task.status != BatchTaskStatus.PENDING:
-                        continue  # Already claimed by another poll
-                    locked_task.status = BatchTaskStatus.QUEUED
-                    run_id = uuid.uuid4()
-                    locked_task.run_id = run_id
-                    locked_task.started_at = datetime.utcnow()
-            
-            # Use unified submission function (native async or fallback)
-            success, method = await submit_task_to_execution(
-                db=claim_db,
-                task=locked_task,
-                graph_service=graph_service,
-                run_id=run_id,
-            )
-            if success:
-                submitted += 1
-                logger.info(f"Starting task {locked_task.task_id} via {method}, run_id={run_id}")
-            else:
-                # Mark task as failed if submission failed
-                async with get_async_sessionmaker()() as fail_db:
-                    async with fail_db.begin():
-                        fail_result = await fail_db.execute(
-                            select(BatchTask).where(BatchTask.task_id == task.task_id)
-                        )
-                        fail_task = fail_result.scalar_one_or_none()
-                        if fail_task:
-                            fail_task.status = BatchTaskStatus.FAILED
-                            fail_task.error_code = "SUBMIT_ERROR"
-                            fail_task.error_message = "Failed to submit task to execution system"
-                            fail_task.completed_at = datetime.utcnow()
+                claimed = await claim_task_for_execution(claim_db, task.task_id, run_id)
+                if not claimed:
+                    logger.warning(f"Task {task.task_id} was already claimed by another caller during refill")
+                    continue
+                
+                # Task is now atomically claimed and committed as RUNNING
+                # Re-fetch the task in this session for submission
+                refetch_result = await claim_db.execute(
+                    select(BatchTask).where(BatchTask.task_id == task.task_id)
+                )
+                locked_task = refetch_result.scalar_one_or_none()
+                if not locked_task:
+                    logger.error(f"Task {task.task_id} not found after claim")
+                    continue
+                
+                # Use unified submission function (native async or fallback)
+                success, method = await submit_task_to_execution(
+                    db=claim_db,
+                    task=locked_task,
+                    graph_service=graph_service,
+                    run_id=run_id,
+                )
+                if success:
+                    submitted += 1
+                    logger.info(f"Starting task {locked_task.task_id} via {method}, run_id={run_id}")
+                else:
+                    # Revert task status to PENDING
+                    await _revert_task_to_pending(claim_db, task.task_id, "REFILL_SUBMIT_FAILED")
         except Exception as e:
             logger.error(f"Failed to submit task {task.task_id} during refill: {e}")
-            # Mark task as failed
+            # Revert task status to PENDING
             try:
-                async with get_async_sessionmaker()() as fail_db:
-                    async with fail_db.begin():
-                        fail_result = await fail_db.execute(
-                            select(BatchTask).where(BatchTask.task_id == task.task_id)
-                        )
-                        fail_task = fail_result.scalar_one_or_none()
-                        if fail_task:
-                            fail_task.status = BatchTaskStatus.FAILED
-                            fail_task.error_code = "SUBMIT_ERROR"
-                            fail_task.error_message = str(e)
-                            fail_task.completed_at = datetime.utcnow()
-            except Exception as inner_e:
-                logger.error(f"Failed to mark task {task.task_id} as failed: {inner_e}")
+                async with get_async_sessionmaker()() as revert_db:
+                    await _revert_task_to_pending(revert_db, task.task_id, "REFILL_EXCEPTION", str(e)[:500])
+            except Exception as revert_err:
+                logger.error(f"Failed to revert task {task.task_id}: {revert_err}")
             continue
     
     if submitted > 0:

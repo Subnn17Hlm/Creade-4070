@@ -139,6 +139,137 @@ def _extract_diagnostic_fields(result: Optional[Dict[str, Any]]) -> Optional[Dic
     return diagnostic if diagnostic else None
 
 
+async def claim_task_for_execution(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    run_id: uuid.UUID,
+) -> bool:
+    """
+    Atomically claim a task for execution using SELECT FOR UPDATE.
+    
+    This prevents race conditions where multiple callers (start_batch,
+    _trigger_next_pending_task, _refill_batch_slots) might try to execute
+    the same task concurrently.
+    
+    The claim is atomic: only the caller that successfully transitions
+    status from PENDING to RUNNING gets to execute the task.
+    
+    Args:
+        db: Database session (must be in a transaction)
+        task_id: Task ID to claim
+        run_id: Run ID to assign (used as execution lease)
+        
+    Returns:
+        True if the task was successfully claimed, False otherwise
+    """
+    from storage.database.batch_models import BatchTask, BatchTaskStatus
+    from sqlalchemy import update
+    
+    # Atomic update: only claim if status is still PENDING
+    result = await db.execute(
+        update(BatchTask)
+        .where(
+            BatchTask.task_id == task_id,
+            BatchTask.status == BatchTaskStatus.PENDING,
+        )
+        .values(
+            status=BatchTaskStatus.RUNNING,
+            run_id=run_id,
+            started_at=utc_now(),
+        )
+    )
+    
+    if result.rowcount == 1:
+        await db.commit()
+        logger.info(f"Task {task_id} claimed for execution, run_id={run_id}")
+        return True
+    else:
+        logger.warning(f"Task {task_id} claim failed: not in PENDING status (rowcount={result.rowcount})")
+        return False
+
+
+async def verify_run_lease(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    expected_run_id: uuid.UUID,
+) -> bool:
+    """
+    Verify that the current run_id matches the expected run_id.
+    
+    This is used to ensure that status updates (success, failure, rollback)
+    are only applied by the current execution lease holder.
+    
+    Args:
+        db: Database session
+        task_id: Task ID to verify
+        expected_run_id: Expected run_id (the lease)
+        
+    Returns:
+        True if the lease is valid, False otherwise
+    """
+    from storage.database.batch_models import BatchTask
+    
+    result = await db.execute(
+        select(BatchTask.run_id).where(BatchTask.task_id == task_id)
+    )
+    current_run_id = result.scalar_one_or_none()
+    
+    if current_run_id == expected_run_id:
+        return True
+    
+    logger.warning(
+        f"Run lease mismatch for task {task_id}: "
+        f"expected={expected_run_id}, current={current_run_id}"
+    )
+    return False
+
+
+async def _revert_task_to_pending(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    error_code: str,
+    error_message: str = "",
+) -> None:
+    """
+    Revert a task to PENDING status after a submission failure.
+    
+    This is used when a task was atomically claimed (RUNNING) but the
+    execution submission failed. The task is reverted to PENDING so it
+    can be retried.
+    
+    Args:
+        db: Database session
+        task_id: Task ID to revert
+        error_code: Error code to record
+        error_message: Error message to record
+    """
+    from storage.database.batch_models import BatchTask, BatchTaskStatus
+    from sqlalchemy import update
+    
+    try:
+        result = await db.execute(
+            update(BatchTask)
+            .where(
+                BatchTask.task_id == task_id,
+                BatchTask.status == BatchTaskStatus.RUNNING,
+            )
+            .values(
+                status=BatchTaskStatus.PENDING,
+                run_id=None,
+                started_at=None,
+                error_code=error_code,
+                error_message=error_message[:500] if error_message else "",
+            )
+        )
+        await db.commit()
+        if result.rowcount == 1:
+            logger.info(f"Reverted task {task_id} to PENDING after {error_code}")
+        else:
+            logger.warning(f"Task {task_id} revert failed: not in RUNNING status (rowcount={result.rowcount})")
+    except Exception as e:
+        logger.error(f"Failed to revert task {task_id}: {e}")
+
+
 async def submit_task_to_execution(
     db: AsyncSession,
     task: BatchTask,
@@ -467,10 +598,17 @@ class BatchExecutor:
             try:
                 # Generate run_id for this task execution
                 run_id = uuid.uuid4()
-                task.run_id = run_id
-                task.started_at = datetime.utcnow()
-                task.status = BatchTaskStatus.RUNNING
                 
+                # Atomically claim the task (PENDING → RUNNING)
+                # This prevents race conditions with concurrent start_batch,
+                # _trigger_next_pending_task, or _refill_batch_slots calls
+                claimed = await claim_task_for_execution(db, task.task_id, run_id)
+                if not claimed:
+                    logger.warning(f"Task {task.task_id} was already claimed by another caller, skipping")
+                    continue
+                
+                # Task is now atomically claimed and committed as RUNNING
+                # Submit to execution system
                 success, method = await submit_task_to_execution(
                     db=db,
                     task=task,
@@ -486,16 +624,12 @@ class BatchExecutor:
                     logger.info(f"Starting task {task.task_id} via {method}, run_id={run_id}")
                 else:
                     logger.error(f"Failed to submit task {task.task_id}: submit_task_to_execution returned False")
-                    # Revert task status
-                    task.status = BatchTaskStatus.PENDING
-                    task.run_id = None
-                    task.started_at = None
+                    # Revert task status to PENDING in a new transaction
+                    await _revert_task_to_pending(db, task.task_id, "SUBMIT_FAILED")
             except Exception as e:
                 logger.error(f"Failed to submit task {task.task_id}: {e}")
-                # Revert task status
-                task.status = BatchTaskStatus.PENDING
-                task.run_id = None
-                task.started_at = None
+                # Revert task status to PENDING in a new transaction
+                await _revert_task_to_pending(db, task.task_id, "SUBMIT_EXCEPTION")
                 continue
         
         await db.commit()
@@ -693,6 +827,7 @@ class BatchExecutor:
             success=workflow_success,
             result=workflow_result,
             error=workflow_error,
+            run_id=run_id,
         )
 
         # Step 4: Update batch counts with a NEW short-lived session
@@ -716,10 +851,13 @@ class BatchExecutor:
         has already been set to RUNNING by start_batch, so we skip the claiming step
         and go directly to workflow execution.
         
+        Uses run_id as execution lease: only the caller with matching run_id can execute.
+        This prevents old/duplicate executors from running or overwriting new state.
+        
         Args:
             batch_id: Batch job ID
             task_id: Task ID
-            run_id: Run ID for this execution (already assigned by start_batch)
+            run_id: Run ID for this execution (execution lease)
         """
         logger.info(f"Executing claimed task {task_id} for batch {batch_id}, run_id={run_id}")
         
@@ -739,6 +877,14 @@ class BatchExecutor:
                 if task.status != BatchTaskStatus.RUNNING:
                     logger.warning(
                         f"Task {task_id} is no longer RUNNING (status={task.status}), skipping execution"
+                    )
+                    return
+                
+                # Verify run_id lease: only the caller with matching run_id can execute
+                if task.run_id != run_id:
+                    logger.warning(
+                        f"Task {task_id} run_id mismatch: expected={run_id}, actual={task.run_id}. "
+                        f"This is a duplicate/old executor, skipping execution."
                     )
                     return
                 
@@ -800,6 +946,7 @@ class BatchExecutor:
             success=workflow_success,
             result=workflow_result,
             error=workflow_error,
+            run_id=run_id,
         )
         
         # Update batch counts
@@ -814,6 +961,8 @@ class BatchExecutor:
         """
         Trigger the next pending task if there's capacity in the concurrency slot.
         This is called after a task completes to ensure pending tasks are picked up.
+        
+        Uses atomic claim to prevent race conditions with concurrent callers.
         """
         try:
             async with get_async_sessionmaker()() as db:
@@ -854,18 +1003,15 @@ class BatchExecutor:
                 if not task:
                     return  # No pending tasks
 
-                # Get async task service
-                from api.async_task_service import get_async_task_service
-                async_task_service = get_async_task_service(self.graph_service)
-
-                # Generate run_id for this task execution
+                # Atomically claim the task (PENDING → RUNNING)
                 run_id = uuid.uuid4()
-                task.run_id = run_id
-                task.started_at = datetime.utcnow()
-                task.status = BatchTaskStatus.RUNNING
-                await db.commit()
+                claimed = await claim_task_for_execution(db, task.task_id, run_id)
+                if not claimed:
+                    logger.warning(f"Task {task.task_id} was already claimed by another caller")
+                    return
 
-                # Submit the task using unified function
+                # Task is now atomically claimed and committed as RUNNING
+                # Submit to execution system
                 success, method = await submit_task_to_execution(
                     db=db,
                     task=task,
@@ -876,6 +1022,8 @@ class BatchExecutor:
                     logger.info(f"Starting task {task.task_id} via {method}, run_id={run_id}")
                 else:
                     logger.warning(f"Failed to trigger next pending task {task.task_id}")
+                    # Revert task status to PENDING
+                    await _revert_task_to_pending(db, task.task_id, "TRIGGER_SUBMIT_FAILED")
 
         except Exception as e:
             logger.error(f"Error triggering next pending task for batch {batch_id}: {e}")
@@ -887,10 +1035,15 @@ class BatchExecutor:
         success: bool,
         result: Optional[Dict[str, Any]],
         error: Optional[str],
+        run_id: Optional[uuid.UUID] = None,
         max_retries: int = 3,
     ):
         """
         Update task final status with retry logic for connection errors.
+        
+        Uses run_id as execution lease: only updates if the task's current run_id
+        matches the expected run_id. This prevents old/duplicate executors from
+        overwriting new state.
 
         Args:
             task_id: Task ID
@@ -898,6 +1051,7 @@ class BatchExecutor:
             success: Whether the task succeeded
             result: Workflow result (if successful)
             error: Error message (if failed)
+            run_id: Expected run_id (execution lease). If provided, verifies lease before updating.
             max_retries: Maximum number of retries for connection errors
         """
         for attempt in range(max_retries):
@@ -910,6 +1064,17 @@ class BatchExecutor:
                         task = result_query.scalar_one_or_none()
 
                         if not task:
+                            logger.error(f"Task {task_id} not found for status update")
+                            return
+
+                        # Verify run_id lease if provided
+                        if run_id is not None and task.run_id != run_id:
+                            logger.warning(
+                                f"Task {task_id} run_id mismatch during status update: "
+                                f"expected={run_id}, actual={task.run_id}. "
+                                f"Skipping status update (old/duplicate executor)."
+                            )
+                            return
                             logger.error(f"Task {task_id} not found for status update")
                             return
 
@@ -980,15 +1145,21 @@ class BatchExecutor:
         batch_id: uuid.UUID,
         error_code: str,
         error_message: str,
+        run_id: Optional[uuid.UUID] = None,
     ):
         """
         Mark a task as failed with a new short-lived session.
+        
+        Uses run_id as execution lease: only marks as failed if the task's current
+        run_id matches the expected run_id. This prevents old/duplicate executors
+        from overwriting new state.
 
         Args:
             task_id: Task ID
             batch_id: Batch ID
             error_code: Error code
             error_message: Error message
+            run_id: Expected run_id (execution lease). If provided, verifies lease before updating.
         """
         try:
             async with get_async_sessionmaker()() as error_db:
@@ -998,6 +1169,14 @@ class BatchExecutor:
                     )
                     task = result.scalar_one_or_none()
                     if task and task.status == BatchTaskStatus.RUNNING:
+                        # Verify run_id lease if provided
+                        if run_id is not None and task.run_id != run_id:
+                            logger.warning(
+                                f"Task {task_id} run_id mismatch during mark_failed: "
+                                f"expected={run_id}, actual={task.run_id}. "
+                                f"Skipping (old/duplicate executor)."
+                            )
+                            return
                         task.status = BatchTaskStatus.FAILED
                         task.completed_at = datetime.utcnow()
                         task.error_code = error_code

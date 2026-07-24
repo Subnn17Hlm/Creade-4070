@@ -12,7 +12,7 @@ Tests the scenario where:
 import uuid
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from api.batch_executor import BatchExecutor, submit_task_to_execution
 from storage.database.batch_models import (
@@ -95,18 +95,44 @@ class TestStartBatchRecoveryScheduling:
         
         # Mock get_async_sessionmaker for _update_batch_counts_safe
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()  # Use MagicMock instead of AsyncMock
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            # Mock begin() as async context manager
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            
+            # Mock execute as AsyncMock
+            mock_session.execute = AsyncMock()
             
             # Mock the count query in _update_batch_counts_safe
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            # Mock ASYNC_TASKS_AVAILABLE to False to force fallback path
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                # Start batch - should recover and submit the pending task
-                result = await executor.start_batch(db, batch_id)
+            # Mock claim_task_for_execution to return True (successful claim)
+            # and also update the task status to RUNNING
+            async def mock_claim_side_effect(db_session, task_id, run_id):
+                # Find the task and update its status
+                for t in tasks:
+                    if t.task_id == task_id:
+                        t.status = BatchTaskStatus.RUNNING
+                        t.run_id = run_id
+                        t.started_at = datetime.now(timezone.utc)
+                        return True
+                return False
+            
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                # Mock ASYNC_TASKS_AVAILABLE to False to force fallback path
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    # Start batch - should recover and submit the pending task
+                    result = await executor.start_batch(db, batch_id)
         
         # Verify the result
         assert result["submitted_count"] == 1, f"Expected 1 submitted task, got {result['submitted_count']}"
@@ -222,17 +248,37 @@ class TestStartBatchRecoveryScheduling:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if task.task_id == task_id and task.status == BatchTaskStatus.PENDING:
+                task.status = BatchTaskStatus.RUNNING
+                task.run_id = run_id
+                task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                # First call - should submit the task
-                result1 = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    # First call - should submit the task
+                    result1 = await executor.start_batch(db, batch_id)
         
         assert result1["submitted_count"] == 1
         
@@ -245,8 +291,16 @@ class TestStartBatchRecoveryScheduling:
         db.execute.return_value = batch_result2
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             # Second call - should NOT submit again
             result2 = await executor.start_batch(db, batch_id)
@@ -371,16 +425,36 @@ class TestStartBatchResponseFields:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if task.task_id == task_id and task.status == BatchTaskStatus.PENDING:
+                task.status = BatchTaskStatus.RUNNING
+                task.run_id = run_id
+                task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                result = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    result = await executor.start_batch(db, batch_id)
         
         # Verify all required fields exist
         assert "selected_count" in result, "Missing selected_count"
@@ -572,16 +646,36 @@ class TestOrphanTaskRecovery:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
+                orphan_task.status = BatchTaskStatus.RUNNING
+                orphan_task.run_id = run_id
+                orphan_task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                result = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    result = await executor.start_batch(db, batch_id)
         
         # The orphan should have been recovered to PENDING, then submitted
         assert result["submitted_count"] == 1, \
@@ -824,17 +918,37 @@ class TestDatetimeTimezoneHandling:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
+                orphan_task.status = BatchTaskStatus.RUNNING
+                orphan_task.run_id = run_id
+                orphan_task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                # Should NOT raise "can't subtract offset-naive and offset-aware"
-                result = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    # Should NOT raise "can't subtract offset-naive and offset-aware"
+                    result = await executor.start_batch(db, batch_id)
         
         # Orphan should have been recovered
         assert result["submitted_count"] == 1
@@ -874,16 +988,36 @@ class TestDatetimeTimezoneHandling:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
+                orphan_task.status = BatchTaskStatus.RUNNING
+                orphan_task.run_id = run_id
+                orphan_task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                result = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    result = await executor.start_batch(db, batch_id)
         
         assert result["submitted_count"] == 1
 
@@ -923,16 +1057,36 @@ class TestDatetimeTimezoneHandling:
         batch_result.scalar_one_or_none.return_value = batch
         db.execute.return_value = batch_result
         
+        # Mock claim_task_for_execution to update task status
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
+                orphan_task.status = BatchTaskStatus.RUNNING
+                orphan_task.run_id = run_id
+                orphan_task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
             
             count_result = MagicMock()
             count_result.scalar.return_value = 0
             mock_session.execute.return_value = count_result
             
-            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
-                result = await executor.start_batch(db, batch_id)
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    result = await executor.start_batch(db, batch_id)
         
         assert result["submitted_count"] == 1
 
@@ -1020,3 +1174,247 @@ class TestDatetimeTimezoneHandling:
         # Task with started_at=None should not be recovered (condition: t.started_at is falsy)
         # So it stays RUNNING and blocks submission
         assert result["submitted_count"] == 0
+
+
+class TestConcurrencySafety:
+    """
+    Tests for concurrent execution safety:
+    - Two concurrent start_batch calls should not double-execute the same task
+    - Recovery and refill concurrent calls should not double-execute
+    - Old attempt callbacks should not overwrite new state
+    """
+
+    @pytest.fixture
+    def mock_graph_service(self):
+        service = AsyncMock()
+        service.run = AsyncMock(return_value={
+            "status": "success",
+            "final_video_url": "https://example.com/video.mp4",
+        })
+        return service
+
+    @pytest.fixture
+    def executor(self, mock_graph_service):
+        return BatchExecutor(mock_graph_service)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_start_batch_only_claims_once(self, executor, mock_graph_service):
+        """
+        Two concurrent start_batch calls should only claim the task once.
+        The second call should find the task already RUNNING and skip it.
+        """
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.CREATED,
+            total_count=1,
+            pending_count=1,
+            running_count=0,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.PENDING,
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        # Track claim calls
+        claim_calls = []
+        
+        async def mock_claim_side_effect(db_session, task_id, run_id):
+            claim_calls.append((task_id, run_id))
+            # First call succeeds, subsequent calls fail (simulating atomic claim)
+            if task.status == BatchTaskStatus.PENDING:
+                task.status = BatchTaskStatus.RUNNING
+                task.run_id = run_id
+                task.started_at = datetime.now(timezone.utc)
+                return True
+            return False
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = MagicMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock()
+            
+            count_result = MagicMock()
+            count_result.scalar.return_value = 0
+            mock_session.execute.return_value = count_result
+            
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+                
+                with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                    # First call - should claim and submit
+                    result1 = await executor.start_batch(db, batch_id)
+                    
+                    # Second call - should find task already RUNNING
+                    result2 = await executor.start_batch(db, batch_id)
+        
+        # First call should have submitted
+        assert result1["submitted_count"] == 1
+        # Second call should NOT have submitted (task already RUNNING)
+        assert result2["submitted_count"] == 0
+        # claim_task_for_execution should have been called only once
+        # (second call returns early because running_count > 0)
+        assert len(claim_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_run_id_lease_prevents_old_callback(self, executor, mock_graph_service):
+        """
+        Old attempt callback with mismatched run_id should not overwrite new state.
+        """
+        task_id = uuid.uuid4()
+        batch_id = uuid.uuid4()
+        old_run_id = uuid.uuid4()
+        new_run_id = uuid.uuid4()
+        
+        db = AsyncMock()
+        
+        # Task is now running with new_run_id (new attempt)
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            run_id=new_run_id,  # New run_id
+            input_data={"script_text": "Test"},
+        )
+        
+        task_result = MagicMock()
+        task_result.scalar_one_or_none.return_value = task
+        db.execute.return_value = task_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = MagicMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock(return_value=task_result)
+            
+            # Old attempt tries to update status with old_run_id
+            await executor._update_task_final_status(
+                task_id=task_id,
+                batch_id=batch_id,
+                success=True,
+                result={"status": "success", "final_video_url": "https://old.com/video.mp4"},
+                error=None,
+                run_id=old_run_id,  # Old run_id - should be rejected
+            )
+        
+        # Task should NOT have been updated (still has new_run_id)
+        assert task.run_id == new_run_id
+        # Task status should NOT have changed to SUCCESS
+        assert task.status == BatchTaskStatus.RUNNING
+
+    @pytest.mark.asyncio
+    async def test_mark_failed_with_wrong_run_id_rejected(self, executor, mock_graph_service):
+        """
+        _mark_task_failed with wrong run_id should not mark the task as failed.
+        """
+        task_id = uuid.uuid4()
+        batch_id = uuid.uuid4()
+        old_run_id = uuid.uuid4()
+        new_run_id = uuid.uuid4()
+        
+        db = AsyncMock()
+        
+        # Task is now running with new_run_id
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            run_id=new_run_id,
+            input_data={"script_text": "Test"},
+        )
+        
+        task_result = MagicMock()
+        task_result.scalar_one_or_none.return_value = task
+        db.execute.return_value = task_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = MagicMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            mock_session.execute = AsyncMock(return_value=task_result)
+            
+            # Old attempt tries to mark as failed with old_run_id
+            await executor._mark_task_failed(
+                task_id=task_id,
+                batch_id=batch_id,
+                error_code="OLD_ATTEMPT_ERROR",
+                error_message="Old attempt failed",
+                run_id=old_run_id,  # Wrong run_id
+            )
+        
+        # Task should NOT have been marked as failed
+        assert task.status == BatchTaskStatus.RUNNING
+        assert task.run_id == new_run_id
+
+    @pytest.mark.asyncio
+    async def test_execute_claimed_task_verifies_run_id(self, executor, mock_graph_service):
+        """
+        _execute_claimed_task should verify run_id before executing.
+        """
+        task_id = uuid.uuid4()
+        batch_id = uuid.uuid4()
+        correct_run_id = uuid.uuid4()
+        wrong_run_id = uuid.uuid4()
+        
+        # Task is RUNNING with correct_run_id
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            run_id=correct_run_id,
+            input_data={"script_text": "Test"},
+        )
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = MagicMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            task_result = MagicMock()
+            task_result.scalar_one_or_none.return_value = task
+            mock_session.execute = AsyncMock(return_value=task_result)
+            
+            # Try to execute with wrong run_id
+            await executor._execute_claimed_task(
+                batch_id=batch_id,
+                task_id=task_id,
+                run_id=wrong_run_id,  # Wrong run_id
+            )
+        
+        # Workflow should NOT have been called
+        mock_graph_service.run.assert_not_called()
