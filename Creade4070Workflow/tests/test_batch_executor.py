@@ -128,7 +128,7 @@ class TestBatchExecutor:
         
         # Should return current status without re-executing
         assert response["status"] == BatchJobStatus.RUNNING
-        assert "already started" in response["message"]
+        assert "already complete" in response["message"] or "no pending" in response["message"]
 
     @pytest.mark.asyncio
     async def test_single_task_failure_isolation(self, executor, mock_graph_service):
@@ -342,6 +342,7 @@ class TestBatchExecutor:
             )
             for i in range(2)
         ]
+        batch.tasks = tasks  # Set up relationship for start_batch task counting
         
         # Mock database
         batch_result = MagicMock()
@@ -365,7 +366,7 @@ class TestBatchExecutor:
             # Start batch
             result = await executor.start_batch(db, batch.batch_id)
             
-            # Should be success
+            # Should be success or running (tasks execute asynchronously)
             assert result["status"] in [BatchJobStatus.SUCCESS, BatchJobStatus.RUNNING]
 
     @pytest.mark.asyncio

@@ -270,17 +270,47 @@ class BatchExecutor:
         if not batch:
             raise ValueError(f"Batch {batch_id} not found")
 
-        if batch.status != BatchJobStatus.CREATED:
+        # Count real task statistics from database
+        pending_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.PENDING)
+        running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING)
+        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS)
+        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED)
+
+        # Check if batch is already fully complete
+        if pending_count == 0 and running_count == 0:
             return {
                 "batch_id": str(batch.batch_id),
                 "status": batch.status,
-                "message": f"Batch already started (status: {batch.status})",
+                "submitted_count": 0,
+                "message": "Batch already complete (no pending or running tasks)",
+                "statistics": {
+                    "pending": pending_count,
+                    "running": running_count,
+                    "success": success_count,
+                    "failed": failed_count,
+                },
             }
 
-        # Update batch to running
-        batch.status = BatchJobStatus.RUNNING
-        batch.started_at = datetime.utcnow()
-        await db.commit()
+        # Check if there are already running tasks (don't start more)
+        if running_count > 0:
+            return {
+                "batch_id": str(batch.batch_id),
+                "status": batch.status,
+                "submitted_count": 0,
+                "message": f"Batch already has {running_count} running task(s)",
+                "statistics": {
+                    "pending": pending_count,
+                    "running": running_count,
+                    "success": success_count,
+                    "failed": failed_count,
+                },
+            }
+
+        # Update batch to running (if not already)
+        if batch.status != BatchJobStatus.RUNNING:
+            batch.status = BatchJobStatus.RUNNING
+            batch.started_at = batch.started_at or datetime.utcnow()
+            await db.commit()
 
         # Get pending tasks
         pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
