@@ -8,11 +8,38 @@ including concurrency control, state management, and error handling.
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+
+def ensure_utc_aware(dt: Optional[datetime]) -> Optional[datetime]:
+    """
+    Normalize a datetime to UTC-aware.
+    
+    Rules:
+    - None → None
+    - naive datetime → assume UTC, attach tzinfo
+    - aware datetime → convert to UTC
+    
+    This prevents "can't subtract offset-naive and offset-aware datetimes" errors
+    when comparing datetimes from different sources (database, user input, etc.).
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # Naive datetime: assume it's UTC and attach tzinfo
+        return dt.replace(tzinfo=timezone.utc)
+    else:
+        # Aware datetime: convert to UTC
+        return dt.astimezone(timezone.utc)
+
+
+def utc_now() -> datetime:
+    """Return current UTC time as a timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 from storage.database.db import get_async_sessionmaker
 from storage.database.batch_models import (
@@ -298,11 +325,12 @@ class BatchExecutor:
 
         # Detect and recover orphaned RUNNING tasks (running > 30 minutes with no progress)
         orphan_timeout = timedelta(minutes=30)
-        now = datetime.utcnow()
+        now = utc_now()
         orphan_count = 0
         for t in batch.tasks:
             if t.status == BatchTaskStatus.RUNNING and t.started_at:
-                running_duration = now - t.started_at
+                started_at_aware = ensure_utc_aware(t.started_at)
+                running_duration = now - started_at_aware
                 if running_duration > orphan_timeout:
                     logger.warning(
                         f"Detected orphan task {t.task_id}: RUNNING for {running_duration}, "
@@ -1354,7 +1382,7 @@ class BatchExecutor:
             Result with recovered task count
         """
         # Find tasks stuck in running for too long
-        timeout_threshold = datetime.utcnow() - timedelta(minutes=TASK_RUNNING_TIMEOUT_MINUTES)
+        timeout_threshold = utc_now() - timedelta(minutes=TASK_RUNNING_TIMEOUT_MINUTES)
 
         result = await db.execute(
             select(BatchTask)
@@ -1373,7 +1401,7 @@ class BatchExecutor:
         # Mark stuck tasks as failed
         for task in stuck_tasks:
             task.status = BatchTaskStatus.FAILED
-            task.completed_at = datetime.utcnow()
+            task.completed_at = utc_now()
             task.error_code = "TIMEOUT"
             task.error_message = f"Task stuck in running state for > {TASK_RUNNING_TIMEOUT_MINUTES} minutes"
 

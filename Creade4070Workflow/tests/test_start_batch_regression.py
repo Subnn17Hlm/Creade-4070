@@ -12,7 +12,7 @@ Tests the scenario where:
 import uuid
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from api.batch_executor import BatchExecutor, submit_task_to_execution
 from storage.database.batch_models import (
@@ -735,3 +735,288 @@ class TestExecuteClaimedTask:
         
         # Workflow should NOT have been called
         mock_graph_service.run.assert_not_called()
+
+
+class TestDatetimeTimezoneHandling:
+    """Test that datetime comparisons handle naive/aware correctly."""
+
+    @pytest.fixture
+    def mock_graph_service(self):
+        service = AsyncMock()
+        service.run = AsyncMock(return_value={
+            "status": "success",
+            "final_video_url": "https://example.com/video.mp4",
+        })
+        return service
+
+    @pytest.fixture
+    def executor(self, mock_graph_service):
+        return BatchExecutor(mock_graph_service)
+
+    def test_ensure_utc_aware_none(self):
+        """None input returns None."""
+        from api.batch_executor import ensure_utc_aware
+        assert ensure_utc_aware(None) is None
+
+    def test_ensure_utc_aware_naive(self):
+        """Naive datetime gets UTC tzinfo attached."""
+        from api.batch_executor import ensure_utc_aware
+        from datetime import timezone
+        
+        naive_dt = datetime(2026, 1, 1, 12, 0, 0)
+        result = ensure_utc_aware(naive_dt)
+        
+        assert result.tzinfo is not None
+        assert result.tzinfo == timezone.utc
+        assert result.year == 2026
+        assert result.hour == 12
+
+    def test_ensure_utc_aware_already_aware(self):
+        """Aware datetime is converted to UTC."""
+        from api.batch_executor import ensure_utc_aware
+        from datetime import timezone, timedelta
+        
+        # Create a datetime in UTC+5
+        tz_plus5 = timezone(timedelta(hours=5))
+        aware_dt = datetime(2026, 1, 1, 17, 0, 0, tzinfo=tz_plus5)  # 17:00+05 = 12:00 UTC
+        result = ensure_utc_aware(aware_dt)
+        
+        assert result.tzinfo == timezone.utc
+        assert result.hour == 12  # Converted to UTC
+
+    def test_utc_now_is_aware(self):
+        """utc_now() returns timezone-aware datetime."""
+        from api.batch_executor import utc_now
+        
+        now = utc_now()
+        assert now.tzinfo is not None
+
+    @pytest.mark.asyncio
+    async def test_orphan_recovery_with_naive_started_at(self, executor, mock_graph_service):
+        """Orphan recovery works when started_at is naive UTC (from database)."""
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # Naive datetime (as returned by most databases)
+        orphan_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.utcnow() - timedelta(minutes=45),  # naive, 45 min ago
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [orphan_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            count_result = MagicMock()
+            count_result.scalar.return_value = 0
+            mock_session.execute.return_value = count_result
+            
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                # Should NOT raise "can't subtract offset-naive and offset-aware"
+                result = await executor.start_batch(db, batch_id)
+        
+        # Orphan should have been recovered
+        assert result["submitted_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_orphan_recovery_with_aware_started_at(self, executor, mock_graph_service):
+        """Orphan recovery works when started_at is timezone-aware UTC."""
+        from datetime import timezone
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # Aware datetime in UTC
+        orphan_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.now(timezone.utc) - timedelta(minutes=45),  # aware UTC, 45 min ago
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [orphan_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            count_result = MagicMock()
+            count_result.scalar.return_value = 0
+            mock_session.execute.return_value = count_result
+            
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                result = await executor.start_batch(db, batch_id)
+        
+        assert result["submitted_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_orphan_recovery_with_different_utc_offset(self, executor, mock_graph_service):
+        """Orphan recovery works with different UTC offsets."""
+        from datetime import timezone
+        
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # Aware datetime in UTC+8 (e.g., China Standard Time)
+        tz_cst = timezone(timedelta(hours=8))
+        orphan_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.now(tz_cst) - timedelta(minutes=45),  # aware UTC+8, 45 min ago
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [orphan_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            count_result = MagicMock()
+            count_result.scalar.return_value = 0
+            mock_session.execute.return_value = count_result
+            
+            with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                result = await executor.start_batch(db, batch_id)
+        
+        assert result["submitted_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_recent_task_not_recovered(self, executor, mock_graph_service):
+        """Task running for < 30 minutes is NOT recovered."""
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        recent_task = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=datetime.utcnow() - timedelta(minutes=5),  # naive, only 5 min ago
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [recent_task]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            result = await executor.start_batch(db, batch_id)
+        
+        # Should NOT submit - task is still legitimately running
+        assert result["submitted_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_started_at_none_is_safe(self, executor, mock_graph_service):
+        """Task with started_at=None does not crash."""
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+        
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=1,
+            pending_count=0,
+            running_count=1,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+        
+        # RUNNING but started_at is None (edge case)
+        task_no_started = BatchTask(
+            task_id=uuid.uuid4(),
+            batch_id=batch_id,
+            row_number=1,
+            status=BatchTaskStatus.RUNNING,
+            started_at=None,  # No started_at
+            run_id=uuid.uuid4(),
+            input_data={"script_text": "Test"},
+        )
+        batch.tasks = [task_no_started]
+        
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+        
+        with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
+            mock_session = AsyncMock()
+            mock_sessionmaker.return_value.return_value.__aenter__.return_value = mock_session
+            
+            # Should NOT raise any exception
+            result = await executor.start_batch(db, batch_id)
+        
+        # Task with started_at=None should not be recovered (condition: t.started_at is falsy)
+        # So it stays RUNNING and blocks submission
+        assert result["submitted_count"] == 0
