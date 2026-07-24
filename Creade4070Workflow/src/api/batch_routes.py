@@ -98,9 +98,9 @@ async def _refill_batch_slots(db: AsyncSession, batch_id: uuid.UUID):
             # Atomically claim the task (PENDING → RUNNING)
             run_id = uuid.uuid4()
             async with get_async_sessionmaker()() as claim_db:
-                claimed = await claim_task_for_execution(task.task_id, run_id)
+                claimed, diagnostic_info = await claim_task_for_execution(task.task_id, run_id)
                 if not claimed:
-                    logger.warning(f"Task {task.task_id} was already claimed by another caller during refill")
+                    logger.warning(f"Task {task.task_id} was already claimed by another caller during refill: {diagnostic_info}")
                     continue
                 
                 # Task is now atomically claimed and committed as RUNNING

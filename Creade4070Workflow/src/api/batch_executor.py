@@ -38,8 +38,8 @@ def ensure_utc_aware(dt: Optional[datetime]) -> Optional[datetime]:
 
 
 def utc_now() -> datetime:
-    """Return current UTC time as a timezone-aware datetime."""
-    return datetime.now(timezone.utc)
+    """Return current UTC time as a naive datetime (for database compatibility)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from storage.database.db import get_async_sessionmaker
 from storage.database.batch_models import (
@@ -142,7 +142,7 @@ def _extract_diagnostic_fields(result: Optional[Dict[str, Any]]) -> Optional[Dic
 async def claim_task_for_execution(
     task_id: uuid.UUID,
     run_id: uuid.UUID,
-) -> bool:
+) -> tuple[bool, dict]:
     """
     Atomically claim a task for execution using a dedicated session.
     
@@ -160,36 +160,67 @@ async def claim_task_for_execution(
         run_id: Run ID to assign (used as execution lease)
         
     Returns:
-        True if the task was successfully claimed, False otherwise
+        Tuple of (success: bool, diagnostic_info: dict)
     """
     from storage.database.batch_models import BatchTask, BatchTaskStatus
     from storage.database.db import get_async_sessionmaker
-    from sqlalchemy import update
+    from sqlalchemy import update, select
+    
+    diagnostic_info = {
+        "task_id": str(task_id),
+        "task_id_type": type(task_id).__name__,
+        "run_id": str(run_id),
+        "run_id_type": type(run_id).__name__,
+        "pending_status_value": BatchTaskStatus.PENDING.value,
+        "pending_status_type": type(BatchTaskStatus.PENDING).__name__,
+    }
     
     # Use a dedicated session to ensure isolation
     async with get_async_sessionmaker()() as db:
+        # First, query the task to get its current state for diagnostics
+        query_result = await db.execute(
+            select(BatchTask.task_id, BatchTask.batch_id, BatchTask.status, BatchTask.run_id)
+            .where(BatchTask.task_id == task_id)
+        )
+        task_row = query_result.first()
+        
+        if task_row:
+            diagnostic_info["actual_task_id"] = str(task_row.task_id)
+            diagnostic_info["actual_task_id_type"] = type(task_row.task_id).__name__
+            diagnostic_info["actual_batch_id"] = str(task_row.batch_id)
+            diagnostic_info["actual_status"] = task_row.status
+            diagnostic_info["actual_status_type"] = type(task_row.status).__name__
+            diagnostic_info["actual_run_id"] = str(task_row.run_id) if task_row.run_id else None
+            diagnostic_info["status_matches_pending"] = (task_row.status == BatchTaskStatus.PENDING.value)
+        else:
+            diagnostic_info["task_not_found"] = True
+        
         # Atomic update: only claim if status is still PENDING
+        # Use .value to ensure we're comparing strings, not enum objects
         result = await db.execute(
             update(BatchTask)
             .where(
                 BatchTask.task_id == task_id,
-                BatchTask.status == BatchTaskStatus.PENDING,
+                BatchTask.status == BatchTaskStatus.PENDING.value,
             )
             .values(
-                status=BatchTaskStatus.RUNNING,
+                status=BatchTaskStatus.RUNNING.value,
                 run_id=run_id,
                 started_at=utc_now(),
             )
         )
         
+        diagnostic_info["update_rowcount"] = result.rowcount
+        diagnostic_info["sql_condition"] = f"task_id={task_id} AND status={BatchTaskStatus.PENDING.value}"
+        
         if result.rowcount == 1:
             await db.commit()
             logger.info(f"Task {task_id} claimed for execution, run_id={run_id}")
-            return True
+            return True, diagnostic_info
         else:
-            logger.warning(f"Task {task_id} claim failed: not in PENDING status (rowcount={result.rowcount})")
+            logger.warning(f"Task {task_id} claim failed: rowcount={result.rowcount}, diagnostic={diagnostic_info}")
             await db.rollback()
-            return False
+            return False, diagnostic_info
 
 
 async def verify_run_lease(
@@ -597,6 +628,8 @@ class BatchExecutor:
         submitted_count = 0
         native_async_count = 0
         fallback_count = 0
+        claim_failed_count = 0
+        claim_failures = []
         
         for task in tasks_to_submit:
             try:
@@ -606,9 +639,11 @@ class BatchExecutor:
                 # Atomically claim the task (PENDING → RUNNING)
                 # This prevents race conditions with concurrent start_batch,
                 # _trigger_next_pending_task, or _refill_batch_slots calls
-                claimed = await claim_task_for_execution(task.task_id, run_id)
+                claimed, diagnostic_info = await claim_task_for_execution(task.task_id, run_id)
                 if not claimed:
-                    logger.warning(f"Task {task.task_id} was already claimed by another caller, skipping")
+                    claim_failed_count += 1
+                    claim_failures.append(diagnostic_info)
+                    logger.warning(f"Task {task.task_id} claim failed: {diagnostic_info}")
                     continue
                 
                 # Task is now atomically claimed and committed as RUNNING
@@ -658,6 +693,8 @@ class BatchExecutor:
             "submitted_count": submitted_count,
             "native_async_count": native_async_count,
             "fallback_count": fallback_count,
+            "claim_failed_count": claim_failed_count,
+            "claim_failures": claim_failures,
             "remaining_count": remaining_count,
             "concurrency": concurrency,
             "statistics": {
@@ -1009,9 +1046,9 @@ class BatchExecutor:
 
                 # Atomically claim the task (PENDING → RUNNING)
                 run_id = uuid.uuid4()
-                claimed = await claim_task_for_execution(task.task_id, run_id)
+                claimed, diagnostic_info = await claim_task_for_execution(task.task_id, run_id)
                 if not claimed:
-                    logger.warning(f"Task {task.task_id} was already claimed by another caller")
+                    logger.warning(f"Task {task.task_id} was already claimed by another caller: {diagnostic_info}")
                     return
 
                 # Task is now atomically claimed and committed as RUNNING

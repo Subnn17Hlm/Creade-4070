@@ -123,8 +123,8 @@ class TestStartBatchRecoveryScheduling:
                         t.status = BatchTaskStatus.RUNNING
                         t.run_id = run_id
                         t.started_at = datetime.now(timezone.utc)
-                        return True
-                return False
+                        return True, {}
+                return False, {}
             
             with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
                 mock_claim.side_effect = mock_claim_side_effect
@@ -254,8 +254,8 @@ class TestStartBatchRecoveryScheduling:
                 task.status = BatchTaskStatus.RUNNING
                 task.run_id = run_id
                 task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -431,8 +431,8 @@ class TestStartBatchResponseFields:
                 task.status = BatchTaskStatus.RUNNING
                 task.run_id = run_id
                 task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -652,8 +652,8 @@ class TestOrphanTaskRecovery:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
                 orphan_task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -924,8 +924,8 @@ class TestDatetimeTimezoneHandling:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
                 orphan_task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -994,8 +994,8 @@ class TestDatetimeTimezoneHandling:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
                 orphan_task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -1063,8 +1063,8 @@ class TestDatetimeTimezoneHandling:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
                 orphan_task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()
@@ -1240,8 +1240,8 @@ class TestConcurrencySafety:
                 task.status = BatchTaskStatus.RUNNING
                 task.run_id = run_id
                 task.started_at = datetime.now(timezone.utc)
-                return True
-            return False
+                return True, {}
+            return False, {}
         
         with patch('api.batch_executor.get_async_sessionmaker') as mock_sessionmaker:
             mock_session = MagicMock()

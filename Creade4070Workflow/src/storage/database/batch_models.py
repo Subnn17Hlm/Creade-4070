@@ -91,7 +91,7 @@ class BatchTask(Base):
     external_task_id = Column(String(255), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     async_task_id = Column(String(255), nullable=True, index=True)  # 原生异步任务 ID
-    status = Column(String(20), nullable=False, default="pending", index=True)
+    status = Column(String(20), nullable=False, default="pending")
     input_data = Column(JSON, nullable=False)
     output_data = Column(JSON, nullable=True)
     final_video_url = Column(Text, nullable=True)
