@@ -140,12 +140,11 @@ def _extract_diagnostic_fields(result: Optional[Dict[str, Any]]) -> Optional[Dic
 
 
 async def claim_task_for_execution(
-    db: AsyncSession,
     task_id: uuid.UUID,
     run_id: uuid.UUID,
 ) -> bool:
     """
-    Atomically claim a task for execution using SELECT FOR UPDATE.
+    Atomically claim a task for execution using a dedicated session.
     
     This prevents race conditions where multiple callers (start_batch,
     _trigger_next_pending_task, _refill_batch_slots) might try to execute
@@ -154,8 +153,9 @@ async def claim_task_for_execution(
     The claim is atomic: only the caller that successfully transitions
     status from PENDING to RUNNING gets to execute the task.
     
+    Uses a dedicated session to ensure isolation from the main session.
+    
     Args:
-        db: Database session (must be in a transaction)
         task_id: Task ID to claim
         run_id: Run ID to assign (used as execution lease)
         
@@ -163,29 +163,33 @@ async def claim_task_for_execution(
         True if the task was successfully claimed, False otherwise
     """
     from storage.database.batch_models import BatchTask, BatchTaskStatus
+    from storage.database.db import get_async_sessionmaker
     from sqlalchemy import update
     
-    # Atomic update: only claim if status is still PENDING
-    result = await db.execute(
-        update(BatchTask)
-        .where(
-            BatchTask.task_id == task_id,
-            BatchTask.status == BatchTaskStatus.PENDING,
+    # Use a dedicated session to ensure isolation
+    async with get_async_sessionmaker()() as db:
+        # Atomic update: only claim if status is still PENDING
+        result = await db.execute(
+            update(BatchTask)
+            .where(
+                BatchTask.task_id == task_id,
+                BatchTask.status == BatchTaskStatus.PENDING,
+            )
+            .values(
+                status=BatchTaskStatus.RUNNING,
+                run_id=run_id,
+                started_at=utc_now(),
+            )
         )
-        .values(
-            status=BatchTaskStatus.RUNNING,
-            run_id=run_id,
-            started_at=utc_now(),
-        )
-    )
-    
-    if result.rowcount == 1:
-        await db.commit()
-        logger.info(f"Task {task_id} claimed for execution, run_id={run_id}")
-        return True
-    else:
-        logger.warning(f"Task {task_id} claim failed: not in PENDING status (rowcount={result.rowcount})")
-        return False
+        
+        if result.rowcount == 1:
+            await db.commit()
+            logger.info(f"Task {task_id} claimed for execution, run_id={run_id}")
+            return True
+        else:
+            logger.warning(f"Task {task_id} claim failed: not in PENDING status (rowcount={result.rowcount})")
+            await db.rollback()
+            return False
 
 
 async def verify_run_lease(
@@ -602,7 +606,7 @@ class BatchExecutor:
                 # Atomically claim the task (PENDING → RUNNING)
                 # This prevents race conditions with concurrent start_batch,
                 # _trigger_next_pending_task, or _refill_batch_slots calls
-                claimed = await claim_task_for_execution(db, task.task_id, run_id)
+                claimed = await claim_task_for_execution(task.task_id, run_id)
                 if not claimed:
                     logger.warning(f"Task {task.task_id} was already claimed by another caller, skipping")
                     continue
@@ -1005,7 +1009,7 @@ class BatchExecutor:
 
                 # Atomically claim the task (PENDING → RUNNING)
                 run_id = uuid.uuid4()
-                claimed = await claim_task_for_execution(db, task.task_id, run_id)
+                claimed = await claim_task_for_execution(task.task_id, run_id)
                 if not claimed:
                     logger.warning(f"Task {task.task_id} was already claimed by another caller")
                     return

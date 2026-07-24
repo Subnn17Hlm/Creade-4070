@@ -116,7 +116,7 @@ class TestStartBatchRecoveryScheduling:
             
             # Mock claim_task_for_execution to return True (successful claim)
             # and also update the task status to RUNNING
-            async def mock_claim_side_effect(db_session, task_id, run_id):
+            async def mock_claim_side_effect(task_id, run_id):
                 # Find the task and update its status
                 for t in tasks:
                     if t.task_id == task_id:
@@ -249,7 +249,7 @@ class TestStartBatchRecoveryScheduling:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if task.task_id == task_id and task.status == BatchTaskStatus.PENDING:
                 task.status = BatchTaskStatus.RUNNING
                 task.run_id = run_id
@@ -426,7 +426,7 @@ class TestStartBatchResponseFields:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if task.task_id == task_id and task.status == BatchTaskStatus.PENDING:
                 task.status = BatchTaskStatus.RUNNING
                 task.run_id = run_id
@@ -647,7 +647,7 @@ class TestOrphanTaskRecovery:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
@@ -919,7 +919,7 @@ class TestDatetimeTimezoneHandling:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
@@ -989,7 +989,7 @@ class TestDatetimeTimezoneHandling:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
@@ -1058,7 +1058,7 @@ class TestDatetimeTimezoneHandling:
         db.execute.return_value = batch_result
         
         # Mock claim_task_for_execution to update task status
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             if orphan_task.task_id == task_id and orphan_task.status == BatchTaskStatus.PENDING:
                 orphan_task.status = BatchTaskStatus.RUNNING
                 orphan_task.run_id = run_id
@@ -1233,7 +1233,7 @@ class TestConcurrencySafety:
         # Track claim calls
         claim_calls = []
         
-        async def mock_claim_side_effect(db_session, task_id, run_id):
+        async def mock_claim_side_effect(task_id, run_id):
             claim_calls.append((task_id, run_id))
             # First call succeeds, subsequent calls fail (simulating atomic claim)
             if task.status == BatchTaskStatus.PENDING:
