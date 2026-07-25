@@ -929,6 +929,7 @@ class BatchExecutor:
         
         # Fetch task and batch info using short-lived sessions
         task_input = None
+        existing_output_data = None
         try:
             async with get_async_sessionmaker()() as fetch_db:
                 result = await fetch_db.execute(
@@ -954,11 +955,37 @@ class BatchExecutor:
                     )
                     return
                 
-                # Capture input data before session closes
+                # Capture input data and existing output_data before session closes
                 task_input = task.input_data or {}
+                existing_output_data = task.output_data or {}
         except Exception as e:
             logger.error(f"Failed to fetch task {task_id} for execution: {e}", exc_info=True)
             return
+        
+        # Create or restore generation info
+        from generation import (
+            create_generation, create_retry_generation,
+            GenerationReason,
+        )
+        
+        existing_gen_id = existing_output_data.get("generation_id")
+        if existing_gen_id:
+            # Retry: restore existing generation (same seed = same result)
+            generation = create_retry_generation(
+                source_generation_id=existing_gen_id,
+                source_variation_seed=existing_output_data.get("variation_seed", 0),
+                variation_index=existing_output_data.get("variation_index", 0),
+                generation_reason=GenerationReason.SYSTEM_RETRY,
+            )
+            logger.info(f"Task {task_id} retry: restoring generation {existing_gen_id[:8]}...")
+        else:
+            # New execution: create new generation
+            generation = create_generation(
+                reason=GenerationReason.NEW_BATCH,
+                source_task_id=str(task_id),
+                source_batch_id=str(batch_id),
+            )
+            logger.info(f"Task {task_id} new generation: {generation.generation_id[:8]}..., seed={generation.variation_seed}")
         
         # Run the workflow WITHOUT holding any database session
         workflow_result = None
@@ -970,6 +997,9 @@ class BatchExecutor:
                 "script_text": task_input.get("script_text", ""),
                 "run_id": str(run_id),
                 "script_source": "manual",
+                "variation_seed": generation.variation_seed,
+                "generation_id": generation.generation_id,
+                "task_id": str(task_id),
             }
             
             from coze_coding_utils.runtime_ctx.context import new_context
@@ -1148,6 +1178,12 @@ class BatchExecutor:
                             task.status = BatchTaskStatus.SUCCESS
                             task.completed_at = datetime.utcnow()
                             task.final_video_url = result.get("final_video_url") if result else None
+                            # Inject generation info into output_data
+                            if result is not None:
+                                result["generation_id"] = generation.generation_id
+                                result["variation_seed"] = generation.variation_seed
+                                result["variation_index"] = generation.variation_index
+                                result["generation_reason"] = generation.generation_reason
                             task.output_data = result
                             # Preserve warnings from quality check
                             warnings = result.get("warnings") if result else None

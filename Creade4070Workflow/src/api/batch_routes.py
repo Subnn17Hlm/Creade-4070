@@ -503,6 +503,37 @@ def _serialize_task(task) -> dict:
         errors.append(f"updated_at: {e}")
         result['updated_at'] = None
 
+    # Generation fields (from output_data)
+    try:
+        od = task.output_data
+        if isinstance(od, str):
+            try:
+                od = json.loads(od)
+            except (json.JSONDecodeError, ValueError):
+                od = {}
+        if isinstance(od, dict):
+            result['generation_id'] = od.get('generation_id')
+            result['variation_seed'] = od.get('variation_seed')
+            result['variation_index'] = od.get('variation_index', 0)
+            result['generation_reason'] = od.get('generation_reason')
+            result['material_sequence_hash'] = od.get('material_sequence_hash')
+            result['timeline_hash'] = od.get('timeline_hash')
+        else:
+            result['generation_id'] = None
+            result['variation_seed'] = None
+            result['variation_index'] = 0
+            result['generation_reason'] = None
+            result['material_sequence_hash'] = None
+            result['timeline_hash'] = None
+    except Exception as e:
+        errors.append(f"generation_fields: {e}")
+        result['generation_id'] = None
+        result['variation_seed'] = None
+        result['variation_index'] = 0
+        result['generation_reason'] = None
+        result['material_sequence_hash'] = None
+        result['timeline_hash'] = None
+
     # serialization_error
     result['serialization_error'] = '; '.join(errors) if errors else None
 
@@ -748,6 +779,126 @@ async def retry_task(
         raise HTTPException(
             status_code=500,
             detail={'error': f'重试失败: {str(e)}'},
+        )
+
+
+@router.post('/{batch_id}/tasks/{task_id}/regenerate', status_code=202)
+async def regenerate_task(
+    batch_id: str,
+    task_id: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Regenerate a task with a new variation (different materials/editing).
+    
+    Unlike retry, regenerate:
+    - Preserves the old final_video_url
+    - Creates a new generation with new variation_seed
+    - Increments variation_index
+    - Produces a different video (different materials/sequence)
+    
+    Args:
+        batch_id: Batch job ID
+        task_id: Task ID to regenerate
+        
+    Returns:
+        New task info (HTTP 202 Accepted)
+    """
+    try:
+        batch_uuid = uuid.UUID(batch_id)
+        task_uuid = uuid.UUID(task_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail={'error': '无效的 ID 格式'},
+        )
+    
+    # Check batch exists
+    batch = await BatchService.get_batch(db, batch_uuid)
+    if not batch:
+        raise HTTPException(
+            status_code=404,
+            detail={'error': '批次不存在'},
+        )
+    
+    # Get existing task
+    from storage.database.batch_models import BatchTask
+    result = await db.execute(
+        select(BatchTask).where(BatchTask.task_id == task_uuid)
+    )
+    old_task = result.scalar_one_or_none()
+    if not old_task:
+        raise HTTPException(
+            status_code=404,
+            detail={'error': '任务不存在'},
+        )
+    
+    # Only allow regeneration of completed tasks (success/warning/failed)
+    if old_task.status not in (
+        BatchTaskStatus.SUCCESS.value,
+        BatchTaskStatus.WARNING.value,
+        BatchTaskStatus.FAILED.value,
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail={'error': f'只能重新生成已完成的任务（当前状态: {old_task.status}）'},
+        )
+    
+    # Create new generation
+    from generation import create_generation, GenerationReason
+    old_output = old_task.output_data or {}
+    old_variation_index = old_output.get('variation_index', 0)
+    
+    new_generation = create_generation(
+        reason=GenerationReason.USER_REGENERATE,
+        source_task_id=str(task_uuid),
+        source_batch_id=str(batch_uuid),
+        variation_index=old_variation_index + 1,
+    )
+    
+    # Create new task with same input but new generation
+    import uuid as uuid_mod
+    new_task_id = uuid_mod.uuid4()
+    new_task = BatchTask(
+        task_id=new_task_id,
+        batch_id=batch_uuid,
+        row_number=old_task.row_number,
+        external_task_id=old_task.external_task_id,
+        status=BatchTaskStatus.PENDING.value,
+        input_data={
+            **(old_task.input_data or {}),
+            'source_task_id': str(task_uuid),
+            'generation_reason': 'user_regenerate',
+            'variation_index': new_generation.variation_index,
+        },
+    )
+    db.add(new_task)
+    await db.commit()
+    
+    # Submit new task for execution
+    from main import service
+    executor = BatchExecutor(service)
+    
+    try:
+        submit_result = await executor.submit_task_to_execution(
+            db, batch_uuid, new_task_id, new_generation.variation_seed
+        )
+        return {
+            'status': 'accepted',
+            'old_task_id': str(task_uuid),
+            'old_final_video_url': old_task.final_video_url,
+            'old_variation_index': old_variation_index,
+            'new_task_id': str(new_task_id),
+            'new_generation_id': new_generation.generation_id,
+            'new_variation_seed': new_generation.variation_seed,
+            'new_variation_index': new_generation.variation_index,
+            'generation_reason': 'user_regenerate',
+            'submitted': submit_result.get('submitted', False),
+        }
+    except Exception as e:
+        logger.error(f"Failed to submit regenerated task {new_task_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={'error': f'重新生成提交失败: {str(e)}'},
         )
 
 
