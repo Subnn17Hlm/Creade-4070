@@ -987,6 +987,47 @@ class BatchExecutor:
             )
             logger.info(f"Task {task_id} new generation: {generation.generation_id[:8]}..., seed={generation.variation_seed}")
         
+        # CRITICAL: Persist generation info to output_data BEFORE running workflow.
+        # This ensures that if the worker crashes mid-execution, the seed is preserved
+        # and retry will restore the same generation (same seed = same result).
+        # Use atomic UPDATE to prevent race conditions with concurrent workers.
+        try:
+            from sqlalchemy import update as sa_update
+            async with get_async_sessionmaker()() as persist_db:
+                gen_snapshot = {
+                    "generation_id": generation.generation_id,
+                    "variation_seed": generation.variation_seed,
+                    "variation_index": generation.variation_index,
+                    "generation_reason": generation.generation_reason,
+                }
+                # Merge with existing output_data (preserve any prior fields)
+                merged_output = dict(existing_output_data)
+                merged_output.update(gen_snapshot)
+                
+                result = await persist_db.execute(
+                    sa_update(BatchTask)
+                    .where(
+                        BatchTask.task_id == task_id,
+                        BatchTask.run_id == run_id,  # Only update if we still own the lease
+                    )
+                    .values(output_data=merged_output)
+                )
+                await persist_db.commit()
+                
+                if result.rowcount == 0:
+                    logger.warning(
+                        f"Task {task_id} generation persistence failed (lease lost?). "
+                        f"Continuing with in-memory generation."
+                    )
+                else:
+                    logger.info(
+                        f"Task {task_id} generation persisted: gen={generation.generation_id[:8]}..., "
+                        f"seed={generation.variation_seed}, reason={generation.generation_reason}"
+                    )
+        except Exception as e:
+            logger.error(f"Task {task_id} failed to persist generation: {e}", exc_info=True)
+            # Don't fail the task - continue with in-memory generation
+        
         # Run the workflow WITHOUT holding any database session
         workflow_result = None
         workflow_error = None
