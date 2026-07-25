@@ -35,6 +35,9 @@ class GlobalState(TypedDict, total=False):
     material_csv: str
     run_id: str
     run_dir: str
+    variation_seed: int
+    generation_id: str
+    task_id: str
 
     # BGM 追踪信息
     bgm_source: str  # "tos" | "bgm_urls" | "local" | ""

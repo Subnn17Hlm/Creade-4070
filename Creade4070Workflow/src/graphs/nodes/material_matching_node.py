@@ -745,6 +745,20 @@ def material_matching_node(
     medium_conf = 0
     low_conf = 0
     mismatch_ids: List[int] = []
+
+    # Variation seed for deterministic-but-varied material selection
+    _variation_seed = state.get("variation_seed", 0)
+    _task_id = state.get("task_id", "") or ""
+    _generation_id = state.get("generation_id", "") or ""
+    if _variation_seed:
+        import sys
+        _gen_src = os.path.join(os.path.dirname(__file__), "..", "..")
+        if _gen_src not in sys.path:
+            sys.path.insert(0, _gen_src)
+        from generation.variation import VariationRNG
+        _variation_rng = VariationRNG(_variation_seed, _task_id, _generation_id)
+    else:
+        _variation_rng = None
     
     # 构建 timing_by_sid 用于计算 visual_group_total_duration
     timing_by_sid: Dict[int, Dict[str, Any]] = {}
@@ -907,59 +921,71 @@ def material_matching_node(
             
             return score
         
+        # Helper: select from scored candidates using weighted random or deterministic top-score
+        def _select_from_scored(scored_list, seg_id="", seg_idx=0):
+            """Select material from scored candidates.
+            
+            With variation_rng: weighted random (score^2 as weight).
+            Without: deterministic top-score (backward compatible).
+            """
+            if not scored_list:
+                return None
+            if len(scored_list) == 1:
+                return scored_list[0][0]
+            if _variation_rng is not None:
+                cands = [item[0] for item in scored_list]
+                scrs = [item[1] for item in scored_list]
+                chosen, _ = _variation_rng.weighted_choice(
+                    cands, scrs, seg_id, seg_idx, minimum_score=0.1
+                )
+                return chosen
+            # Deterministic fallback: always pick highest score
+            scored_list_sorted = sorted(scored_list, key=lambda x: x[1], reverse=True)
+            return scored_list_sorted[0][0]
+        
+        _seg_id = str(sentence_ids[0]) if sentence_ids else ""
+        _seg_idx = group_index if 'group_index' in dir() else 0
+        
         if unused_candidates:
             if is_short_sentence:
                 # 短句：优先选择时长较短的素材（1-3秒）
                 short_candidates = [c for c in unused_candidates if c.get("duration_sec", 3) <= 3]
                 if short_candidates:
-                    # 从短素材中选择分数最高的
                     short_candidates_with_score = [
                         (c, _calculate_material_score(c, sentence_text, True))
                         for c in short_candidates
                     ]
-                    short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                    selected = short_candidates_with_score[0][0]
+                    selected = _select_from_scored(short_candidates_with_score, _seg_id, _seg_idx)
                 else:
-                    # 没有短素材，从未使用的候选中选择分数最高的
                     unused_with_score = [
                         (c, _calculate_material_score(c, sentence_text, True))
                         for c in unused_candidates
                     ]
-                    unused_with_score.sort(key=lambda x: x[1], reverse=True)
-                    selected = unused_with_score[0][0]
+                    selected = _select_from_scored(unused_with_score, _seg_id, _seg_idx)
             else:
-                # 长句：从所有未使用的候选中选择分数最高的
                 unused_with_score = [
                     (c, _calculate_material_score(c, sentence_text, False))
                     for c in unused_candidates
                 ]
-                unused_with_score.sort(key=lambda x: x[1], reverse=True)
-                selected = unused_with_score[0][0]
+                selected = _select_from_scored(unused_with_score, _seg_id, _seg_idx)
             repeated_reason = ""
         else:
             # 素材已用完，需要复用或扩展到相邻标签
-            # 首先尝试扩展到相邻安全标签
             expanded_candidates = []
             seen_expanded_ids = set(seen_material_ids)
             
-            # 根据当前标签确定可扩展的相邻标签
             current_tag = candidates[0]["primary_scene_tag"] if candidates else ""
             expansion_tags = []
             
             if current_tag == "产品展示":
-                # 产品展示用完时，可扩展到：手持大小对比、折叠动作、放进包包、价格促销、CTA促单
                 expansion_tags = ["手持大小对比", "折叠动作", "放进包包", "价格促销", "CTA促单"]
             elif current_tag in ["价格促销", "CTA促单"]:
-                # 促销/CTA用完时，可扩展到：产品展示
                 expansion_tags = ["产品展示"]
             elif current_tag == "痛点共鸣":
-                # 痛点共鸣用完时，可扩展到：护发效果、旅行场景
                 expansion_tags = ["护发效果", "旅行场景"]
             elif current_tag == "旅行场景":
-                # 旅行场景用完时，可扩展到：放进包包、放进行李箱
                 expansion_tags = ["放进包包", "放进行李箱"]
             
-            # 从相邻标签收集中未使用的素材
             for exp_tag in expansion_tags:
                 if exp_tag in tag_to_materials:
                     for mat in tag_to_materials[exp_tag]:
@@ -969,7 +995,6 @@ def material_matching_node(
                             seen_expanded_ids.add(mid)
             
             if expanded_candidates:
-                # 有未使用的相邻标签素材，从中选择
                 if is_short_sentence:
                     short_expanded = [c for c in expanded_candidates if c.get("duration_sec", 3) <= 3]
                     if short_expanded:
@@ -977,49 +1002,41 @@ def material_matching_node(
                             (c, _calculate_material_score(c, sentence_text, True))
                             for c in short_expanded
                         ]
-                        short_expanded_with_score.sort(key=lambda x: x[1], reverse=True)
-                        selected = short_expanded_with_score[0][0]
+                        selected = _select_from_scored(short_expanded_with_score, _seg_id, _seg_idx)
                     else:
                         expanded_with_score = [
                             (c, _calculate_material_score(c, sentence_text, True))
                             for c in expanded_candidates
                         ]
-                        expanded_with_score.sort(key=lambda x: x[1], reverse=True)
-                        selected = expanded_with_score[0][0]
+                        selected = _select_from_scored(expanded_with_score, _seg_id, _seg_idx)
                 else:
                     expanded_with_score = [
                         (c, _calculate_material_score(c, sentence_text, False))
                         for c in expanded_candidates
                     ]
-                    expanded_with_score.sort(key=lambda x: x[1], reverse=True)
-                    selected = expanded_with_score[0][0]
+                    selected = _select_from_scored(expanded_with_score, _seg_id, _seg_idx)
                 repeated_reason = f"扩展到相邻标签: {current_tag} → {selected['primary_scene_tag']}"
             else:
-                # 相邻标签也没有未使用的素材，只能复用
                 if is_short_sentence:
-                    # 短句：优先复用时长较短的素材
                     short_candidates = [c for c in candidates if c.get("duration_sec", 3) <= 3]
                     if short_candidates:
                         short_candidates_with_score = [
                             (c, _calculate_material_score(c, sentence_text, True))
                             for c in short_candidates
                         ]
-                        short_candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                        selected = short_candidates_with_score[0][0]
+                        selected = _select_from_scored(short_candidates_with_score, _seg_id, _seg_idx)
                     else:
                         candidates_with_score = [
                             (c, _calculate_material_score(c, sentence_text, True))
                             for c in candidates
                         ] if candidates else [(all_materials[0], 0.0)]
-                        candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                        selected = candidates_with_score[0][0]
+                        selected = _select_from_scored(candidates_with_score, _seg_id, _seg_idx)
                 else:
                     candidates_with_score = [
                         (c, _calculate_material_score(c, sentence_text, False))
                         for c in candidates
                     ] if candidates else [(all_materials[0], 0.0)]
-                    candidates_with_score.sort(key=lambda x: x[1], reverse=True)
-                    selected = candidates_with_score[0][0]
+                    selected = _select_from_scored(candidates_with_score, _seg_id, _seg_idx)
                 repeated_reason = f"素材已用完，复用{selected['asset_id']}"
 
         used_material_ids.add(selected["asset_id"])
@@ -1344,5 +1361,7 @@ def material_matching_node(
         "medium_confidence_segments": medium_conf,
         "semantic_mismatch_segments": mismatch_ids,
         "matched_materials": matched_materials,
+        "variation_seed": _variation_seed,
+        "generation_id": _generation_id,
         "node_trace": ["material_matching"],
     }

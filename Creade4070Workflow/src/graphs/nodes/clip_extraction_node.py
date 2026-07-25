@@ -381,6 +381,23 @@ def clip_extraction_node(
                 clip_duration = group_duration
             else:
                 clip_duration = min(duration, 5.0)
+            
+            # Variation: shift source_start within valid range for different generations
+            _v_seed = state.get("variation_seed", 0)
+            _eff_end = effective_end if effective_end is not None else source_duration
+            _max_offset = max(0.0, _eff_end - clip_start - clip_duration)
+            if _v_seed and _max_offset > 0.5:
+                import sys, hashlib
+                _gen_src = os.path.join(os.path.dirname(__file__), "..", "..")
+                if _gen_src not in sys.path:
+                    sys.path.insert(0, _gen_src)
+                from generation.variation import VariationRNG
+                _vrng = VariationRNG(_v_seed, state.get("task_id", ""), state.get("generation_id", ""))
+                _offset = _vrng.random_float(0.0, _max_offset, str(sentence_id), i)
+                clip_start = round(clip_start + _offset, 2)
+                logger.info("[Node5] 片段%d (sid=%d): variation offset=%.2fs, clip_start=%.2fs",
+                           i + 1, sentence_id, _offset, clip_start)
+            
             used_duration = clip_duration
             clip_end = clip_start + clip_duration
         
