@@ -831,6 +831,232 @@ class TestExecuteClaimedTask:
         mock_graph_service.run.assert_not_called()
 
 
+class TestAutoBackfillAfterCompletion:
+    """
+    Regression test for production issue:
+    并发2、共6条，前2条完成后自动补位 → running=2、pending=2。
+
+    Verifies that _trigger_next_pending_task correctly fills available
+    concurrency slots after tasks complete, and that datetime errors
+    in orphan detection do not block the auto-backfill.
+    """
+
+    @pytest.fixture
+    def mock_graph_service(self):
+        service = AsyncMock()
+        service.run = AsyncMock(return_value={
+            "status": "success",
+            "final_video_url": "https://example.com/video.mp4",
+        })
+        return service
+
+    @pytest.fixture
+    def executor(self, mock_graph_service):
+        return BatchExecutor(mock_graph_service)
+
+    @pytest.mark.asyncio
+    async def test_auto_backfill_concurrency2_total6(self, executor, mock_graph_service):
+        """
+        Scenario: concurrency=2, total=6 tasks.
+        - Tasks 1,2 are SUCCESS (completed).
+        - Tasks 3,4 should be auto-backfilled to RUNNING.
+        - Tasks 5,6 remain PENDING.
+        - Final: running=2, pending=2, success=2.
+
+        Also verifies that orphan detection with mixed naive/aware datetimes
+        does not raise TypeError or block scheduling.
+        """
+        batch_id = uuid.uuid4()
+
+        # Create batch with concurrency=2
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=6,
+            pending_count=4,
+            running_count=0,
+            success_count=2,
+            failed_count=0,
+            concurrency=2,
+        )
+
+        # Create 6 tasks: 2 SUCCESS, 4 PENDING
+        tasks = []
+        for i in range(6):
+            task = BatchTask(
+                task_id=uuid.uuid4(),
+                batch_id=batch_id,
+                row_number=i + 1,
+                input_data={"script_text": f"Test {i+1}"},
+            )
+            if i < 2:
+                task.status = BatchTaskStatus.SUCCESS
+                task.completed_at = datetime.now(timezone.utc)
+            else:
+                task.status = BatchTaskStatus.PENDING
+            tasks.append(task)
+
+        batch.tasks = tasks
+
+        # Track claimed tasks
+        claimed_task_ids = []
+
+        async def mock_claim_side_effect(task_id, run_id):
+            for t in tasks:
+                if t.task_id == task_id and t.status == BatchTaskStatus.PENDING:
+                    t.status = BatchTaskStatus.RUNNING
+                    t.run_id = run_id
+                    t.started_at = datetime.utcnow()  # naive datetime (simulates DB)
+                    claimed_task_ids.append(task_id)
+                    return True, {}
+            return False, {}
+
+        def _create_mock_session():
+            """Each _trigger_next_pending_task call creates a new session."""
+            mock_session = MagicMock()
+
+            batch_q_result = MagicMock()
+            batch_q_result.scalar_one_or_none.return_value = batch
+
+            count_q_result = MagicMock()
+            # Dynamically count RUNNING tasks
+            count_q_result.scalar.return_value = sum(
+                1 for t in tasks if t.status in (BatchTaskStatus.RUNNING, BatchTaskStatus.QUEUED)
+            )
+
+            call_num = [0]
+            def execute_side_effect(*args, **kwargs):
+                call_num[0] += 1
+                n = call_num[0]
+                if n % 3 == 1:
+                    return batch_q_result
+                elif n % 3 == 2:
+                    # Re-count running each time
+                    count_q_result.scalar.return_value = sum(
+                        1 for t in tasks if t.status in (BatchTaskStatus.RUNNING, BatchTaskStatus.QUEUED)
+                    )
+                    return count_q_result
+                else:
+                    # Return next PENDING task
+                    for t in tasks:
+                        if t.status == BatchTaskStatus.PENDING:
+                            r = MagicMock()
+                            r.scalar_one_or_none.return_value = t
+                            return r
+                    r = MagicMock()
+                    r.scalar_one_or_none.return_value = None
+                    return r
+
+            mock_session.execute = AsyncMock(side_effect=execute_side_effect)
+
+            class MockBeginContextManager:
+                async def __aenter__(self):
+                    return None
+                async def __aexit__(self, *args):
+                    pass
+            mock_session.begin.return_value = MockBeginContextManager()
+            return mock_session
+
+        # Each call to get_async_sessionmaker()() should return a fresh session
+        session_factory = MagicMock()
+        session_factory.return_value.__aenter__ = AsyncMock(side_effect=lambda: _create_mock_session())
+        session_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        with patch('api.batch_executor.get_async_sessionmaker', return_value=session_factory):
+            with patch('api.batch_executor.claim_task_for_execution', new_callable=AsyncMock) as mock_claim:
+                mock_claim.side_effect = mock_claim_side_effect
+
+                with patch('api.batch_executor.submit_task_to_execution', new_callable=AsyncMock) as mock_submit:
+                    mock_submit.return_value = (True, "fallback")
+
+                    with patch('api.async_task_service.ASYNC_TASKS_AVAILABLE', False):
+                        await executor._trigger_next_pending_task(batch_id)
+                        await executor._trigger_next_pending_task(batch_id)
+
+        # Verify: 2 tasks were claimed and set to RUNNING
+        assert len(claimed_task_ids) == 2, f"Expected 2 claimed tasks, got {len(claimed_task_ids)}"
+
+        # Count final states
+        running_tasks = [t for t in tasks if t.status == BatchTaskStatus.RUNNING]
+        pending_tasks = [t for t in tasks if t.status == BatchTaskStatus.PENDING]
+        success_tasks = [t for t in tasks if t.status == BatchTaskStatus.SUCCESS]
+
+        assert len(running_tasks) == 2, f"Expected 2 RUNNING, got {len(running_tasks)}"
+        assert len(pending_tasks) == 2, f"Expected 2 PENDING, got {len(pending_tasks)}"
+        assert len(success_tasks) == 2, f"Expected 2 SUCCESS, got {len(success_tasks)}"
+
+    @pytest.mark.asyncio
+    async def test_orphan_detection_naive_aware_mixed(self, executor, mock_graph_service):
+        """
+        Verify that orphan detection handles mixed naive/aware datetimes
+        without raising TypeError, and does not block start_batch.
+        """
+        db = AsyncMock()
+        batch_id = uuid.uuid4()
+
+        batch = BatchJob(
+            batch_id=batch_id,
+            status=BatchJobStatus.RUNNING,
+            total_count=4,
+            pending_count=2,
+            running_count=2,
+            success_count=0,
+            failed_count=0,
+            concurrency=2,
+        )
+
+        # Create tasks with mixed datetime types (simulating DB inconsistency)
+        tasks = [
+            BatchTask(
+                task_id=uuid.uuid4(),
+                batch_id=batch_id,
+                row_number=1,
+                status=BatchTaskStatus.RUNNING,
+                started_at=datetime.utcnow(),  # NAIVE datetime (from DB)
+                input_data={"script_text": "Test 1"},
+            ),
+            BatchTask(
+                task_id=uuid.uuid4(),
+                batch_id=batch_id,
+                row_number=2,
+                status=BatchTaskStatus.RUNNING,
+                started_at=datetime.now(timezone.utc),  # AWARE datetime
+                input_data={"script_text": "Test 2"},
+            ),
+            BatchTask(
+                task_id=uuid.uuid4(),
+                batch_id=batch_id,
+                row_number=3,
+                status=BatchTaskStatus.PENDING,
+                input_data={"script_text": "Test 3"},
+            ),
+            BatchTask(
+                task_id=uuid.uuid4(),
+                batch_id=batch_id,
+                row_number=4,
+                status=BatchTaskStatus.PENDING,
+                input_data={"script_text": "Test 4"},
+            ),
+        ]
+        batch.tasks = tasks
+
+        batch_result = MagicMock()
+        batch_result.scalar_one_or_none.return_value = batch
+        db.execute.return_value = batch_result
+
+        # start_batch should NOT raise TypeError even with mixed datetimes
+        # Since running_count > 0, it will return early with "already running" message
+        # But the orphan detection should not crash
+        result = await executor.start_batch(db, batch_id)
+
+        # The method should complete without error
+        assert "batch_id" in result
+        assert "statistics" in result
+        # Running tasks should still be counted
+        assert result["statistics"]["running"] == 2
+        assert result["statistics"]["pending"] == 2
+
+
 class TestDatetimeTimezoneHandling:
     """Test that datetime comparisons handle naive/aware correctly."""
 

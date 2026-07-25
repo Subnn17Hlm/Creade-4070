@@ -10,7 +10,7 @@ import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
-from sqlalchemy import select, and_, update
+from sqlalchemy import select, and_, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -38,8 +38,8 @@ def ensure_utc_aware(dt: Optional[datetime]) -> Optional[datetime]:
 
 
 def utc_now() -> datetime:
-    """Return current UTC time as a naive datetime (for database compatibility)."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    """Return current UTC time as a timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 from storage.database.db import get_async_sessionmaker
 from storage.database.batch_models import (
@@ -490,28 +490,35 @@ class BatchExecutor:
             raise ValueError(f"Batch {batch_id} not found")
 
         # Detect and recover orphaned RUNNING tasks (running > 30 minutes with no progress)
+        # Wrapped in try/except to ensure datetime errors never block batch scheduling
         orphan_timeout = timedelta(minutes=30)
-        now = datetime.now(timezone.utc)  # Use aware datetime for comparison
         orphan_count = 0
-        for t in batch.tasks:
-            if t.status == BatchTaskStatus.RUNNING and t.started_at:
-                started_at_aware = ensure_utc_aware(t.started_at)
-                running_duration = now - started_at_aware
-                if running_duration > orphan_timeout:
-                    logger.warning(
-                        f"Detected orphan task {t.task_id}: RUNNING for {running_duration}, "
-                        f"resetting to PENDING for recovery"
-                    )
-                    t.status = BatchTaskStatus.PENDING
-                    t.run_id = None
-                    t.started_at = None
-                    t.error_code = "ORPHAN_RECOVERY"
-                    t.error_message = f"Task was RUNNING for {running_duration} with no progress, reset for retry"
-                    orphan_count += 1
-        
-        if orphan_count > 0:
-            await db.commit()
-            logger.info(f"Recovered {orphan_count} orphan task(s) for batch {batch_id}")
+        try:
+            now = datetime.now(timezone.utc)  # UTC-aware datetime
+            for t in batch.tasks:
+                if t.status == BatchTaskStatus.RUNNING and t.started_at:
+                    started_at_aware = ensure_utc_aware(t.started_at)
+                    running_duration = now - started_at_aware
+                    if running_duration > orphan_timeout:
+                        logger.warning(
+                            f"Detected orphan task {t.task_id}: RUNNING for {running_duration}, "
+                            f"resetting to PENDING for recovery"
+                        )
+                        t.status = BatchTaskStatus.PENDING
+                        t.run_id = None
+                        t.started_at = None
+                        t.error_code = "ORPHAN_RECOVERY"
+                        t.error_message = f"Task was RUNNING for {running_duration} with no progress, reset for retry"
+                        orphan_count += 1
+            
+            if orphan_count > 0:
+                await db.commit()
+                logger.info(f"Recovered {orphan_count} orphan task(s) for batch {batch_id}")
+        except Exception as e:
+            logger.error(
+                f"Orphan detection failed for batch {batch_id} (non-blocking, continuing): {e}",
+                exc_info=True,
+            )
 
         # Count real task statistics from database (after orphan recovery)
         pending_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.PENDING)
