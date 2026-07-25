@@ -5,6 +5,7 @@ from generation.generation_model import (
     create_generation,
     create_retry_generation,
     create_reroll_generation,
+    create_regenerate_generation,
 )
 from generation.variation import VariationRNG
 from generation.hash_utils import (
@@ -29,6 +30,7 @@ __all__ = [
     "create_generation",
     "create_retry_generation",
     "create_reroll_generation",
+    "create_regenerate_generation",
     "VariationRNG",
     "compute_material_sequence_hash",
     "compute_timeline_hash",
