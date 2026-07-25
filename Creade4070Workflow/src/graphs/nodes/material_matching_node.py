@@ -675,6 +675,11 @@ def material_matching_node(
     all_materials = _load_material_manifest(csv_path)
     logger.info(f"素材清单 {manifest_file_used}: {len(all_materials)} 个可用素材")
 
+    # 2.5 计算 material_pool_version
+    from generation.hash_utils import compute_material_pool_version
+    _material_pool_version = compute_material_pool_version(all_materials)
+    logger.info(f"素材池版本: {_material_pool_version[:12]}...")
+
     # 3. 构建标签→素材索引
     tag_to_materials: Dict[str, List[Dict]] = {}
     for mat in all_materials:
@@ -1363,5 +1368,6 @@ def material_matching_node(
         "matched_materials": matched_materials,
         "variation_seed": _variation_seed,
         "generation_id": _generation_id,
+        "material_pool_version": _material_pool_version,
         "node_trace": ["material_matching"],
     }

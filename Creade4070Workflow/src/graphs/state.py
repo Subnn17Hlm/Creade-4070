@@ -105,6 +105,14 @@ class GlobalState(TypedDict, total=False):
     timeline_video_path: str  # 组装后的基础视频路径
     timeline_duration: float  # 组装后的视频时长
 
+    # 历史去重 / Reroll
+    reroll_count: int
+    needs_reroll: bool
+    material_sequence_hash: str
+    timeline_hash: str
+    segment_signature_hash: str
+    material_pool_version: str
+
     # Node7 - 最终合成
     final_video_path: str
     contact_sheet_path: str
