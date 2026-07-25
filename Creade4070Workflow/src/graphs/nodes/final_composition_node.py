@@ -316,18 +316,42 @@ def _render_subtitle_png(
     font_size: int = 38,
     video_width: int = 720,
     video_height: int = 1280,
+    subtitle_style: Any = None,
 ) -> Dict[str, Any]:
-    """使用 Pillow 渲染透明 PNG 字幕图层，返回验证结果"""
+    """
+    使用 Pillow 渲染透明 PNG 字幕图层，返回验证结果。
+
+    参数:
+        subtitle_style: 可选的 SubtitleStyle 对象，来自字幕样式池。
+                       如果提供，使用样式池的颜色、描边、背景等参数。
+                       如果未提供，使用默认参数（白字黑描边）。
+    """
     result = {
         "success": False,
         "text_bbox": None,
         "non_transparent_pixel_count": 0,
         "error": None,
     }
-    
+
     try:
         from PIL import Image, ImageDraw, ImageFont
-        
+
+        # 如果提供了样式，使用样式池渲染器
+        if subtitle_style is not None:
+            try:
+                from subtitle_styling.renderer import render_subtitle_png as styled_render
+                return styled_render(
+                    text=text,
+                    output_path=output_path,
+                    font_path=font_path,
+                    style=subtitle_style,
+                    video_width=video_width,
+                    video_height=video_height,
+                )
+            except Exception as e:
+                logger.warning("[Node7] 样式池渲染失败，回退到默认渲染: %s", e)
+                # 回退到默认渲染逻辑
+
         # 创建透明背景
         img = Image.new('RGBA', (video_width, video_height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
