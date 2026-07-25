@@ -1219,17 +1219,28 @@ class BatchExecutor:
                             task.status = BatchTaskStatus.SUCCESS
                             task.completed_at = datetime.utcnow()
                             task.final_video_url = result.get("final_video_url") if result else None
-                            # Inject generation info into output_data
+                            # Generation info should already be in result from workflow output
+                            # or from the earlier persistence in _execute_claimed_task.
+                            # Do NOT reference an undefined 'generation' variable here.
                             if result is not None:
-                                result["generation_id"] = generation.generation_id
-                                result["variation_seed"] = generation.variation_seed
-                                result["variation_index"] = generation.variation_index
-                                result["generation_reason"] = generation.generation_reason
+                                # Ensure generation fields are present (may already be in result)
+                                # If not, try to read from task's existing output_data
+                                existing_output = task.output_data or {}
+                                for gen_field in ("generation_id", "variation_seed", "variation_index", "generation_reason"):
+                                    if gen_field not in result and gen_field in existing_output:
+                                        result[gen_field] = existing_output[gen_field]
                             task.output_data = result
                             # Preserve warnings from quality check
                             warnings = result.get("warnings") if result else None
                             if warnings and isinstance(warnings, list):
                                 task.warning = "; ".join(str(w) for w in warnings)
+                            # Add manual review warning if needs_manual_review is set
+                            if result and result.get("needs_manual_review"):
+                                review_note = "needs_manualReview"
+                                if task.warning:
+                                    task.warning = f"{task.warning}; {review_note}"
+                                else:
+                                    task.warning = review_note
                         else:
                             # Check if video was actually generated despite status != "success"
                             # e.g. quality check returned "failed" but final_video_url exists
