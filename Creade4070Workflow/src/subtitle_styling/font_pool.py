@@ -102,18 +102,19 @@ def _build_font_registry() -> List[FontConfig]:
         fallback_font_id=DEFAULT_FONT_ID,
     ))
 
-    # 4. 得意黑 — 未找到字体文件
-    # smiley_sans_path = _FONTS_DIR / "SmileySans-Oblique.ttf"
+    # 4. 得意黑 (Smiley Sans) — OFL 许可证，从官方 GitHub Release 下载
+    smiley_sans_path = _FONTS_DIR / "SmileySans-Oblique.ttf"
+    smiley_sans_license = _FONTS_DIR / "licenses" / "smiley-sans" / "LICENSE.txt"
     fonts.append(FontConfig(
         font_id="smiley_sans",
         font_name="得意黑",
         font_family="Smiley Sans",
         font_weight="Oblique",
-        font_path=str(_FONTS_DIR / "SmileySans-Oblique.ttf"),
+        font_path=str(smiley_sans_path),
         supports_chinese=True,
         license_name="SIL Open Font License 1.1",
-        license_path="https://github.com/atelier-anchor/smiley-sans",
-        enabled=False,  # 字体文件不存在
+        license_path=str(smiley_sans_license),
+        enabled=smiley_sans_path.exists(),  # 字体文件存在时启用
         fallback_font_id=DEFAULT_FONT_ID,
     ))
 

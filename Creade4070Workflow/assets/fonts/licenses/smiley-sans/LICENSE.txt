@@ -1,0 +1,10 @@
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+https://scripts.sil.org/OFL
+
+Font: Smiley Sans (得意黑) v2.0.1
+Source: https://github.com/atelier-anchor/smiley-sans
+Copyright: Copyright 2022-2024 Atelier Anchor (https://atelier-anchor.com)
+License: SIL Open Font License 1.1
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is available with a FAQ at: https://scripts.sil.org/OFL

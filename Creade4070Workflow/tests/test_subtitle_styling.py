@@ -82,14 +82,17 @@ class TestFontPoolBasic:
 # 2. 得意黑配置检查（不存在时应报告缺失）
 # ============================================================
 class TestSmileySans:
-    def test_smiley_sans_not_found(self):
-        """得意黑不存在时系统正常运行"""
+    def test_smiley_sans_available(self):
+        """得意黑已下载并启用"""
         font = get_font_by_id("smiley_sans")
         assert font is not None
-        assert font.enabled is False  # 文件不存在，不启用
+        assert font.enabled is True
+        assert font.font_id == "smiley_sans"
+        assert font.font_weight == "Oblique"
         result = validate_font(font)
-        assert result.success is False
-        assert "不存在" in result.error
+        assert result.success is True
+        assert result.test_width > 0
+        assert result.test_height > 0
 
 
 # ============================================================
