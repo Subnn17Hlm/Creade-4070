@@ -38,8 +38,16 @@ def ensure_utc_aware(dt: Optional[datetime]) -> Optional[datetime]:
 
 
 def utc_now() -> datetime:
-    """Return current UTC time as a timezone-aware datetime."""
-    return datetime.now(timezone.utc)
+    """Return current UTC time as a naive datetime (for DB DateTime columns without timezone).
+    
+    The database columns (started_at, completed_at, etc.) are defined as DateTime
+    without timezone=True. Storing aware datetimes would cause asyncpg/PostgreSQL
+    to raise: 'cannot use a timezone-aware datetime in a timestamp without time zone column'.
+    
+    For Python-level comparisons, use ensure_utc_aware() to normalize datetimes
+    read from the database before comparing with datetime.now(timezone.utc).
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from storage.database.db import get_async_sessionmaker
 from storage.database.batch_models import (
@@ -192,6 +200,9 @@ async def claim_task_for_execution(
             diagnostic_info["actual_status_type"] = type(task_row.status).__name__
             diagnostic_info["actual_run_id"] = str(task_row.run_id) if task_row.run_id else None
             diagnostic_info["status_matches_pending"] = (task_row.status == BatchTaskStatus.PENDING.value)
+            diagnostic_info["run_id_matches"] = (
+                task_row.run_id == run_id if task_row.run_id else False
+            )
         else:
             diagnostic_info["task_not_found"] = True
         
@@ -218,6 +229,13 @@ async def claim_task_for_execution(
             logger.info(f"Task {task_id} claimed for execution, run_id={run_id}")
             return True, diagnostic_info
         else:
+            # Determine the specific failure reason
+            if task_row is None:
+                diagnostic_info["claim_failure_reason"] = "TASK_NOT_FOUND"
+            elif not diagnostic_info.get("status_matches_pending", False):
+                diagnostic_info["claim_failure_reason"] = f"STATUS_NOT_PENDING (actual={task_row.status})"
+            else:
+                diagnostic_info["claim_failure_reason"] = f"UPDATE_ROWCOUNT_ZERO (rowcount={result.rowcount})"
             logger.warning(f"Task {task_id} claim failed: rowcount={result.rowcount}, diagnostic={diagnostic_info}")
             await db.rollback()
             return False, diagnostic_info
@@ -372,7 +390,7 @@ async def submit_task_to_execution(
                                 select(BatchTask).where(BatchTask.task_id == captured_task_id)
                             )
                             revert_task = result.scalar_one_or_none()
-                            if revert_task and revert_task.status == BatchTaskStatus.RUNNING:
+                            if revert_task and revert_task.status == BatchTaskStatus.RUNNING.value:
                                 revert_task.status = BatchTaskStatus.PENDING
                                 revert_task.run_id = None
                                 revert_task.started_at = None
@@ -405,12 +423,12 @@ async def update_batch_counts(db: AsyncSession, batch_id: uuid.UUID) -> None:
     )
     tasks = list(result.scalars().all())
     
-    pending_count = sum(1 for t in tasks if t.status == BatchTaskStatus.PENDING)
-    queued_count = sum(1 for t in tasks if t.status == BatchTaskStatus.QUEUED)
-    running_count = sum(1 for t in tasks if t.status == BatchTaskStatus.RUNNING)
-    success_count = sum(1 for t in tasks if t.status == BatchTaskStatus.SUCCESS)
-    warning_count = sum(1 for t in tasks if t.status == BatchTaskStatus.WARNING)
-    failed_count = sum(1 for t in tasks if t.status == BatchTaskStatus.FAILED)
+    pending_count = sum(1 for t in tasks if t.status == BatchTaskStatus.PENDING.value)
+    queued_count = sum(1 for t in tasks if t.status == BatchTaskStatus.QUEUED.value)
+    running_count = sum(1 for t in tasks if t.status == BatchTaskStatus.RUNNING.value)
+    success_count = sum(1 for t in tasks if t.status == BatchTaskStatus.SUCCESS.value)
+    warning_count = sum(1 for t in tasks if t.status == BatchTaskStatus.WARNING.value)
+    failed_count = sum(1 for t in tasks if t.status == BatchTaskStatus.FAILED.value)
     
     # Update batch job
     batch_result = await db.execute(
@@ -496,7 +514,7 @@ class BatchExecutor:
         try:
             now = datetime.now(timezone.utc)  # UTC-aware datetime
             for t in batch.tasks:
-                if t.status == BatchTaskStatus.RUNNING and t.started_at:
+                if t.status == BatchTaskStatus.RUNNING.value and t.started_at:
                     started_at_aware = ensure_utc_aware(t.started_at)
                     running_duration = now - started_at_aware
                     if running_duration > orphan_timeout:
@@ -504,7 +522,7 @@ class BatchExecutor:
                             f"Detected orphan task {t.task_id}: RUNNING for {running_duration}, "
                             f"resetting to PENDING for recovery"
                         )
-                        t.status = BatchTaskStatus.PENDING
+                        t.status = BatchTaskStatus.PENDING.value
                         t.run_id = None
                         t.started_at = None
                         t.error_code = "ORPHAN_RECOVERY"
@@ -521,10 +539,10 @@ class BatchExecutor:
             )
 
         # Count real task statistics from database (after orphan recovery)
-        pending_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.PENDING)
-        running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING)
-        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS)
-        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED)
+        pending_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.PENDING.value)
+        running_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.RUNNING.value)
+        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS.value)
+        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED.value)
 
         # Check if batch is already fully complete
         if pending_count == 0 and running_count == 0:
@@ -557,17 +575,17 @@ class BatchExecutor:
             }
 
         # Update batch to running (if not already)
-        if batch.status != BatchJobStatus.RUNNING:
-            batch.status = BatchJobStatus.RUNNING
+        if batch.status != BatchJobStatus.RUNNING.value:
+            batch.status = BatchJobStatus.RUNNING.value
             batch.started_at = batch.started_at or datetime.utcnow()
             await db.commit()
 
         # Get pending tasks
-        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING.value]
 
         if not pending_tasks:
             # No tasks to execute, mark as complete
-            batch.status = BatchJobStatus.SUCCESS
+            batch.status = BatchJobStatus.SUCCESS.value
             batch.completed_at = datetime.utcnow()
             await db.commit()
             return {
@@ -608,7 +626,7 @@ class BatchExecutor:
             }
         
         # Get pending tasks
-        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING.value]
         
         # Select tasks to submit (up to available_slots)
         tasks_to_submit = pending_tasks[:available_slots]
@@ -721,7 +739,7 @@ class BatchExecutor:
             db: Database session
             batch: Batch job instance
         """
-        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING]
+        pending_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.PENDING.value]
 
         # Create async tasks with semaphore for concurrency control
         async_tasks = []
@@ -794,7 +812,7 @@ class BatchExecutor:
                         return
 
                     # Check if already running or completed
-                    if locked_task.status != BatchTaskStatus.PENDING:
+                    if locked_task.status != BatchTaskStatus.PENDING.value:
                         logger.warning(
                             f"Task {task_id} already in status {locked_task.status}, skipping"
                         )
@@ -922,7 +940,7 @@ class BatchExecutor:
                     return
                 
                 # Verify task is still RUNNING (not reverted by another process)
-                if task.status != BatchTaskStatus.RUNNING:
+                if task.status != BatchTaskStatus.RUNNING.value:
                     logger.warning(
                         f"Task {task_id} is no longer RUNNING (status={task.status}), skipping execution"
                     )
@@ -1028,7 +1046,7 @@ class BatchExecutor:
                     .select_from(BatchTask)
                     .where(
                         BatchTask.batch_id == batch_id,
-                        BatchTask.status.in_([BatchTaskStatus.RUNNING, BatchTaskStatus.QUEUED])
+                        BatchTask.status.in_([BatchTaskStatus.RUNNING.value, BatchTaskStatus.QUEUED.value])
                     )
                 )
                 running_count = running_result.scalar() or 0
@@ -1042,7 +1060,7 @@ class BatchExecutor:
                     select(BatchTask)
                     .where(
                         BatchTask.batch_id == batch_id,
-                        BatchTask.status == BatchTaskStatus.PENDING
+                        BatchTask.status == BatchTaskStatus.PENDING.value
                     )
                     .order_by(BatchTask.created_at)
                     .limit(1)
@@ -1216,7 +1234,7 @@ class BatchExecutor:
                         select(BatchTask).where(BatchTask.task_id == task_id)
                     )
                     task = result.scalar_one_or_none()
-                    if task and task.status == BatchTaskStatus.RUNNING:
+                    if task and task.status == BatchTaskStatus.RUNNING.value:
                         # Verify run_id lease if provided
                         if run_id is not None and task.run_id != run_id:
                             logger.warning(
@@ -1317,8 +1335,8 @@ class BatchExecutor:
         await db.refresh(batch)
 
         # Count tasks by status
-        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS)
-        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED)
+        success_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.SUCCESS.value)
+        failed_count = sum(1 for t in batch.tasks if t.status == BatchTaskStatus.FAILED.value)
 
         # Update batch counts
         batch.success_count = success_count
@@ -1378,7 +1396,7 @@ class BatchExecutor:
             raise ValueError(f"Task {task_id} not found in batch {batch_id}")
 
         # Only allow retry for failed tasks
-        if task.status != BatchTaskStatus.FAILED:
+        if task.status != BatchTaskStatus.FAILED.value:
             raise ValueError(
                 f"Task {task_id} is in {task.status} status, only failed tasks can be retried"
             )
@@ -1495,7 +1513,7 @@ class BatchExecutor:
             raise ValueError(f"Batch {batch_id} not found")
 
         # Get failed tasks
-        failed_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.FAILED]
+        failed_tasks = [t for t in batch.tasks if t.status == BatchTaskStatus.FAILED.value]
 
         if not failed_tasks:
             return {

@@ -1104,12 +1104,12 @@ class TestDatetimeTimezoneHandling:
         assert result.tzinfo == timezone.utc
         assert result.hour == 12  # Converted to UTC
 
-    def test_utc_now_is_aware(self):
-        """utc_now() returns timezone-aware datetime."""
+    def test_utc_now_is_naive_for_db(self):
+        """utc_now() returns naive datetime for DB DateTime columns without timezone."""
         from api.batch_executor import utc_now
         
         now = utc_now()
-        assert now.tzinfo is not None
+        assert now.tzinfo is None, "utc_now() must return naive datetime for DB compatibility"
 
     @pytest.mark.asyncio
     async def test_orphan_recovery_with_naive_started_at(self, executor, mock_graph_service):

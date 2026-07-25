@@ -405,3 +405,162 @@ async def test_auto_fill_after_task_completion(real_db_session, real_db_engine):
                     assert success_count == 2, f"Expected 2 SUCCESS, got {success_count}"
                     assert running_count == 2, f"Expected 2 RUNNING after auto-fill, got {running_count}"
                     assert pending_count == 2, f"Expected 2 PENDING after auto-fill, got {pending_count}"
+
+
+@pytest.mark.asyncio
+async def test_full_batch_lifecycle_real_db(real_db_session, real_db_engine):
+    """
+    完整批次生命周期集成测试（真实数据库）：
+    1. 创建1个批次、6条PENDING任务、并发2
+    2. 第一次启动：running=2、pending=4、submitted=2
+    3. 再次启动：不得重复领取正在运行的任务，submitted=0
+    4. 前2条完成后自动补位：running=2、pending=2
+    5. 再完成2条后自动补位：running=2、pending=0
+    6. 最后完成2条：success=6
+    7. 验证每条任务只执行一次（run_id唯一）
+    """
+    from api.batch_executor import BatchExecutor
+
+    # 1. Create batch + 6 PENDING tasks
+    batch_id = uuid.uuid4()
+    batch = BatchJob(
+        batch_id=batch_id,
+        status=BatchJobStatus.CREATED,
+        total_count=6,
+        pending_count=6,
+        running_count=0,
+        success_count=0,
+        failed_count=0,
+        concurrency=2,
+    )
+    real_db_session.add(batch)
+
+    task_ids = []
+    for i in range(6):
+        task_id = uuid.uuid4()
+        task_ids.append(task_id)
+        task = BatchTask(
+            task_id=task_id,
+            batch_id=batch_id,
+            row_number=i + 1,
+            external_task_id=f"ext_{i}",
+            status=BatchTaskStatus.PENDING.value,
+            input_data={"idx": i},
+        )
+        real_db_session.add(task)
+
+    await real_db_session.commit()
+    await real_db_session.close()
+
+    session_factory = async_sessionmaker(
+        real_db_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+    mock_graph_service = AsyncMock()
+    executor = BatchExecutor(graph_service=mock_graph_service)
+
+    # Track all run_ids to verify each task executed exactly once
+    claimed_run_ids = []
+
+    async def mock_submit(db, task, graph_service, run_id):
+        claimed_run_ids.append((task.task_id, run_id))
+        return True, "mock"
+
+    with patch('storage.database.db.get_async_sessionmaker', return_value=session_factory):
+        with patch('api.batch_executor.get_async_sessionmaker', return_value=session_factory):
+            with patch('api.batch_executor.submit_task_to_execution', side_effect=mock_submit):
+
+                # 2. First start: should claim exactly 2 tasks
+                async with session_factory() as db:
+                    result = await executor.start_batch(db, batch_id)
+                    assert result["submitted_count"] == 2, \
+                        f"First start: expected submitted=2, got {result['submitted_count']}. " \
+                        f"claim_failures={result.get('claim_failures', [])}"
+                    assert result["selected_count"] == 2
+
+                # Verify: running=2, pending=4
+                async with session_factory() as vdb:
+                    rows = (await vdb.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )).scalars().all()
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.RUNNING.value) == 2
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.PENDING.value) == 4
+                    first_run_ids = [t.run_id for t in rows if t.status == BatchTaskStatus.RUNNING.value]
+                    first_running_ids = [t.task_id for t in rows if t.status == BatchTaskStatus.RUNNING.value]
+
+                # 3. Second start: must NOT re-claim running tasks
+                async with session_factory() as db:
+                    result2 = await executor.start_batch(db, batch_id)
+                    assert result2["submitted_count"] == 0, \
+                        f"Second start: expected submitted=0, got {result2['submitted_count']}"
+
+                # 4. Complete first 2 tasks → auto-fill should bring 2 more to RUNNING
+                for task_id in first_running_ids:
+                    async with session_factory() as cdb:
+                        t = (await cdb.execute(
+                            select(BatchTask).where(BatchTask.task_id == task_id)
+                        )).scalar_one()
+                        t.status = BatchTaskStatus.SUCCESS.value
+                        t.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        await cdb.commit()
+                    await executor._trigger_next_pending_task(batch_id)
+
+                # Verify: success=2, running=2, pending=2
+                async with session_factory() as vdb:
+                    rows = (await vdb.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )).scalars().all()
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.SUCCESS.value) == 2
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.RUNNING.value) == 2, \
+                        f"Expected 2 RUNNING after auto-fill, got {sum(1 for t in rows if t.status == BatchTaskStatus.RUNNING.value)}"
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.PENDING.value) == 2
+                    second_running_ids = [t.task_id for t in rows if t.status == BatchTaskStatus.RUNNING.value]
+
+                # 5. Complete next 2 → auto-fill last 2
+                for task_id in second_running_ids:
+                    async with session_factory() as cdb:
+                        t = (await cdb.execute(
+                            select(BatchTask).where(BatchTask.task_id == task_id)
+                        )).scalar_one()
+                        t.status = BatchTaskStatus.SUCCESS.value
+                        t.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        await cdb.commit()
+                    await executor._trigger_next_pending_task(batch_id)
+
+                # Verify: success=4, running=2, pending=0
+                async with session_factory() as vdb:
+                    rows = (await vdb.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )).scalars().all()
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.SUCCESS.value) == 4
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.RUNNING.value) == 2
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.PENDING.value) == 0
+                    third_running_ids = [t.task_id for t in rows if t.status == BatchTaskStatus.RUNNING.value]
+
+                # 6. Complete last 2 → all success
+                for task_id in third_running_ids:
+                    async with session_factory() as cdb:
+                        t = (await cdb.execute(
+                            select(BatchTask).where(BatchTask.task_id == task_id)
+                        )).scalar_one()
+                        t.status = BatchTaskStatus.SUCCESS.value
+                        t.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        await cdb.commit()
+                    await executor._trigger_next_pending_task(batch_id)
+
+                async with session_factory() as vdb:
+                    rows = (await vdb.execute(
+                        select(BatchTask).where(BatchTask.batch_id == batch_id)
+                    )).scalars().all()
+                    assert sum(1 for t in rows if t.status == BatchTaskStatus.SUCCESS.value) == 6
+
+                # 7. Verify each task was claimed exactly once (unique run_id per task)
+                task_id_to_run_ids = {}
+                for tid, rid in claimed_run_ids:
+                    task_id_to_run_ids.setdefault(tid, []).append(rid)
+                for tid, rids in task_id_to_run_ids.items():
+                    assert len(rids) == 1, f"Task {tid} was claimed {len(rids)} times, expected 1"
+                assert len(task_id_to_run_ids) == 6, \
+                    f"Expected 6 unique tasks claimed, got {len(task_id_to_run_ids)}"
