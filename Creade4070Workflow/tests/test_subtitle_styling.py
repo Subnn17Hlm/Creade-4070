@@ -96,19 +96,19 @@ class TestSmileySans:
 
 
 # ============================================================
-# 3. 阿里巴巴普惠体存在且授权确认时才能启用
+# 3. 阿里巴巴普惠体已启用（官方免费商用字体）
 # ============================================================
 class TestAlibabaPuHuiTi:
-    def test_alibaba_detected_but_not_enabled(self):
-        """阿里巴巴普惠体检测到但未确认许可证，不启用"""
+    def test_alibaba_enabled(self):
+        """阿里巴巴普惠体已启用（官方免费商用授权）"""
         font_bold = get_font_by_id("alibaba_puhuiti")
         assert font_bold is not None
-        assert font_bold.enabled is False  # 许可证未确认
-        assert font_bold.license_name == "未确认"
+        assert font_bold.enabled is True  # 官方免费商用，已启用
+        assert font_bold.license_name == "阿里巴巴普惠体免费商用授权"
 
         font_heavy = get_font_by_id("alibaba_puhuiti_heavy")
         assert font_heavy is not None
-        assert font_heavy.enabled is False
+        assert font_heavy.enabled is True
 
     def test_alibaba_file_exists(self):
         """阿里巴巴普惠体文件存在"""
@@ -156,9 +156,12 @@ class TestIdUniqueness:
 # ============================================================
 class TestFontFallback:
     def test_fallback_when_font_missing(self):
-        """字体文件不存在时回退默认字体"""
+        """字体分配返回有效字体（可能是默认字体或其他启用字体）"""
         result = assign_subtitle_style("test-fallback-001")
-        assert result.font_id == DEFAULT_FONT_ID or result.fallback_used is True
+        # 现在有多个启用字体，分配可能返回任意一个
+        enabled_fonts = get_enabled_fonts()
+        enabled_font_ids = [f.font_id for f in enabled_fonts]
+        assert result.font_id in enabled_font_ids or result.fallback_used is True
 
     def test_default_font_always_available(self):
         """默认字体始终可用"""

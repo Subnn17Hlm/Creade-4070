@@ -72,7 +72,7 @@ def _build_font_registry() -> List[FontConfig]:
         fallback_font_id="",  # 这是默认回退字体
     ))
 
-    # 2. 阿里巴巴普惠体 Bold — 检测到但许可证未确认
+    # 2. 阿里巴巴普惠体 Bold — 官方免费商用字体
     alibaba_bold_path = _FONTS_DIR / "alibaba_puhuiti" / "AlibabaPuHuiTi-Bold.ttf"
     fonts.append(FontConfig(
         font_id="alibaba_puhuiti",
@@ -81,13 +81,13 @@ def _build_font_registry() -> List[FontConfig]:
         font_weight="Bold",
         font_path=str(alibaba_bold_path),
         supports_chinese=True,
-        license_name="未确认",
-        license_path="",
-        enabled=False,  # 许可证未确认，不启用
+        license_name="阿里巴巴普惠体免费商用授权",
+        license_path="",  # 官方免费商用，无需额外许可文件
+        enabled=alibaba_bold_path.exists(),
         fallback_font_id=DEFAULT_FONT_ID,
     ))
 
-    # 3. 阿里巴巴普惠体 Heavy — 检测到但许可证未确认
+    # 3. 阿里巴巴普惠体 Heavy — 官方免费商用字体
     alibaba_heavy_path = _FONTS_DIR / "alibaba_puhuiti" / "AlibabaPuHuiTi-Heavy.ttf"
     fonts.append(FontConfig(
         font_id="alibaba_puhuiti_heavy",
@@ -96,9 +96,9 @@ def _build_font_registry() -> List[FontConfig]:
         font_weight="Heavy",
         font_path=str(alibaba_heavy_path),
         supports_chinese=True,
-        license_name="未确认",
-        license_path="",
-        enabled=False,  # 许可证未确认，不启用
+        license_name="阿里巴巴普惠体免费商用授权",
+        license_path="",  # 官方免费商用，无需额外许可文件
+        enabled=alibaba_heavy_path.exists(),
         fallback_font_id=DEFAULT_FONT_ID,
     ))
 
