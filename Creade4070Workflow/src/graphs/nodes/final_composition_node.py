@@ -15,7 +15,7 @@ import re
 import shutil
 import logging
 import subprocess
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
@@ -633,6 +633,7 @@ def _burn_subtitles_batched(
     video_width: int = 720,
     video_height: int = 1280,
     max_cues_per_batch: int = 3,
+    subtitle_style: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     分批烧录字幕，避免同时加载所有 PNG 导致 OOM。
@@ -706,6 +707,7 @@ def _burn_subtitles_batched(
                     font_size=38,
                     video_width=video_width,
                     video_height=video_height,
+                    subtitle_style=subtitle_style,
                 )
                 
                 if not render_result["success"]:
@@ -893,9 +895,17 @@ def final_composition_node(
     subtitle_filter_supported = _check_subtitle_filter(ffmpeg_path)
     logger.info("[Node7] 字幕滤镜支持: %s", subtitle_filter_supported)
     
-    # 查找中文字体
-    font_path = _find_chinese_font()
-    logger.info("[Node7] 使用字体: %s", font_path)
+    # 查找中文字体（优先使用 subtitle_style 中指定的字体）
+    subtitle_style = state.get("subtitle_style")
+    font_path = None
+    if subtitle_style and isinstance(subtitle_style, dict):
+        font_path = subtitle_style.get("font_path")
+        if font_path and not os.path.exists(font_path):
+            logger.warning("[Node7] subtitle_style 指定字体不存在: %s，回退查找", font_path)
+            font_path = None
+    if not font_path:
+        font_path = _find_chinese_font()
+    logger.info("[Node7] 使用字体: %s (preset=%s)", font_path, state.get("subtitle_preset_id", "default"))
     
     # 获取TTS时长
     tts_duration = get_media_duration(tts_wav_path) if os.path.exists(tts_wav_path) else 0.0
@@ -1057,7 +1067,7 @@ def final_composition_node(
             raise RuntimeError(error_msg)
         
         try:
-            logger.info("[Node7] 使用分批 Pillow PNG overlay 方式烧录字幕")
+            logger.info("[Node7] 使用分批 Pillow PNG overlay 方式烧录字幕 (preset=%s)", state.get("subtitle_preset_id", "default"))
             overlay_result = _burn_subtitles_batched(
                 ffmpeg_path=ffmpeg_path,
                 video_path=concat_path,
@@ -1069,6 +1079,7 @@ def final_composition_node(
                 video_width=1080,
                 video_height=1920,
                 max_cues_per_batch=3,
+                subtitle_style=subtitle_style,
             )
             
             if overlay_result.get("subtitle_burned"):
@@ -1294,6 +1305,15 @@ def final_composition_node(
             "bgm_used": bgm_used,
             "node_trace": ["final_composition"],
         }
+        
+        # 添加字幕样式信息到结果
+        if subtitle_style:
+            result["subtitle_preset_id"] = subtitle_style.get("preset_id")
+            result["subtitle_font_id"] = subtitle_style.get("font_id")
+            result["subtitle_font_path"] = font_path
+            result["subtitle_font_size"] = subtitle_style.get("font_size")
+            result["subtitle_stroke_width"] = subtitle_style.get("stroke_width")
+            result["subtitle_fallback_used"] = False
         
         # 如果有 BGM 警告，合并到 warnings 中
         if bgm_warnings:

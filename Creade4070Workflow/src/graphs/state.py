@@ -113,6 +113,12 @@ class GlobalState(TypedDict, total=False):
     segment_signature_hash: str
     material_pool_version: str
 
+    # 字幕样式选择
+    subtitle_preset_id: str  # 选中的字幕预设ID
+    subtitle_font_id: str  # 选中的字体ID
+    subtitle_style: Dict[str, Any]  # 完整的字幕样式配置
+    subtitle_fallback_used: bool  # 是否使用了回退样式
+
     # Node7 - 最终合成
     final_video_path: str
     contact_sheet_path: str

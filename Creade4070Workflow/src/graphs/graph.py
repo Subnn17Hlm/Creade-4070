@@ -79,6 +79,7 @@ from graphs.nodes.generate_script_node import generate_script_node
 from graphs.nodes.manual_script_node import manual_script_node
 from graphs.nodes.input_normalization_node import input_normalization_node
 from graphs.nodes.tts_generation_node import tts_generation_node
+from graphs.nodes.subtitle_style_selection_node import subtitle_style_selection_node
 from graphs.nodes.subtitle_timing_node import subtitle_timing_node
 from graphs.nodes.material_source_audit_node import material_source_audit_node
 from graphs.nodes.material_matching_node import material_matching_node
@@ -101,6 +102,7 @@ builder.add_node("material_matching", material_matching_node, metadata={"type": 
 builder.add_node("clip_extraction", clip_extraction_node, metadata={"type": "task"})
 builder.add_node("timeline_assembly", timeline_assembly_node, metadata={"type": "task"})
 builder.add_node("timeline_dedup", timeline_dedup_node, metadata={"type": "task"})
+builder.add_node("subtitle_style_selection", subtitle_style_selection_node, metadata={"type": "task"})
 builder.add_node("final_composition", final_composition_node, metadata={"type": "task"})
 builder.add_node("quality_check", quality_check_node, metadata={"type": "task"})
 
@@ -138,9 +140,10 @@ builder.add_conditional_edges(
     path=route_after_dedup,
     path_map={
         "reroll": "material_matching",  # 重复 → 回到素材匹配重新选择
-        "proceed": "final_composition",  # 通过 → 继续渲染
+        "proceed": "subtitle_style_selection",  # 通过 → 选择字幕样式
     },
 )
+builder.add_edge("subtitle_style_selection", "final_composition")
 builder.add_edge("final_composition", "quality_check")
 builder.add_edge("quality_check", END)
 
