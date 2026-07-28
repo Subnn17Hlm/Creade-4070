@@ -835,6 +835,71 @@ def _burn_subtitles_batched(
     return result
 
 
+def resolve_subtitle_render_config(
+    state: dict,
+) -> tuple:
+    """Resolve subtitle rendering configuration from state.
+
+    Extracts subtitle_style dict from state, recovers SubtitleStyle object
+    via get_style_by_id(), and resolves font_path.
+
+    Returns:
+        (font_path, subtitle_style_or_None, metadata_dict)
+    """
+    subtitle_style_data = state.get("subtitle_style") or {}
+
+    subtitle_font_id = subtitle_style_data.get("subtitle_font_id")
+    subtitle_font_path = subtitle_style_data.get("subtitle_font_path")
+    subtitle_style_id = subtitle_style_data.get("subtitle_style_id")
+    subtitle_preset_id = (
+        subtitle_style_data.get("subtitle_preset_id")
+        or state.get("subtitle_preset_id")
+        or "default"
+    )
+
+    subtitle_style = None
+    if subtitle_style_id:
+        try:
+            from subtitle_styling.style_pool import get_style_by_id
+            subtitle_style = get_style_by_id(subtitle_style_id)
+            if subtitle_style is None:
+                logger.warning(
+                    "[resolve] 未找到字幕样式: style_id=%s",
+                    subtitle_style_id,
+                )
+        except Exception as exc:
+            logger.warning(
+                "[resolve] 恢复字幕样式失败: style_id=%s, error=%s",
+                subtitle_style_id,
+                exc,
+            )
+
+    font_path = subtitle_font_path
+    if font_path and not os.path.exists(font_path):
+        logger.warning(
+            "[resolve] 指定字幕字体不存在: font_id=%s, path=%s",
+            subtitle_font_id,
+            font_path,
+        )
+        font_path = None
+
+    if not font_path:
+        font_path = _find_chinese_font()
+
+    metadata = {
+        "subtitle_preset_id": subtitle_preset_id,
+        "subtitle_font_id": subtitle_font_id,
+        "subtitle_font_path": font_path,
+        "subtitle_style_id": subtitle_style_id,
+        "subtitle_fallback_used": subtitle_style is None,
+    }
+    if subtitle_style is not None:
+        metadata["subtitle_font_size"] = subtitle_style.font_size
+        metadata["subtitle_stroke_width"] = subtitle_style.stroke_width
+
+    return font_path, subtitle_style, metadata
+
+
 def final_composition_node(
     state: dict,
     config: RunnableConfig,
@@ -895,49 +960,11 @@ def final_composition_node(
     subtitle_filter_supported = _check_subtitle_filter(ffmpeg_path)
     logger.info("[Node7] 字幕滤镜支持: %s", subtitle_filter_supported)
     
-    # 查找中文字体（优先使用 subtitle_style 中指定的字体）
-    # subtitle_style 在 state 中是可序列化字典（来自 assignment_to_dict），
-    # 字段前缀为 subtitle_*，需要正确读取并恢复 SubtitleStyle 对象。
-    subtitle_style_data = state.get("subtitle_style") or {}
-
-    subtitle_font_id = subtitle_style_data.get("subtitle_font_id")
-    subtitle_font_path = subtitle_style_data.get("subtitle_font_path")
-    subtitle_style_id = subtitle_style_data.get("subtitle_style_id")
-    subtitle_preset_id = (
-        subtitle_style_data.get("subtitle_preset_id")
-        or state.get("subtitle_preset_id")
-        or "default"
-    )
-
-    # 从 style_id 恢复 SubtitleStyle 对象（渲染器需要对象属性，不是字典）
-    subtitle_style = None
-    if subtitle_style_id:
-        try:
-            from subtitle_styling.style_pool import get_style_by_id
-            subtitle_style = get_style_by_id(subtitle_style_id)
-            if subtitle_style is None:
-                logger.warning(
-                    "[Node7] 未找到字幕样式: style_id=%s",
-                    subtitle_style_id,
-                )
-        except Exception as exc:
-            logger.warning(
-                "[Node7] 恢复字幕样式失败: style_id=%s, error=%s",
-                subtitle_style_id,
-                exc,
-            )
-
-    font_path = subtitle_font_path
-    if font_path and not os.path.exists(font_path):
-        logger.warning(
-            "[Node7] 指定字幕字体不存在: font_id=%s, path=%s",
-            subtitle_font_id,
-            font_path,
-        )
-        font_path = None
-
-    if not font_path:
-        font_path = _find_chinese_font()
+    # Resolve subtitle rendering config from state
+    font_path, subtitle_style, _subtitle_meta = resolve_subtitle_render_config(state)
+    subtitle_font_id = _subtitle_meta.get("subtitle_font_id")
+    subtitle_preset_id = _subtitle_meta.get("subtitle_preset_id", "default")
+    subtitle_style_id = _subtitle_meta.get("subtitle_style_id")
 
     logger.info(
         "[Node7] 使用字幕配置: preset=%s, style=%s, font=%s, path=%s",

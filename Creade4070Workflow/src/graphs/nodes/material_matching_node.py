@@ -406,10 +406,12 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
                 "needs_clip": row.get("needs_clip", "").strip().lower() == 'true',
                 "notes": row.get("notes", "").strip(),
                 "source_batch": (
+                    lambda v: v if v else None
+                )((
                     row.get("source_batch")
                     or row.get("batch")
-                    or "default"
-                ).strip(),
+                    or ""
+                ).strip()),
             }
             # Parse optional priority column
             try:
@@ -774,21 +776,51 @@ def material_matching_node(
     else:
         _variation_rng = None
 
-    # Batch-level material usage tracking for cross-task deduplication.
-    # Uses a file-based tracker at runs/_batch_usage/ to share across tasks.
-    _batch_usage = {"asset_counts": {}, "source_batch_counts": {}}
-    _run_dir = state.get("run_dir", "")
-    if _run_dir:
-        _batch_usage_dir = os.path.join(os.path.dirname(_run_dir), "_batch_usage")
-        _batch_usage_file = os.path.join(_batch_usage_dir, "material_usage.json")
-        try:
-            os.makedirs(_batch_usage_dir, exist_ok=True)
-            if os.path.exists(_batch_usage_file):
-                with open(_batch_usage_file, "r", encoding="utf-8") as f:
-                    _batch_usage = json.load(f)
-        except Exception as exc:
-            logger.warning("[MaterialMatching] Failed to load batch usage: %s", exc)
-    
+    # Variation index for stable weighted selection
+    _variation_index = state.get("variation_index", 0) or 0
+
+    # Check if source_batch metadata is available in loaded materials
+    _source_batch_available = any(
+        m.get("source_batch") for m in materials
+    )
+    if not _source_batch_available:
+        logger.info(
+            "[MaterialMatching] source_batch metadata unavailable; "
+            "using asset-level variation only"
+        )
+
+    # Stable weighted selection functions (stateless, reproducible)
+    import hashlib as _hashlib
+
+    def _stable_unit_interval(
+        *,
+        variation_seed: int,
+        task_id: str,
+        generation_id: str,
+        variation_index: int,
+        asset_id: str,
+    ) -> float:
+        """Produce a stable float in (0, 1) for a task-asset combination."""
+        raw = (
+            f"{variation_seed}:"
+            f"{task_id}:"
+            f"{generation_id}:"
+            f"{variation_index}:"
+            f"{asset_id}"
+        ).encode("utf-8")
+        digest = _hashlib.sha256(raw).digest()
+        value = int.from_bytes(digest[:8], "big")
+        return (value + 1) / ((1 << 64) + 1)
+
+    def _weighted_stable_key(
+        *,
+        weight: float,
+        stable_random: float,
+    ) -> float:
+        """Efraimidis–Spirakis weighted random key."""
+        safe_weight = max(float(weight), 0.000001)
+        return stable_random ** (1.0 / safe_weight)
+
     # 构建 timing_by_sid 用于计算 visual_group_total_duration
     timing_by_sid: Dict[int, Dict[str, Any]] = {}
     for t in state.get("timing", []):
@@ -917,14 +949,13 @@ def material_matching_node(
         # 当句子时长较短（< 1.5秒）时，优先选择duration_sec较短的素材
         is_short_sentence = target_duration < 1.5
         
-        # 辅助函数：计算素材与句子的匹配分数
+        # 辅助函数：计算素材与句子的业务匹配分数
         def _calculate_material_score(mat: Dict, sentence_text: str, is_short: bool) -> float:
             """
-            计算素材与句子的匹配分数
+            计算素材与句子的业务匹配分数
             - description 辅助匹配：description 中包含句子关键词则加分
             - duration_sec 辅助匹配：短句优先短素材，长句优先长素材
-            - priority 加权：高优先级素材获得更高分
-            - batch usage 降权：近期使用过的素材和 source_batch 降权
+            仅返回业务分数，不含随机扰动。
             """
             base_score = 0.0
             mat_desc = mat.get("description", "").lower()
@@ -947,47 +978,47 @@ def material_matching_node(
                 elif mat_duration >= 3.0:
                     base_score += 0.1
             
-            # Priority factor: higher priority materials get a boost
-            priority = int(mat.get("priority", 0))
-            priority_factor = max(0.25, 1.0 + float(priority) * 0.10)
-            
-            # Asset usage penalty: recently used assets get penalized
-            asset_id = mat.get("asset_id", "")
-            asset_usage_count = _batch_usage.get("asset_counts", {}).get(asset_id, 0)
-            asset_usage_factor = 1.0 / (1.0 + asset_usage_count)
-            
-            # Source batch usage penalty: recently used source_batches get penalized
-            source_batch = mat.get("source_batch", "default")
-            batch_usage_count = _batch_usage.get("source_batch_counts", {}).get(source_batch, 0)
-            batch_usage_factor = 1.0 / (1.0 + batch_usage_count * 0.5)
-            
-            # Final weight: base_score^2 * priority * usage penalties
-            # Use max(base_score, 0.1)^2 to ensure non-zero weights
-            final_weight = (max(base_score, 0.1) ** 2) * priority_factor * asset_usage_factor * batch_usage_factor
-            
-            return final_weight
+            return max(base_score, 0.1)
         
-        # Helper: select from scored candidates using weighted random or deterministic top-score
+        # Helper: select from scored candidates using stable weighted keys
         def _select_from_scored(scored_list, seg_id="", seg_idx=0):
-            """Select material from scored candidates.
+            """Select material using Efraimidis-Spirakis stable weighted keys.
             
-            With variation_rng: weighted random (score^2 as weight).
-            Without: deterministic top-score (backward compatible).
+            Each candidate gets a selection_key = stable_random^(1/weight).
+            Higher weight → key closer to 1 → more likely to be selected.
+            The selection is fully deterministic given task parameters.
             """
             if not scored_list:
                 return None
             if len(scored_list) == 1:
                 return scored_list[0][0]
-            if _variation_rng is not None:
-                cands = [item[0] for item in scored_list]
-                scrs = [item[1] for item in scored_list]
-                chosen, _ = _variation_rng.weighted_choice(
-                    cands, scrs, seg_id, seg_idx, minimum_score=0.1
+            
+            # Compute stable selection key for each candidate
+            keyed = []
+            for mat, score in scored_list:
+                asset_id = mat.get("asset_id", "")
+                base_weight = max(float(score), 0.1) ** 2
+                # Priority boost
+                priority = int(mat.get("priority", 0))
+                priority_factor = max(0.25, 1.0 + float(priority) * 0.10)
+                base_weight *= priority_factor
+                
+                stable_random = _stable_unit_interval(
+                    variation_seed=_variation_seed,
+                    task_id=_task_id,
+                    generation_id=_generation_id,
+                    variation_index=_variation_index,
+                    asset_id=asset_id,
                 )
-                return chosen
-            # Deterministic fallback: always pick highest score
-            scored_list_sorted = sorted(scored_list, key=lambda x: x[1], reverse=True)
-            return scored_list_sorted[0][0]
+                selection_key = _weighted_stable_key(
+                    weight=base_weight,
+                    stable_random=stable_random,
+                )
+                keyed.append((mat, selection_key))
+            
+            # Select the candidate with the highest key
+            keyed.sort(key=lambda x: x[1], reverse=True)
+            return keyed[0][0]
         
         _seg_id = str(sentence_ids[0]) if sentence_ids else ""
         _seg_idx = group_index if 'group_index' in dir() else 0
@@ -1087,23 +1118,6 @@ def material_matching_node(
 
         used_material_ids.add(selected["asset_id"])
 
-        # Update batch-level usage tracking
-        _sel_asset_id = selected.get("asset_id", "")
-        _sel_source_batch = selected.get("source_batch", "default")
-        if _sel_asset_id:
-            _batch_usage.setdefault("asset_counts", {})[_sel_asset_id] = \
-                _batch_usage.get("asset_counts", {}).get(_sel_asset_id, 0) + 1
-        if _sel_source_batch:
-            _batch_usage.setdefault("source_batch_counts", {})[_sel_source_batch] = \
-                _batch_usage.get("source_batch_counts", {}).get(_sel_source_batch, 0) + 1
-        # Persist batch usage for cross-task sharing
-        if _run_dir and _batch_usage_file:
-            try:
-                with open(_batch_usage_file, "w", encoding="utf-8") as f:
-                    json.dump(_batch_usage, f, ensure_ascii=False)
-            except Exception as exc:
-                logger.warning("[MaterialMatching] Failed to save batch usage: %s", exc)
-
         # 获取 group 中第一个句子的 mapping 信息（用于 low_confidence 标记）
         first_sid = sentence_ids[0] if sentence_ids else 1
         first_mapping = timing_by_sid.get(first_sid, {})
@@ -1189,7 +1203,9 @@ def material_matching_node(
             "selected_material_id": selected["asset_id"],
             "selected_file_name": selected["file_name"],
             "selected_primary_scene_tag": selected["primary_scene_tag"],
-            "selected_source_batch": selected.get("source_batch", "default"),
+            "selected_source_batch": selected.get("source_batch"),
+            "source_batch_available": _source_batch_available,
+            "selection_strategy": "stable_weighted_variation",
             "selected_url": selected["s3_url"] or (
                 _get_presigned_url(selected["bucket"], selected["object_key"])
                 if selected.get("bucket") and selected.get("object_key")

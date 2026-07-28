@@ -101,17 +101,19 @@ def build_workflow_input(task: "BatchTask") -> dict:
         )
     )
 
-    # variation_seed: prefer persisted output_data, then input_data
+    # variation_seed: prefer persisted output_data, then input_data, then task field
     variation_seed = int(
         output_data.get("variation_seed")
         or input_data.get("variation_seed")
+        or getattr(task, "variation_seed", 0)
         or 0
     )
 
-    # generation_id: prefer persisted output_data, then input_data
+    # generation_id: prefer persisted output_data, then input_data, then task field
     generation_id = str(
         output_data.get("generation_id")
         or input_data.get("generation_id")
+        or getattr(task, "generation_id", "")
         or ""
     )
 
