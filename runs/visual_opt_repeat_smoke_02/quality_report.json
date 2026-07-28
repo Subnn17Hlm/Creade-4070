@@ -1,0 +1,299 @@
+{
+  "original_script_chars": 160,
+  "final_script_chars": 157,
+  "script_coverage": 98.1,
+  "script_ok": true,
+  "audio_duration": 26.832,
+  "video_duration": 27.84,
+  "video_audio_diff": 1.008,
+  "padding_seconds": 1.008,
+  "body_sync_diff": 0.008,
+  "end_hold_sec": 1.0,
+  "tts_wav_exists": true,
+  "bgm_exists": true,
+  "tts_duration": 26.832,
+  "bgm_duration": 53.107,
+  "final_audio_duration": 26.832,
+  "final_video_duration": 27.84,
+  "final_audio_bitrate": 132147,
+  "final_audio_mean_volume": -23.5,
+  "tts_mean_volume": -21.2,
+  "bgm_mean_volume": -17.4,
+  "audio_mix_used": true,
+  "tts_in_final": true,
+  "bgm_in_final": true,
+  "bgm_trimmed_exists": true,
+  "mixed_audio_exists": true,
+  "mixed_audio_mean_volume": -23.5,
+  "bgm_audible_manual_check_required": true,
+  "bgm_audible_manual_result": "pending",
+  "subtitle_render_source": "subtitles_srt",
+  "subtitle_render_passes": 1,
+  "subtitles_no_overlap": true,
+  "subtitle_font_size": 38,
+  "subtitle_y_position_ratio": 0.82,
+  "subtitle_max_lines": 2,
+  "subtitle_area_ratio": 0.05,
+  "subtitle_style_pass": true,
+  "subtitle_cue_count": 20,
+  "subtitle_burned_into_final": true,
+  "subtitle_visible_in_final_video": true,
+  "sampled_subtitle_frame_paths": [
+    "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_2.0s.jpg",
+    "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_7.0s.jpg",
+    "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_13.0s.jpg",
+    "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_18.0s.jpg",
+    "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_23.0s.jpg"
+  ],
+  "expected_srt_text_per_frame": [
+    "是不是都在为",
+    "还好被我挖到了这个出差神器",
+    "别看它小",
+    "而且它这个屏显调温我真的超爱",
+    "经常出门的姐妹"
+  ],
+  "manual_visual_check_required": false,
+  "sampled_subtitle_frames": [
+    {
+      "time_point": 2,
+      "frame_path": "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_2.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "是不是都在为",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        51
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 7,
+      "frame_path": "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_7.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "还好被我挖到了这个出差神器",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        33
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 13,
+      "frame_path": "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_13.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "别看它小",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        31
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 18,
+      "frame_path": "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_18.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "而且它这个屏显调温我真的超爱",
+      "has_text_in_frame": true,
+      "text_blocks": 2,
+      "text_block_rows": [
+        31,
+        33
+      ],
+      "text_visible": true
+    },
+    {
+      "time_point": 23,
+      "frame_path": "/workspace/projects/runs/visual_opt_repeat_smoke_02/subtitle_check_frames/frame_23.0s.jpg",
+      "has_srt_at_time": true,
+      "srt_text": "经常出门的姐妹",
+      "has_text_in_frame": true,
+      "text_blocks": 1,
+      "text_block_rows": [
+        32
+      ],
+      "text_visible": true
+    }
+  ],
+  "material_frame_modified": false,
+  "material_resize_applied": false,
+  "material_crop_applied": false,
+  "crop_or_mask_method": "none",
+  "has_black_padding": false,
+  "bottom_black_area_ratio": 0.0,
+  "dark_frame_ratio": 0.0,
+  "dim_overlay_detected": false,
+  "black_padding_detected": false,
+  "final_visual_text_only_from_srt": true,
+  "unexpected_visual_text_detected": [],
+  "material_label_text_burned_in": false,
+  "debug_text_burned_in": false,
+  "selected_materials_from_candidates": true,
+  "semantic_match_summary": {
+    "total_segments": 20,
+    "high_confidence": 18,
+    "medium_confidence": 0,
+    "low_confidence": 2
+  },
+  "low_confidence_segments": 1,
+  "timeline_split_method": "character_weighted_punctuation",
+  "timeline_average_split": false,
+  "used_manifest_file": "asset_manifest_v2_clean.csv",
+  "unique_material_count": 16,
+  "adjacent_same_asset_restart": false,
+  "visual_group_continuity_fail": false,
+  "high_freq_reuse_fail": false,
+  "source_range_overlap_fail": false,
+  "asset_usage_counts": {
+    "旅行场景_002": 1,
+    "痛点共鸣_001": 1,
+    "痛点共鸣_004": 1,
+    "旅行场景_003": 1,
+    "痛点共鸣_003": 1,
+    "旅行场景_001": 1,
+    "手持大小对比_001": 1,
+    "放进包包_005": 1,
+    "风力展示_004": 1,
+    "吹发动作_001": 1,
+    "屏显调温_007": 1,
+    "屏显调温_003": 1,
+    "屏显调温_008": 1,
+    "旅行场景_005": 1,
+    "产品展示_001": 1,
+    "放进行李箱_005": 1
+  },
+  "visual_group_report": [
+    {
+      "group_id": 1,
+      "sentence_id": 1,
+      "is_active_clip": true,
+      "asset_id": "旅行场景_002",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 2,
+      "sentence_id": 2,
+      "is_active_clip": true,
+      "asset_id": "痛点共鸣_001",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 3,
+      "sentence_id": 3,
+      "is_active_clip": true,
+      "asset_id": "痛点共鸣_004",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 4,
+      "sentence_id": 4,
+      "is_active_clip": true,
+      "asset_id": "旅行场景_003",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 5,
+      "sentence_id": 6,
+      "is_active_clip": true,
+      "asset_id": "痛点共鸣_003",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 6,
+      "sentence_id": 7,
+      "is_active_clip": true,
+      "asset_id": "旅行场景_001",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 7,
+      "sentence_id": 8,
+      "is_active_clip": true,
+      "asset_id": "手持大小对比_001",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 8,
+      "sentence_id": 10,
+      "is_active_clip": true,
+      "asset_id": "放进包包_005",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 9,
+      "sentence_id": 12,
+      "is_active_clip": true,
+      "asset_id": "风力展示_004",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 10,
+      "sentence_id": 14,
+      "is_active_clip": true,
+      "asset_id": "吹发动作_001",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 11,
+      "sentence_id": 15,
+      "is_active_clip": true,
+      "asset_id": "屏显调温_007",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 12,
+      "sentence_id": 16,
+      "is_active_clip": true,
+      "asset_id": "屏显调温_003",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 13,
+      "sentence_id": 17,
+      "is_active_clip": true,
+      "asset_id": "屏显调温_008",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 14,
+      "sentence_id": 18,
+      "is_active_clip": true,
+      "asset_id": "旅行场景_005",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 15,
+      "sentence_id": 19,
+      "is_active_clip": true,
+      "asset_id": "产品展示_001",
+      "source_start": 0,
+      "source_end": 0
+    },
+    {
+      "group_id": 16,
+      "sentence_id": 20,
+      "is_active_clip": true,
+      "asset_id": "放进行李箱_005",
+      "source_start": 0,
+      "source_end": 0
+    }
+  ],
+  "failure_category": "fully_successful",
+  "status": "success",
+  "fail_reason": ""
+}

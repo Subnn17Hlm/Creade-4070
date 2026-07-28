@@ -1,0 +1,25 @@
+{
+  "manifest_file_used": "asset_manifest_v2_clean.csv",
+  "total_manifest_assets": 126,
+  "available_assets_after_filter": 126,
+  "sentence_mapping_file": "auto_generated",
+  "exact_tag_match_count": 20,
+  "synonym_match_count": 0,
+  "semantic_fallback_count": 0,
+  "unmatched_sentence_ids": [],
+  "high_confidence": 18,
+  "medium_confidence": 0,
+  "low_confidence": 2,
+  "repeated_material_count": 0,
+  "tag_distribution_used": {
+    "旅行场景": 4,
+    "痛点共鸣": 4,
+    "折叠动作": 1,
+    "放进包包": 1,
+    "放进行李箱": 2,
+    "产品展示": 2,
+    "风力展示": 2,
+    "护发效果": 1,
+    "屏显调温": 3
+  }
+}

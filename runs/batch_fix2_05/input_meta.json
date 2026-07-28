@@ -1,0 +1,31 @@
+{
+  "script_source": "manual",
+  "product_name": "",
+  "raw_script_chars": 139,
+  "cleaned_script_chars": 139,
+  "script_changed": true,
+  "change_reason": "whitespace_and_punctuation_normalization",
+  "material_csv": "assets/asset_manifest_v2_clean.csv",
+  "sentences": [
+    "这么小的吹风机",
+    "还能号称吹风机里的小钢炮",
+    "这款Creade折叠吹风机",
+    "只有巴掌大小",
+    "颜值高还轻巧",
+    "11万转每分钟的转速",
+    "风速能高达29米每秒",
+    "还配备磁吸风嘴",
+    "吹头发吹得又快又顺滑",
+    "2挡风速",
+    "5种风温",
+    "10种选择",
+    "怎么吹也不用担心烫伤",
+    "折叠随身携带",
+    "包包能放",
+    "箱子不占地",
+    "这么精致小巧的高速吹风机",
+    "一定要试一试"
+  ],
+  "sentence_count": 18,
+  "run_dir": "/workspace/projects/runs/batch_fix2_05"
+}

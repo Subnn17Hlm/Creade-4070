@@ -1,0 +1,235 @@
+[
+  {
+    "group_id": 1,
+    "sentence_ids": [
+      1
+    ],
+    "sentence_texts": [
+      "这款折叠吹风机"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "折叠动作",
+    "selected_asset_id": "折叠动作_001",
+    "selected_asset_file": "折叠动作_001_折叠收起_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作"
+  },
+  {
+    "group_id": 2,
+    "sentence_ids": [
+      2
+    ],
+    "sentence_texts": [
+      "十一万转"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "风力展示",
+    "selected_asset_id": "风力展示_001",
+    "selected_asset_file": "风力展示_001_花朵风力_2s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示"
+  },
+  {
+    "group_id": 3,
+    "sentence_ids": [
+      3
+    ],
+    "sentence_texts": [
+      "巴掌大"
+    ],
+    "original_sentence_durations": [
+      0.9
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "手持大小对比",
+    "selected_asset_id": "手持大小对比_001",
+    "selected_asset_file": "手持大小对比_001_桌面手机对比_3s.mp4",
+    "total_duration": 0.9,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['手持大小对比'] → 手持大小对比"
+  },
+  {
+    "group_id": 4,
+    "sentence_ids": [
+      4
+    ],
+    "sentence_texts": [
+      "放包里就走"
+    ],
+    "original_sentence_durations": [
+      1.521
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "放进包包",
+    "selected_asset_id": "放进包包_005",
+    "selected_asset_file": "放进包包_005_特写切远景从包拿出动作_3s.mp4",
+    "total_duration": 1.521,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['放进包包'] → 放进包包"
+  },
+  {
+    "group_id": 5,
+    "sentence_ids": [
+      5
+    ],
+    "sentence_texts": [
+      "0.3秒出风"
+    ],
+    "original_sentence_durations": [
+      1.887
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "产品展示",
+    "selected_asset_id": "产品展示_001",
+    "selected_asset_file": "产品展示_001_响指出现桌面静物展示_3s.mp4",
+    "total_duration": 1.887,
+    "low_confidence": true,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示"
+  },
+  {
+    "group_id": 6,
+    "sentence_ids": [
+      6
+    ],
+    "sentence_texts": [
+      "三档风速"
+    ],
+    "original_sentence_durations": [
+      2.071
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "风力展示",
+    "selected_asset_id": "风力展示_004",
+    "selected_asset_file": "风力展示_004_吹保鲜膜不破展示智能恒温_5s.mp4",
+    "total_duration": 2.071,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['风力展示'] → 风力展示"
+  },
+  {
+    "group_id": 7,
+    "sentence_ids": [
+      7
+    ],
+    "sentence_texts": [
+      "双风道"
+    ],
+    "original_sentence_durations": [
+      1.887
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "产品展示",
+    "selected_asset_id": "产品展示_002",
+    "selected_asset_file": "产品展示_002_抽屉里的折叠吹风机_3s.mp4",
+    "total_duration": 1.887,
+    "low_confidence": true,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示"
+  },
+  {
+    "group_id": 8,
+    "sentence_ids": [
+      8,
+      9
+    ],
+    "sentence_texts": [
+      "干发快"
+    ],
+    "original_sentence_durations": [
+      1.154,
+      1.338
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "吹发动作",
+    "selected_asset_id": "吹发动作_001",
+    "selected_asset_file": "吹发动作_001_全景吹发_5s.mp4",
+    "total_duration": 2.492,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['吹发动作'] → 吹发动作"
+  },
+  {
+    "group_id": 9,
+    "sentence_ids": [
+      10
+    ],
+    "sentence_texts": [
+      "护发顺"
+    ],
+    "original_sentence_durations": [
+      1.887
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "护发效果",
+    "selected_asset_id": "护发效果_001",
+    "selected_asset_file": "护发效果_001_半身中景_4s.mp4",
+    "total_duration": 1.887,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['护发效果'] → 护发效果"
+  },
+  {
+    "group_id": 10,
+    "sentence_ids": [
+      11
+    ],
+    "sentence_texts": [
+      "折叠设计"
+    ],
+    "original_sentence_durations": [
+      1.704
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "折叠动作",
+    "selected_asset_id": "折叠动作_002",
+    "selected_asset_file": "折叠动作_002_折叠到打开_3s.mp4",
+    "total_duration": 1.704,
+    "low_confidence": false,
+    "match_confidence": "high",
+    "match_reason": "精确标签匹配: ['折叠动作'] → 折叠动作"
+  },
+  {
+    "group_id": 11,
+    "sentence_ids": [
+      12
+    ],
+    "sentence_texts": [
+      "真的方便"
+    ],
+    "original_sentence_durations": [
+      1.521
+    ],
+    "merged": false,
+    "merge_reason": "",
+    "selected_scene_tag": "产品展示",
+    "selected_asset_id": "产品展示_003",
+    "selected_asset_file": "产品展示_003_手指品牌logo_3s.mp4",
+    "total_duration": 1.521,
+    "low_confidence": true,
+    "match_confidence": "low",
+    "match_reason": "[LOW_CONFIDENCE] 无关键词匹配，使用兜底标签: 产品展示; 素材: ['产品展示'] → 产品展示"
+  }
+]

@@ -1,0 +1,132 @@
+{
+  "audit_version": "1.0",
+  "audit_time": "2026-07-17T12:01:00.116145",
+  "total_assets_audited": 37,
+  "text_audit_summary": {
+    "passed": 36,
+    "passed_with_exception": 1,
+    "rejected": 0,
+    "unverified": 0
+  },
+  "product_consistency_summary": {
+    "passed": 37,
+    "rejected": 0,
+    "unverified": 0
+  },
+  "scene_tag_coverage": {
+    "CTA促单": {
+      "total": 2,
+      "safe": 2,
+      "rejected": 0
+    },
+    "产品展示": {
+      "total": 2,
+      "safe": 2,
+      "rejected": 0
+    },
+    "价格促销": {
+      "total": 3,
+      "safe": 3,
+      "rejected": 0
+    },
+    "吹发动作": {
+      "total": 2,
+      "safe": 2,
+      "rejected": 0
+    },
+    "屏显调温": {
+      "total": 4,
+      "safe": 4,
+      "rejected": 0
+    },
+    "手持大小对比": {
+      "total": 4,
+      "safe": 4,
+      "rejected": 0
+    },
+    "折叠动作": {
+      "total": 2,
+      "safe": 2,
+      "rejected": 0
+    },
+    "护发效果": {
+      "total": 4,
+      "safe": 4,
+      "rejected": 0
+    },
+    "放进包包": {
+      "total": 1,
+      "safe": 1,
+      "rejected": 0
+    },
+    "放进行李箱": {
+      "total": 1,
+      "safe": 1,
+      "rejected": 0
+    },
+    "旅行场景": {
+      "total": 4,
+      "safe": 4,
+      "rejected": 0
+    },
+    "痛点共鸣": {
+      "total": 3,
+      "safe": 3,
+      "rejected": 0
+    },
+    "风力展示": {
+      "total": 4,
+      "safe": 4,
+      "rejected": 0
+    },
+    "风嘴配件": {
+      "total": 1,
+      "safe": 1,
+      "rejected": 0
+    }
+  },
+  "safe_assets": [
+    "CTA促单_001",
+    "CTA促单_003",
+    "产品展示_001",
+    "产品展示_002",
+    "价格促销_001",
+    "价格促销_002",
+    "价格促销_003",
+    "吹发动作_001",
+    "吹发动作_008",
+    "屏显调温_001",
+    "屏显调温_003",
+    "屏显调温_007",
+    "屏显调温_008",
+    "手持大小对比_001",
+    "手持大小对比_002",
+    "手持大小对比_003",
+    "手持大小对比_006",
+    "折叠动作_001",
+    "折叠动作_002",
+    "护发效果_003",
+    "护发效果_004",
+    "护发效果_005",
+    "护发效果_006",
+    "放进包包_005",
+    "放进行李箱_005",
+    "旅行场景_001",
+    "旅行场景_002",
+    "旅行场景_003",
+    "旅行场景_005",
+    "痛点共鸣_001",
+    "痛点共鸣_003",
+    "痛点共鸣_004",
+    "风力展示_001",
+    "风力展示_002",
+    "风力展示_004",
+    "风力展示_005",
+    "风嘴配件_007"
+  ],
+  "rejected_assets": [],
+  "whitelist_assets": [
+    "屏显调温_003"
+  ],
+  "whitelist_count": 1
+}

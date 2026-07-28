@@ -1,0 +1,56 @@
+{
+  "lock_name": "LOCK_RELEASE_主链路稳定版_2026-07-16",
+  "lock_date": "2026-07-16",
+  "lock_type": "main_pipeline_stable",
+  "source_batch_report": "/workspace/projects/5条小批量验证修复版2/BATCH_VALIDATION_REPORT.md",
+  "stable_run_dirs": [
+    "runs/batch_fix2_01/",
+    "runs/batch_fix2_02/",
+    "runs/batch_fix2_03/",
+    "runs/batch_fix2_04/",
+    "runs/batch_fix2_05/"
+  ],
+  "passed_count": 5,
+  "total_count": 5,
+  "low_confidence_total": 6,
+  "low_confidence_per_batch": {
+    "batch_fix2_01": 2,
+    "batch_fix2_02": 2,
+    "batch_fix2_03": 0,
+    "batch_fix2_04": 2,
+    "batch_fix2_05": 0
+  },
+  "video_audio_diff_per_batch": {
+    "batch_fix2_01": 0.000,
+    "batch_fix2_02": 0.000,
+    "batch_fix2_03": 0.000,
+    "batch_fix2_04": 0.000,
+    "batch_fix2_05": 0.000
+  },
+  "handhold_fallback_used": false,
+  "repeated_materials": false,
+  "video_audio_diff_passed": true,
+  "asset_manifest": "assets/asset_manifest_v2_clean.csv",
+  "asset_manifest_count": 126,
+  "bgm_dir": "assets/bgm/",
+  "bgm_selection_logic": "MD5(script_id) stable selection",
+  "core_code_changes": [
+    {
+      "file": "src/graphs/nodes/material_matching_node.py",
+      "changes": "扩充_KEYWORD_TO_TAG字典至~160关键词，新增口语化/种草表达映射；优化兜底策略按句子类型选择安全标签"
+    },
+    {
+      "file": "src/graphs/nodes/timeline_assembly_node.py",
+      "changes": "修复跨句视觉延续clip时长不足时的回退逻辑，确保视觉总时长=TTS总时长"
+    },
+    {
+      "file": "src/graphs/nodes/script_source_router_node.py",
+      "changes": "BGM选择从random.choice改为MD5(script_id)稳定选择"
+    },
+    {
+      "file": "src/graphs/nodes/quality_check_node.py",
+      "changes": "low_confidence失败阈值从>0改为>=3"
+    }
+  ],
+  "notes": "主链路稳定版。后续 visual_grouping、end_hold、字幕样式池等优化应基于此版本之后进行。"
+}
