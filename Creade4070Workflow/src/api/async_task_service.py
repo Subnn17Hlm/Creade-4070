@@ -70,9 +70,9 @@ class AsyncTaskService:
         if task.status not in [BatchTaskStatus.PENDING, BatchTaskStatus.QUEUED, BatchTaskStatus.FAILED]:
             raise ValueError(f"Task status {task.status} is not valid for submission")
 
-        # Prepare workflow input
-        workflow_input = task.input_data.copy() if task.input_data else {}
-        workflow_input["task_id"] = str(task.task_id)
+        # Prepare workflow input using unified builder
+        from api.batch_executor import build_workflow_input
+        workflow_input = build_workflow_input(task)
         workflow_input["batch_id"] = str(task.batch_id)
         workflow_input["retry_count"] = task.retry_count
 

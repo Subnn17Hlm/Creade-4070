@@ -633,7 +633,7 @@ def _burn_subtitles_batched(
     video_width: int = 720,
     video_height: int = 1280,
     max_cues_per_batch: int = 3,
-    subtitle_style: Optional[Dict[str, Any]] = None,
+    subtitle_style: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     分批烧录字幕，避免同时加载所有 PNG 导致 OOM。
@@ -896,16 +896,56 @@ def final_composition_node(
     logger.info("[Node7] 字幕滤镜支持: %s", subtitle_filter_supported)
     
     # 查找中文字体（优先使用 subtitle_style 中指定的字体）
-    subtitle_style = state.get("subtitle_style")
-    font_path = None
-    if subtitle_style and isinstance(subtitle_style, dict):
-        font_path = subtitle_style.get("font_path")
-        if font_path and not os.path.exists(font_path):
-            logger.warning("[Node7] subtitle_style 指定字体不存在: %s，回退查找", font_path)
-            font_path = None
+    # subtitle_style 在 state 中是可序列化字典（来自 assignment_to_dict），
+    # 字段前缀为 subtitle_*，需要正确读取并恢复 SubtitleStyle 对象。
+    subtitle_style_data = state.get("subtitle_style") or {}
+
+    subtitle_font_id = subtitle_style_data.get("subtitle_font_id")
+    subtitle_font_path = subtitle_style_data.get("subtitle_font_path")
+    subtitle_style_id = subtitle_style_data.get("subtitle_style_id")
+    subtitle_preset_id = (
+        subtitle_style_data.get("subtitle_preset_id")
+        or state.get("subtitle_preset_id")
+        or "default"
+    )
+
+    # 从 style_id 恢复 SubtitleStyle 对象（渲染器需要对象属性，不是字典）
+    subtitle_style = None
+    if subtitle_style_id:
+        try:
+            from subtitle_styling.style_pool import get_style_by_id
+            subtitle_style = get_style_by_id(subtitle_style_id)
+            if subtitle_style is None:
+                logger.warning(
+                    "[Node7] 未找到字幕样式: style_id=%s",
+                    subtitle_style_id,
+                )
+        except Exception as exc:
+            logger.warning(
+                "[Node7] 恢复字幕样式失败: style_id=%s, error=%s",
+                subtitle_style_id,
+                exc,
+            )
+
+    font_path = subtitle_font_path
+    if font_path and not os.path.exists(font_path):
+        logger.warning(
+            "[Node7] 指定字幕字体不存在: font_id=%s, path=%s",
+            subtitle_font_id,
+            font_path,
+        )
+        font_path = None
+
     if not font_path:
         font_path = _find_chinese_font()
-    logger.info("[Node7] 使用字体: %s (preset=%s)", font_path, state.get("subtitle_preset_id", "default"))
+
+    logger.info(
+        "[Node7] 使用字幕配置: preset=%s, style=%s, font=%s, path=%s",
+        subtitle_preset_id,
+        subtitle_style_id,
+        subtitle_font_id,
+        font_path,
+    )
     
     # 获取TTS时长
     tts_duration = get_media_duration(tts_wav_path) if os.path.exists(tts_wav_path) else 0.0
@@ -1307,13 +1347,20 @@ def final_composition_node(
         }
         
         # 添加字幕样式信息到结果
-        if subtitle_style:
-            result["subtitle_preset_id"] = subtitle_style.get("preset_id")
-            result["subtitle_font_id"] = subtitle_style.get("font_id")
+        if subtitle_style is not None:
+            result["subtitle_preset_id"] = subtitle_preset_id
+            result["subtitle_font_id"] = subtitle_font_id
             result["subtitle_font_path"] = font_path
-            result["subtitle_font_size"] = subtitle_style.get("font_size")
-            result["subtitle_stroke_width"] = subtitle_style.get("stroke_width")
+            result["subtitle_style_id"] = subtitle_style.style_id
+            result["subtitle_font_size"] = subtitle_style.font_size
+            result["subtitle_stroke_width"] = subtitle_style.stroke_width
             result["subtitle_fallback_used"] = False
+        else:
+            result["subtitle_preset_id"] = subtitle_preset_id
+            result["subtitle_font_id"] = subtitle_font_id
+            result["subtitle_font_path"] = font_path
+            result["subtitle_style_id"] = subtitle_style_id
+            result["subtitle_fallback_used"] = True
         
         # 如果有 BGM 警告，合并到 warnings 中
         if bgm_warnings:

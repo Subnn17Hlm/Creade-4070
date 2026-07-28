@@ -217,9 +217,12 @@ class TestBatchExecutorRunIdPassing(unittest.TestCase):
         import inspect
         source = inspect.getsource(BatchExecutor._execute_single_task)
         
-        # Verify run_id is in workflow_input
-        self.assertIn('"run_id": str(run_id)', source)
-        self.assertIn('"script_source": "manual"', source)
+        # Verify run_id is passed to workflow_input (either inline or via build_workflow_input)
+        # After refactoring, run_id is set after build_workflow_input call
+        self.assertTrue(
+            '"run_id": str(run_id)' in source or 'workflow_input["run_id"]' in source,
+            "run_id should be set in workflow_input"
+        )
 
 
 if __name__ == "__main__":

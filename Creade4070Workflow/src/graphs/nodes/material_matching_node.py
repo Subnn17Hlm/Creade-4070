@@ -405,8 +405,17 @@ def _load_material_manifest(csv_path: str) -> List[Dict[str, Any]]:
                 "description": row.get("description", "").strip(),
                 "needs_clip": row.get("needs_clip", "").strip().lower() == 'true',
                 "notes": row.get("notes", "").strip(),
-                "batch": row.get("batch", "").strip(),
+                "source_batch": (
+                    row.get("source_batch")
+                    or row.get("batch")
+                    or "default"
+                ).strip(),
             }
+            # Parse optional priority column
+            try:
+                mat["priority"] = int(row.get("priority") or 0)
+            except (TypeError, ValueError):
+                mat["priority"] = 0
             # 保留有 URL 或有 bucket+object_key 的记录
             if url or (bucket and object_key):
                 materials.append(mat)
@@ -764,6 +773,21 @@ def material_matching_node(
         _variation_rng = VariationRNG(_variation_seed, _task_id, _generation_id)
     else:
         _variation_rng = None
+
+    # Batch-level material usage tracking for cross-task deduplication.
+    # Uses a file-based tracker at runs/_batch_usage/ to share across tasks.
+    _batch_usage = {"asset_counts": {}, "source_batch_counts": {}}
+    _run_dir = state.get("run_dir", "")
+    if _run_dir:
+        _batch_usage_dir = os.path.join(os.path.dirname(_run_dir), "_batch_usage")
+        _batch_usage_file = os.path.join(_batch_usage_dir, "material_usage.json")
+        try:
+            os.makedirs(_batch_usage_dir, exist_ok=True)
+            if os.path.exists(_batch_usage_file):
+                with open(_batch_usage_file, "r", encoding="utf-8") as f:
+                    _batch_usage = json.load(f)
+        except Exception as exc:
+            logger.warning("[MaterialMatching] Failed to load batch usage: %s", exc)
     
     # 构建 timing_by_sid 用于计算 visual_group_total_duration
     timing_by_sid: Dict[int, Dict[str, Any]] = {}
@@ -899,32 +923,49 @@ def material_matching_node(
             计算素材与句子的匹配分数
             - description 辅助匹配：description 中包含句子关键词则加分
             - duration_sec 辅助匹配：短句优先短素材，长句优先长素材
+            - priority 加权：高优先级素材获得更高分
+            - batch usage 降权：近期使用过的素材和 source_batch 降权
             """
-            score = 0.0
+            base_score = 0.0
             mat_desc = mat.get("description", "").lower()
             mat_duration = mat.get("duration_sec", 3.0)
             
             # description 辅助匹配
-            # 检查 description 中是否包含句子中的关键词
             for keyword in _KEYWORD_TO_TAG.keys():
                 if keyword in sentence_text.lower() and keyword in mat_desc:
-                    score += 0.3
+                    base_score += 0.3
             
             # duration_sec 辅助匹配
             if is_short:
-                # 短句：优先选择时长较短的素材（1-3秒）
                 if mat_duration <= 3.0:
-                    score += 0.2
+                    base_score += 0.2
                 elif mat_duration <= 5.0:
-                    score += 0.1
+                    base_score += 0.1
             else:
-                # 长句：优先选择时长较长的素材（5秒以上）
                 if mat_duration >= 5.0:
-                    score += 0.2
+                    base_score += 0.2
                 elif mat_duration >= 3.0:
-                    score += 0.1
+                    base_score += 0.1
             
-            return score
+            # Priority factor: higher priority materials get a boost
+            priority = int(mat.get("priority", 0))
+            priority_factor = max(0.25, 1.0 + float(priority) * 0.10)
+            
+            # Asset usage penalty: recently used assets get penalized
+            asset_id = mat.get("asset_id", "")
+            asset_usage_count = _batch_usage.get("asset_counts", {}).get(asset_id, 0)
+            asset_usage_factor = 1.0 / (1.0 + asset_usage_count)
+            
+            # Source batch usage penalty: recently used source_batches get penalized
+            source_batch = mat.get("source_batch", "default")
+            batch_usage_count = _batch_usage.get("source_batch_counts", {}).get(source_batch, 0)
+            batch_usage_factor = 1.0 / (1.0 + batch_usage_count * 0.5)
+            
+            # Final weight: base_score^2 * priority * usage penalties
+            # Use max(base_score, 0.1)^2 to ensure non-zero weights
+            final_weight = (max(base_score, 0.1) ** 2) * priority_factor * asset_usage_factor * batch_usage_factor
+            
+            return final_weight
         
         # Helper: select from scored candidates using weighted random or deterministic top-score
         def _select_from_scored(scored_list, seg_id="", seg_idx=0):
@@ -1046,6 +1087,23 @@ def material_matching_node(
 
         used_material_ids.add(selected["asset_id"])
 
+        # Update batch-level usage tracking
+        _sel_asset_id = selected.get("asset_id", "")
+        _sel_source_batch = selected.get("source_batch", "default")
+        if _sel_asset_id:
+            _batch_usage.setdefault("asset_counts", {})[_sel_asset_id] = \
+                _batch_usage.get("asset_counts", {}).get(_sel_asset_id, 0) + 1
+        if _sel_source_batch:
+            _batch_usage.setdefault("source_batch_counts", {})[_sel_source_batch] = \
+                _batch_usage.get("source_batch_counts", {}).get(_sel_source_batch, 0) + 1
+        # Persist batch usage for cross-task sharing
+        if _run_dir and _batch_usage_file:
+            try:
+                with open(_batch_usage_file, "w", encoding="utf-8") as f:
+                    json.dump(_batch_usage, f, ensure_ascii=False)
+            except Exception as exc:
+                logger.warning("[MaterialMatching] Failed to save batch usage: %s", exc)
+
         # 获取 group 中第一个句子的 mapping 信息（用于 low_confidence 标记）
         first_sid = sentence_ids[0] if sentence_ids else 1
         first_mapping = timing_by_sid.get(first_sid, {})
@@ -1131,6 +1189,7 @@ def material_matching_node(
             "selected_material_id": selected["asset_id"],
             "selected_file_name": selected["file_name"],
             "selected_primary_scene_tag": selected["primary_scene_tag"],
+            "selected_source_batch": selected.get("source_batch", "default"),
             "selected_url": selected["s3_url"] or (
                 _get_presigned_url(selected["bucket"], selected["object_key"])
                 if selected.get("bucket") and selected.get("object_key")
@@ -1148,6 +1207,8 @@ def material_matching_node(
             "low_confidence": mapping_low_confidence,
             "fallback_reason": mapping_fallback_reason,
             "candidate_tags": mapping_candidate_tags,
+            "candidate_count": len(candidates),
+            "variation_seed": _variation_seed,
         }
         selected_assets.append(entry)
 

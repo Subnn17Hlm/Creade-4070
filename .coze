@@ -6,8 +6,8 @@ project_type = "web"
 preview_enable = "enabled"
 
 [dev]
-build = ["bash", "Creade4070Workflow/scripts/dev-build-minimal.sh"]
-run = ["bash", "Creade4070Workflow/scripts/dev-run-minimal.sh"]
+build = ["bash", "Creade4070Workflow/scripts/coze-preview-build.sh"]
+run = ["bash", "Creade4070Workflow/scripts/coze-preview-run.sh"]
 
 [deploy]
 build = ["bash", "Creade4070Workflow/scripts/setup.sh"]

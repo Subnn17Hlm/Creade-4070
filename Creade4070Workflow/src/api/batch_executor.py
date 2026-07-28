@@ -68,6 +68,75 @@ logger = logging.getLogger(__name__)
 MAX_ERROR_MESSAGE_LENGTH = 2000
 
 
+def derive_stable_nonzero_seed(task_id: str, generation_id: str) -> int:
+    """Derive a stable, non-zero seed from task_id and generation_id using SHA-256."""
+    import hashlib
+    raw = f"{task_id}:{generation_id}".encode("utf-8")
+    digest = hashlib.sha256(raw).digest()
+    seed = int.from_bytes(digest[:8], "big")
+    return seed or 1
+
+
+def build_workflow_input(task: "BatchTask") -> dict:
+    """
+    Build a unified workflow input dict from a BatchTask.
+
+    All execution paths (native async, fallback, direct) must call this
+    function to ensure consistent parameters.
+
+    Priority:
+    - batch_task_index from input_data (set during CSV parsing)
+    - variation_index from input_data (legacy)
+    - generation_id / variation_seed from output_data (persisted) or input_data
+    - Non-zero seed guaranteed via derive_stable_nonzero_seed fallback
+    """
+    input_data = dict(task.input_data or {})
+    output_data = dict(task.output_data or {})
+
+    # batch_task_index: stable per-row index from CSV parsing
+    batch_task_index = int(
+        input_data.get(
+            "batch_task_index",
+            input_data.get("variation_index", 0),
+        )
+    )
+
+    # variation_seed: prefer persisted output_data, then input_data
+    variation_seed = int(
+        output_data.get("variation_seed")
+        or input_data.get("variation_seed")
+        or 0
+    )
+
+    # generation_id: prefer persisted output_data, then input_data
+    generation_id = str(
+        output_data.get("generation_id")
+        or input_data.get("generation_id")
+        or ""
+    )
+
+    # Ensure non-zero seed
+    if variation_seed == 0:
+        variation_seed = derive_stable_nonzero_seed(
+            task_id=str(task.task_id),
+            generation_id=generation_id,
+        )
+
+    # Build unified input
+    workflow_input = dict(input_data)
+    workflow_input.update({
+        "task_id": str(task.task_id),
+        "generation_id": generation_id or str(task.task_id),
+        "variation_seed": variation_seed,
+        "variation_index": batch_task_index,
+        "batch_task_index": batch_task_index,
+        "script_text": input_data.get("script_text", ""),
+        "script_source": "manual",
+    })
+
+    return workflow_input
+
+
 def _sanitize_error_message(raw) -> str:
     """Sanitize error message to a safe, JSON-serializable string.
     
@@ -352,8 +421,8 @@ async def submit_task_to_execution(
             async_task_service = get_async_task_service(graph_service)
             if async_task_service.runtime is not None:
                 await async_task_service.submit_task(
-                    task_id=str(task.task_id),
-                    input_data=task.input_data or {},
+                    db=db,
+                    task=task,
                     deadline_sec=1800,
                 )
                 logger.info(f"Submitted task {task.task_id} to native async system")
@@ -839,13 +908,9 @@ class BatchExecutor:
         workflow_success = False
 
         try:
-            # Prepare input for workflow - include run_id for directory isolation
-            workflow_input = {
-                "script_text": task.input_data.get("script_text", ""),
-                "run_id": str(run_id),  # Pass run_id to workflow for directory isolation
-                "script_source": "manual",  # Batch tasks use manual script mode
-                "variation_index": task.input_data.get("batch_task_index", 0),
-            }
+            # Prepare input for workflow using unified builder
+            workflow_input = build_workflow_input(task)
+            workflow_input["run_id"] = str(run_id)  # Pass run_id for directory isolation
 
             # Create context for this run
             from coze_coding_utils.runtime_ctx.context import new_context
@@ -1035,6 +1100,13 @@ class BatchExecutor:
         workflow_success = False
         
         try:
+            # Build unified workflow input using generation info
+            batch_task_index = int(
+                task_input.get(
+                    "batch_task_index",
+                    task_input.get("variation_index", generation.variation_index),
+                )
+            )
             workflow_input = {
                 "script_text": task_input.get("script_text", ""),
                 "run_id": str(run_id),
@@ -1042,7 +1114,8 @@ class BatchExecutor:
                 "variation_seed": generation.variation_seed,
                 "generation_id": generation.generation_id,
                 "task_id": str(task_id),
-                "variation_index": task_input.get("batch_task_index", generation.variation_index),
+                "variation_index": batch_task_index,
+                "batch_task_index": batch_task_index,
             }
             
             from coze_coding_utils.runtime_ctx.context import new_context
