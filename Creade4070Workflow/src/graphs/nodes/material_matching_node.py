@@ -781,7 +781,7 @@ def material_matching_node(
 
     # Check if source_batch metadata is available in loaded materials
     _source_batch_available = any(
-        m.get("source_batch") for m in materials
+        m.get("source_batch") for m in all_materials
     )
     if not _source_batch_available:
         logger.info(

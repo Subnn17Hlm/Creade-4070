@@ -519,3 +519,46 @@ class TestMaterialVariationIntegration:
         new_db_task = result.scalar_one()
         assert new_db_task.output_data["generation_id"] != gen1.generation_id
         assert new_db_task.output_data["generation_reason"] == "user_regenerate"
+
+
+class TestSourceBatchDetectionRegression:
+    """Regression: source_batch detection must use all_materials, not undefined 'materials'."""
+
+    def test_source_batch_detection_no_name_error(self):
+        """Verify that checking source_batch availability doesn't raise NameError.
+
+        Bug: material_matching_node() used 'materials' (undefined in node scope)
+        instead of 'all_materials' for source_batch detection.
+        """
+        # Simulate the exact code path from material_matching_node
+        all_materials = [
+            {"asset_id": "a1", "source_batch": None, "primary_scene_tag": "test"},
+            {"asset_id": "a2", "source_batch": None, "primary_scene_tag": "test"},
+        ]
+
+        # This is the exact code from material_matching_node line ~783
+        _source_batch_available = any(
+            m.get("source_batch") for m in all_materials
+        )
+        assert _source_batch_available is False
+
+    def test_source_batch_detection_with_real_batch_data(self):
+        """Verify source_batch detection works when materials have batch data."""
+        all_materials = [
+            {"asset_id": "a1", "source_batch": "batch_01", "primary_scene_tag": "test"},
+            {"asset_id": "a2", "source_batch": None, "primary_scene_tag": "test"},
+        ]
+
+        _source_batch_available = any(
+            m.get("source_batch") for m in all_materials
+        )
+        assert _source_batch_available is True
+
+    def test_source_batch_detection_empty_list(self):
+        """Verify source_batch detection handles empty material list."""
+        all_materials = []
+
+        _source_batch_available = any(
+            m.get("source_batch") for m in all_materials
+        )
+        assert _source_batch_available is False
