@@ -1,7 +1,7 @@
 """
 字幕字体与样式确定性分配模块
 
-使用 SHA-256 根据 task_id 确定性选择字体和样式。
+使用预设系统实现批次内确定性均衡轮换。
 同一 task_id 每次运行结果一致，服务重启后结果一致。
 """
 import hashlib
@@ -26,6 +26,14 @@ from subtitle_styling.style_pool import (
     get_style_by_id,
     validate_style,
 )
+from subtitle_styling.presets import (
+    SubtitlePreset,
+    get_preset_by_id,
+    get_preset_for_task,
+    get_preset_for_task_id,
+    get_presets,
+    validate_preset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +49,7 @@ class SubtitleAssignment:
     style_name: str
     style: SubtitleStyle
     font_config: FontConfig
+    preset_id: str
     fallback_used: bool
     fallback_reason: str
 
@@ -53,82 +62,74 @@ def _sha256_digest(task_id: str) -> str:
 def assign_subtitle_style(
     task_id: str,
     existing_assignment: Optional[Dict] = None,
+    task_index: Optional[int] = None,
 ) -> SubtitleAssignment:
     """
-    根据 task_id 确定性分配字幕字体和样式。
+    根据 task_id 或 task_index 确定性分配字幕字体和样式。
 
     参数:
         task_id: 任务 ID（字符串）
         existing_assignment: 已保存的分配结果（用于任务重试时保持一致）
+        task_index: 任务在批次中的索引（用于均衡轮换）
 
     返回:
         SubtitleAssignment: 分配结果
 
     算法:
         1. 如果已有保存的分配结果，直接使用
-        2. 否则，使用 SHA-256(task_id) 计算索引
-        3. 从已启用的字体和样式中选择
-        4. 验证选择结果，失败则回退到默认
+        2. 如果提供 task_index，使用均衡轮换（task_index % preset_count）
+        3. 否则，使用 SHA-256(task_id) 计算索引
+        4. 从预设列表中选择
+        5. 验证选择结果，失败则回退到默认
     """
     # 1. 如果已有保存的分配结果，优先使用
     if existing_assignment:
         return _restore_assignment(existing_assignment)
 
-    # 2. 计算 SHA-256 摘要
-    digest = _sha256_digest(task_id)
+    # 2. 获取预设列表
+    presets = get_presets()
+    if not presets:
+        logger.warning("没有可用的预设，使用默认回退")
+        return _create_fallback_assignment("没有可用的预设")
 
-    # 3. 获取已启用的字体和样式（按稳定字段排序）
-    enabled_fonts = get_enabled_fonts()
-    enabled_styles = get_enabled_styles()
+    # 3. 选择预设
+    if task_index is not None:
+        # 使用均衡轮换
+        preset = get_preset_for_task(task_index)
+        logger.info(f"使用均衡轮换: task_index={task_index}, preset={preset.preset_id}")
+    else:
+        # 使用哈希确定性选择
+        preset = get_preset_for_task_id(task_id)
+        logger.info(f"使用哈希选择: task_id={task_id}, preset={preset.preset_id}")
 
-    if not enabled_fonts:
-        logger.warning("没有可用的字体，使用默认回退")
-        return _create_fallback_assignment("没有可用的字体")
+    # 4. 验证预设
+    valid, error = validate_preset(preset)
+    if not valid:
+        logger.warning(f"预设 {preset.preset_id} 验证失败: {error}，回退到默认")
+        return _create_fallback_assignment(f"预设 {preset.preset_id} 验证失败: {error}")
 
-    if not enabled_styles:
-        logger.warning("没有可用的样式，使用默认回退")
-        return _create_fallback_assignment("没有可用的样式")
+    # 5. 获取字体和样式
+    selected_font = get_font_by_id(preset.font_id)
+    selected_style = get_style_by_id(preset.style_id)
 
-    # 4. 计算索引
-    font_index = int(digest[:16], 16) % len(enabled_fonts)
-    style_index = int(digest[16:32], 16) % len(enabled_styles)
+    if selected_font is None:
+        logger.warning(f"字体 {preset.font_id} 不存在，回退到默认")
+        return _create_fallback_assignment(f"字体 {preset.font_id} 不存在")
 
-    selected_font = enabled_fonts[font_index]
-    selected_style = enabled_styles[style_index]
+    if selected_style is None:
+        logger.warning(f"样式 {preset.style_id} 不存在，回退到默认")
+        return _create_fallback_assignment(f"样式 {preset.style_id} 不存在")
 
-    # 5. 验证字体和样式
+    # 6. 验证字体
     font_validation = validate_font(selected_font)
-    style_errors = validate_style(selected_style)
-
     if not font_validation.success:
         logger.warning(
-            "字体 %s 验证失败: %s，回退到默认字体",
-            selected_font.font_id,
-            font_validation.error,
+            f"字体 {selected_font.font_id} 验证失败: {font_validation.error}，回退到默认字体"
         )
         selected_font = get_default_font()
         fallback_reason = f"字体 {selected_font.font_id} 验证失败: {font_validation.error}"
-    elif style_errors:
-        logger.warning(
-            "样式 %s 验证失败: %s，回退到默认样式",
-            selected_style.style_id,
-            style_errors,
-        )
-        selected_style = get_default_style()
-        fallback_reason = f"样式 {selected_style.style_id} 验证失败: {style_errors}"
     else:
-        # 检查字体是否在样式的允许列表中
-        if selected_font.font_id not in selected_style.allowed_font_ids:
-            logger.warning(
-                "字体 %s 不在样式 %s 的允许列表中，回退到默认",
-                selected_font.font_id,
-                selected_style.style_id,
-            )
-            selected_font = get_default_font()
-            selected_style = get_default_style()
-            fallback_reason = f"字体 {selected_font.font_id} 不在样式允许列表中"
-        else:
-            fallback_reason = ""
+        fallback_reason = ""
 
     return SubtitleAssignment(
         font_id=selected_font.font_id,
@@ -139,6 +140,7 @@ def assign_subtitle_style(
         style_name=selected_style.style_name,
         style=selected_style,
         font_config=selected_font,
+        preset_id=preset.preset_id,
         fallback_used=bool(fallback_reason),
         fallback_reason=fallback_reason,
     )
@@ -148,6 +150,7 @@ def _restore_assignment(saved: Dict) -> SubtitleAssignment:
     """从已保存的分配结果恢复"""
     font_id = saved.get("subtitle_font_id", DEFAULT_FONT_ID)
     style_id = saved.get("subtitle_style_id", DEFAULT_STYLE_ID)
+    preset_id = saved.get("subtitle_preset_id", "")
 
     font_config = get_font_by_id(font_id)
     style = get_style_by_id(style_id)
@@ -166,6 +169,7 @@ def _restore_assignment(saved: Dict) -> SubtitleAssignment:
         style_name=style.style_name,
         style=style,
         font_config=font_config,
+        preset_id=preset_id,
         fallback_used=saved.get("subtitle_fallback_used", False),
         fallback_reason=saved.get("subtitle_fallback_reason", ""),
     )
@@ -184,6 +188,7 @@ def _create_fallback_assignment(reason: str) -> SubtitleAssignment:
         style_name=style.style_name,
         style=style,
         font_config=font,
+        preset_id="fallback_default",
         fallback_used=True,
         fallback_reason=reason,
     )
@@ -198,6 +203,7 @@ def assignment_to_dict(assignment: SubtitleAssignment) -> Dict[str, any]:
         "subtitle_font_path": assignment.font_path,
         "subtitle_style_id": assignment.style_id,
         "subtitle_style_name": assignment.style_name,
+        "subtitle_preset_id": assignment.preset_id,
         "subtitle_fallback_used": assignment.fallback_used,
         "subtitle_fallback_reason": assignment.fallback_reason,
     }

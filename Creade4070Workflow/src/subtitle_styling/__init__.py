@@ -22,6 +22,16 @@ from subtitle_styling.font_pool import (
     measure_text_width,
     validate_font,
 )
+from subtitle_styling.presets import (
+    SubtitlePreset,
+    get_preset_by_id,
+    get_preset_count,
+    get_preset_for_task,
+    get_preset_for_task_id,
+    get_preset_status_report,
+    get_presets,
+    validate_preset,
+)
 from subtitle_styling.renderer import (
     adjust_font_size_for_width,
     render_preview_image,
@@ -61,6 +71,15 @@ __all__ = [
     "get_default_style",
     "validate_style",
     "get_style_status_report",
+    # Presets
+    "SubtitlePreset",
+    "get_presets",
+    "get_preset_by_id",
+    "get_preset_count",
+    "get_preset_for_task",
+    "get_preset_for_task_id",
+    "validate_preset",
+    "get_preset_status_report",
     # Assignment
     "SubtitleAssignment",
     "assign_subtitle_style",

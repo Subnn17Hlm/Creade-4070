@@ -55,8 +55,11 @@ async def subtitle_style_selection_node(state: GlobalState) -> Dict[str, Any]:
         task_id = f"seed_{variation_seed}"
         logger.warning(f"缺少 task_id，使用 variation_seed 作为后备: {task_id}")
     
+    # 获取 variation_index 用于均衡轮换
+    variation_index = state.get("variation_index", 0)
+    
     try:
-        assignment = assign_subtitle_style(task_id)
+        assignment = assign_subtitle_style(task_id, task_index=variation_index)
         style_dict = assignment_to_dict(assignment)
         
         logger.info(f"字幕样式选择完成: preset={assignment.style_id}, font={assignment.font_id}")
