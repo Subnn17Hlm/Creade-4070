@@ -844,6 +844,7 @@ class BatchExecutor:
                 "script_text": task.input_data.get("script_text", ""),
                 "run_id": str(run_id),  # Pass run_id to workflow for directory isolation
                 "script_source": "manual",  # Batch tasks use manual script mode
+                "variation_index": task.input_data.get("batch_task_index", 0),
             }
 
             # Create context for this run
@@ -1041,6 +1042,7 @@ class BatchExecutor:
                 "variation_seed": generation.variation_seed,
                 "generation_id": generation.generation_id,
                 "task_id": str(task_id),
+                "variation_index": task_input.get("batch_task_index", generation.variation_index),
             }
             
             from coze_coding_utils.runtime_ctx.context import new_context

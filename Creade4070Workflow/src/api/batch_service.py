@@ -65,6 +65,9 @@ class BatchService:
             input_data = {
                 'script_text': row['script_text'],
             }
+            # Persist stable batch_task_index for subtitle style rotation
+            if 'batch_task_index' in row:
+                input_data['batch_task_index'] = row['batch_task_index']
             # Add optional fields if present
             if row.get('script_id'):
                 input_data['script_id'] = row['script_id']

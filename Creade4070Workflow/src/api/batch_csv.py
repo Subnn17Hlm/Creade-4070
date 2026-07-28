@@ -148,6 +148,7 @@ def validate_csv(content: bytes, filename: Optional[str] = None) -> CSVParseResu
             # Add valid row
             rows.append({
                 'row_number': row_number - 1,  # 1-indexed row number (excluding header)
+                'batch_task_index': len(rows),  # 0-indexed position among valid rows (0, 1, 2, ...)
                 'task_id': task_id,
                 'script_text': script_text,
                 'title': title,

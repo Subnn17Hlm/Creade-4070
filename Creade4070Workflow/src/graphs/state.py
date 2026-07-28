@@ -36,6 +36,7 @@ class GlobalState(TypedDict, total=False):
     run_id: str
     run_dir: str
     variation_seed: int
+    variation_index: int
     generation_id: str
     task_id: str
 
