@@ -51,12 +51,23 @@ async def subtitle_style_selection_node(state: GlobalState) -> Dict[str, Any]:
 
     if existing_style and existing_preset_id:
         logger.info(f"复用已有字幕样式: preset={existing_preset_id}")
+        # 从持久化字典读取统一字段名
+        existing_style_id = existing_style.get("subtitle_style_id", "")
+        existing_font_id = existing_style.get("subtitle_font_id", "source_han_sans")
+        # 通过 get_style_by_id 恢复完整 SubtitleStyle 对象获取 font_size / stroke_width
+        existing_style_obj = get_style_by_id(existing_style_id) if existing_style_id else None
+        font_size = getattr(existing_style_obj, "font_size", 38) if existing_style_obj else 38
+        stroke_width = getattr(existing_style_obj, "stroke_width", 3) if existing_style_obj else 3
+        logger.info(
+            f"复用样式详情: style_id={existing_style_id}, font_id={existing_font_id}, "
+            f"font_size={font_size}, stroke_width={stroke_width}"
+        )
         return {
             "subtitle_preset_id": existing_preset_id,
             "subtitle_style": existing_style,
-            "subtitle_font_id": existing_style.get("font_id", "source_han_sans"),
-            "subtitle_font_size": existing_style.get("font_size", 38),
-            "subtitle_stroke_width": existing_style.get("stroke_width", 3),
+            "subtitle_font_id": existing_font_id,
+            "subtitle_font_size": font_size,
+            "subtitle_stroke_width": stroke_width,
             "subtitle_fallback_used": state.get("subtitle_fallback_used", False),
             "variation_index": state.get("variation_index", 0),
             "node_trace": ["subtitle_style_selection_node:reused"],
@@ -105,9 +116,22 @@ async def subtitle_style_selection_node(state: GlobalState) -> Dict[str, Any]:
         font_size = getattr(assignment.style, "font_size", 38)
         stroke_width = getattr(assignment.style, "stroke_width", 3)
 
+        # 生产日志：完整输出样式选择详情
         logger.info(
-            f"字幕样式选择完成: preset={assignment.preset_id}, "
-            f"font={assignment.font_id}, variation_index={variation_index}"
+            f"[字幕样式选择] batch_task_index={state.get('batch_task_index')}, "
+            f"variation_index={variation_index}, "
+            f"subtitle_preset_id={assignment.preset_id}, "
+            f"subtitle_style_id={assignment.style_id}, "
+            f"subtitle_font_id={assignment.font_id}, "
+            f"subtitle_font_path={assignment.font_path}, "
+            f"font_size={font_size}, "
+            f"text_color={getattr(assignment.style, 'text_color', None)}, "
+            f"stroke_color={getattr(assignment.style, 'stroke_color', None)}, "
+            f"stroke_width={stroke_width}, "
+            f"shadow_enabled={getattr(assignment.style, 'shadow_enabled', None)}, "
+            f"background_enabled={getattr(assignment.style, 'background_enabled', None)}, "
+            f"fallback_used={assignment.fallback_used}, "
+            f"fallback_reason={assignment.fallback_reason}"
         )
 
         return {

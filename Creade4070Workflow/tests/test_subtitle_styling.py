@@ -188,10 +188,10 @@ class TestFontFallback:
 # 9. 12 套字幕样式全部通过配置校验
 # ============================================================
 class TestStyleValidation:
-    def test_all_12_styles_valid(self):
-        """12 套字幕样式全部通过配置校验"""
+    def test_all_13_styles_valid(self):
+        """13 套字幕样式全部通过配置校验"""
         styles = get_style_registry()
-        assert len(styles) == 12
+        assert len(styles) == 13
         for style in styles:
             errors = validate_style(style)
             assert errors == [], f"样式 {style.style_id} 校验失败: {errors}"
@@ -199,7 +199,7 @@ class TestStyleValidation:
     def test_style_status_report(self):
         """样式状态报告正确"""
         report = get_style_status_report()
-        assert report["total_styles"] == 12
+        assert report["total_styles"] == 13
         for entry in report["styles"]:
             assert entry["valid"] is True
 
@@ -470,10 +470,10 @@ class TestConfigValidation:
 # ============================================================
 class TestPreviewGeneration:
     def test_generate_preview_for_default_font(self):
-        """为默认字体生成 12 套样式预览图"""
+        """为默认字体生成 13 套样式预览图"""
         font = get_default_font()
         styles = get_enabled_styles()
-        assert len(styles) == 12
+        assert len(styles) == 13
 
         with tempfile.TemporaryDirectory() as tmpdir:
             for style in styles:

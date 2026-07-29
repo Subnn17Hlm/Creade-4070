@@ -1080,6 +1080,27 @@ def final_composition_node(
     subtitle_preset_id = _subtitle_meta.get("subtitle_preset_id", "default")
     subtitle_style_id = _subtitle_meta.get("subtitle_style_id")
 
+    # 生产日志：完整输出渲染配置详情
+    actual_renderer = "styled" if subtitle_style else "default"
+    actual_style_id = subtitle_style.style_id if subtitle_style else None
+    logger.info(
+        f"[最终合成-字幕配置] "
+        f"subtitle_preset_id={subtitle_preset_id}, "
+        f"subtitle_style_id={subtitle_style_id}, "
+        f"subtitle_font_id={subtitle_font_id}, "
+        f"subtitle_font_path={font_path}, "
+        f"font_size={_subtitle_meta.get('subtitle_font_size')}, "
+        f"text_color={getattr(subtitle_style, 'text_color', None) if subtitle_style else None}, "
+        f"stroke_color={getattr(subtitle_style, 'stroke_color', None) if subtitle_style else None}, "
+        f"stroke_width={_subtitle_meta.get('subtitle_stroke_width')}, "
+        f"shadow_enabled={getattr(subtitle_style, 'shadow_enabled', None) if subtitle_style else None}, "
+        f"background_enabled={getattr(subtitle_style, 'background_enabled', None) if subtitle_style else None}, "
+        f"fallback_used={_subtitle_meta.get('subtitle_fallback_used')}, "
+        f"fallback_reason={_subtitle_meta.get('subtitle_fallback_reason')}, "
+        f"actual_renderer={actual_renderer}, "
+        f"actual_style_id={actual_style_id}"
+    )
+
     logger.info(
         "[Node7] 使用字幕配置: preset=%s, style=%s, font=%s, path=%s",
         subtitle_preset_id,
