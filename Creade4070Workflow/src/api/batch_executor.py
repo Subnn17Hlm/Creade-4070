@@ -1059,6 +1059,7 @@ class BatchExecutor:
         # This ensures that if the worker crashes mid-execution, the seed is preserved
         # and retry will restore the same generation (same seed = same result).
         # Use atomic UPDATE to prevent race conditions with concurrent workers.
+        merged_output = None
         try:
             from sqlalchemy import update as sa_update
             async with get_async_sessionmaker()() as persist_db:
@@ -1102,23 +1103,28 @@ class BatchExecutor:
         workflow_success = False
         
         try:
-            # Build unified workflow input using generation info
-            batch_task_index = int(
-                task_input.get(
-                    "batch_task_index",
-                    task_input.get("variation_index", generation.variation_index),
-                )
+            # Build unified workflow input using the same function as other paths
+            # Construct a task-like object for build_workflow_input
+            class _TaskProxy:
+                def __init__(self, task_id, generation_id, variation_seed, input_data, output_data):
+                    self.task_id = task_id
+                    self.generation_id = generation_id
+                    self.variation_seed = variation_seed
+                    self.input_data = input_data
+                    self.output_data = output_data
+            
+            # Use merged_output if available (generation was persisted), otherwise use existing_output_data
+            output_data_for_workflow = merged_output if merged_output is not None else existing_output_data
+            
+            task_proxy = _TaskProxy(
+                task_id=str(task_id),
+                generation_id=generation.generation_id,
+                variation_seed=generation.variation_seed,
+                input_data=task_input,
+                output_data=output_data_for_workflow,
             )
-            workflow_input = {
-                "script_text": task_input.get("script_text", ""),
-                "run_id": str(run_id),
-                "script_source": "manual",
-                "variation_seed": generation.variation_seed,
-                "generation_id": generation.generation_id,
-                "task_id": str(task_id),
-                "variation_index": batch_task_index,
-                "batch_task_index": batch_task_index,
-            }
+            workflow_input = build_workflow_input(task_proxy)
+            workflow_input["run_id"] = str(run_id)
             
             from coze_coding_utils.runtime_ctx.context import new_context
             ctx = new_context("batch_task")

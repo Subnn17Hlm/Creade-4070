@@ -886,12 +886,21 @@ def resolve_subtitle_render_config(
     if not font_path:
         font_path = _find_chinese_font()
 
+    # Determine fallback reason
+    fallback_reason = None
+    if subtitle_style is None:
+        if not subtitle_style_id:
+            fallback_reason = "subtitle_style_id_missing"
+        else:
+            fallback_reason = "subtitle_style_id_not_found"
+
     metadata = {
         "subtitle_preset_id": subtitle_preset_id,
         "subtitle_font_id": subtitle_font_id,
         "subtitle_font_path": font_path,
         "subtitle_style_id": subtitle_style_id,
         "subtitle_fallback_used": subtitle_style is None,
+        "subtitle_fallback_reason": fallback_reason,
     }
     if subtitle_style is not None:
         metadata["subtitle_font_size"] = subtitle_style.font_size
@@ -1382,12 +1391,30 @@ def final_composition_node(
             result["subtitle_font_size"] = subtitle_style.font_size
             result["subtitle_stroke_width"] = subtitle_style.stroke_width
             result["subtitle_fallback_used"] = False
+            result["subtitle_fallback_reason"] = None
         else:
             result["subtitle_preset_id"] = subtitle_preset_id
             result["subtitle_font_id"] = subtitle_font_id
             result["subtitle_font_path"] = font_path
             result["subtitle_style_id"] = subtitle_style_id
             result["subtitle_fallback_used"] = True
+            result["subtitle_fallback_reason"] = _subtitle_meta.get("subtitle_fallback_reason", "style_id_missing_or_not_found")
+
+        # 添加 batch_task_index 到结果（用于调试字幕轮换）
+        result["batch_task_index"] = state.get("batch_task_index", state.get("variation_index"))
+
+        logger.info(
+            "[Node7] 字幕渲染结果: batch_task_index=%s, preset=%s, style=%s, font=%s, "
+            "font_size=%s, stroke_width=%s, fallback=%s, reason=%s",
+            result.get("batch_task_index"),
+            result.get("subtitle_preset_id"),
+            result.get("subtitle_style_id"),
+            result.get("subtitle_font_path"),
+            result.get("subtitle_font_size"),
+            result.get("subtitle_stroke_width"),
+            result.get("subtitle_fallback_used"),
+            result.get("subtitle_fallback_reason"),
+        )
         
         # 如果有 BGM 警告，合并到 warnings 中
         if bgm_warnings:
