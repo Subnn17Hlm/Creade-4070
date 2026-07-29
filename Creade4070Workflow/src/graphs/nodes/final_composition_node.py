@@ -5,7 +5,7 @@ Node7: 最终合成
 
 固定字幕参数：
 - font_size=38, font_color=white, outline_color=black, outline_width=3
-- subtitle_y_position_ratio=0.82, safe_margin_bottom>=180px
+- subtitle_y_ratio=0.75（字幕块中心在画面 75% 高度处）
 - subtitle_area_ratio<=0.18, max_lines=2, horizontal_align=center
 - background_box=false
 """
@@ -36,6 +36,9 @@ from utils.media_uploader import upload_local_file
 from graphs.node_trace_utils import write_trace_entered, write_trace_completed, write_trace_error
 
 logger = logging.getLogger(__name__)
+
+# 字幕块中心 Y 位置比例（从画面顶部算起 75% 处）
+SUBTITLE_Y_RATIO = 0.75
 
 
 def _validate_bgm_decodable(bgm_path: str, ffmpeg_path: str = "ffmpeg") -> bool:
@@ -331,6 +334,11 @@ def _render_subtitle_png(
         "text_bbox": None,
         "non_transparent_pixel_count": 0,
         "error": None,
+        "actual_renderer": "default",
+        "actual_style_id": None,
+        "actual_font_path": font_path,
+        "render_fallback_used": False,
+        "render_fallback_reason": None,
     }
 
     try:
@@ -340,7 +348,7 @@ def _render_subtitle_png(
         if subtitle_style is not None:
             try:
                 from subtitle_styling.renderer import render_subtitle_png as styled_render
-                return styled_render(
+                styled_result = styled_render(
                     text=text,
                     output_path=output_path,
                     font_path=font_path,
@@ -348,9 +356,23 @@ def _render_subtitle_png(
                     video_width=video_width,
                     video_height=video_height,
                 )
+                # 标记实际使用的渲染器和样式
+                styled_result["actual_renderer"] = "styled"
+                styled_result["actual_style_id"] = subtitle_style.style_id
+                styled_result["actual_font_path"] = font_path
+                # 保留样式渲染器设置的 fallback 信息（如果有的话）
+                if "render_fallback_used" not in styled_result:
+                    styled_result["render_fallback_used"] = False
+                if "render_fallback_reason" not in styled_result:
+                    styled_result["render_fallback_reason"] = None
+                return styled_result
             except Exception as e:
                 logger.warning("[Node7] 样式池渲染失败，回退到默认渲染: %s", e)
-                # 回退到默认渲染逻辑
+                # 记录回退信息
+                result["actual_renderer"] = "default"
+                result["render_fallback_used"] = True
+                result["render_fallback_reason"] = f"styled_render_failed: {e}"
+                # 继续执行默认渲染逻辑
 
         # 创建透明背景
         img = Image.new('RGBA', (video_width, video_height), (0, 0, 0, 0))
@@ -361,18 +383,31 @@ def _render_subtitle_png(
             font = ImageFont.truetype(font_path, font_size)
         except Exception as e:
             result["error"] = f"加载字体失败: {e}"
+            result["render_fallback_used"] = True
+            result["render_fallback_reason"] = f"font_load_failed: {e}"
             return result
         
-        # 计算文本位置（底部 82% 位置）
-        y_position = int(video_height * 0.82)
+        # 计算文本位置：字幕块中心固定在画面 75% 高度处
+        anchor_y = int(video_height * SUBTITLE_Y_RATIO)
         
         # 处理多行文本（最多两行）
         lines = text.split('\n')[:2]
-        line_height = font_size + 10
         
-        # 计算所有行的总高度
-        total_text_height = len(lines) * line_height
-        start_y = y_position - total_text_height // 2
+        # 使用实际字体度量计算行高（而不是 font_size + 10）
+        # 获取第一行的实际高度作为行高基准
+        sample_bbox = draw.textbbox((0, 0), lines[0] if lines else "测", font=font)
+        # bbox[1] 是字体的顶部偏移（top bearing），渲染时文本实际从 y + bbox[1] 开始
+        top_bearing = sample_bbox[1]
+        actual_line_height = sample_bbox[3] - sample_bbox[1]
+        # 添加行间距（使用字体大小的 20% 作为行间距）
+        line_spacing = max(int(font_size * 0.2), 4)
+        line_height = actual_line_height + line_spacing
+        
+        # 计算所有行的总高度（包括顶部偏移）
+        total_text_height = len(lines) * actual_line_height + (len(lines) - 1) * line_spacing
+        # 调整 start_y，使实际渲染的文本块中心在 anchor_y
+        # 默认渲染没有背景，所以不需要考虑背景内边距
+        start_y = anchor_y - total_text_height // 2 - top_bearing
         
         all_bbox = []
         for i, line in enumerate(lines):
@@ -383,7 +418,7 @@ def _render_subtitle_png(
             
             # 居中
             x = (video_width - text_width) // 2
-            y = start_y + i * line_height
+            y = start_y + i * (actual_line_height + line_spacing)
             
             all_bbox.append((x, y, x + text_width, y + text_height))
             
@@ -652,6 +687,11 @@ def _burn_subtitles_batched(
         "batches": [],
         "ffmpeg_returncode": -1,
         "ffmpeg_stderr_tail": "",
+        # 渲染回退追踪
+        "render_fallback_used": False,
+        "render_fallback_reasons": [],
+        "actual_renderer": "styled" if subtitle_style else "default",
+        "actual_style_id": subtitle_style.style_id if subtitle_style else None,
     }
     
     # 解析 SRT
@@ -709,6 +749,16 @@ def _burn_subtitles_batched(
                     video_height=video_height,
                     subtitle_style=subtitle_style,
                 )
+                
+                # 收集渲染回退信息
+                if render_result.get("render_fallback_used"):
+                    result["render_fallback_used"] = True
+                    reason = render_result.get("render_fallback_reason", "unknown")
+                    result["render_fallback_reasons"].append({
+                        "cue_index": cue_start + i,
+                        "cue_text": cue["text"][:50],
+                        "reason": reason,
+                    })
                 
                 if not render_result["success"]:
                     error_msg = render_result.get("error", "Unknown error")
@@ -1130,6 +1180,7 @@ def final_composition_node(
         
         subtitle_burned = False
         subtitle_filter_used = ""
+        _burn_subtitles_batched_result: Dict[str, Any] = {}
         
         # 强制使用 Pillow PNG overlay 方式烧录字幕
         if not font_path:
@@ -1144,7 +1195,7 @@ def final_composition_node(
         
         try:
             logger.info("[Node7] 使用分批 Pillow PNG overlay 方式烧录字幕 (preset=%s)", state.get("subtitle_preset_id", "default"))
-            overlay_result = _burn_subtitles_batched(
+            _burn_subtitles_batched_result = _burn_subtitles_batched(
                 ffmpeg_path=ffmpeg_path,
                 video_path=concat_path,
                 audio_path=tts_wav_path,
@@ -1158,16 +1209,16 @@ def final_composition_node(
                 subtitle_style=subtitle_style,
             )
             
-            if overlay_result.get("subtitle_burned"):
+            if _burn_subtitles_batched_result.get("subtitle_burned"):
                 subtitle_burned = True
                 subtitle_filter_used = "batched_pillow_png_overlay"
                 logger.info(
                     "[Node7] 分批字幕烧录成功: cue_count=%d, batch_count=%d",
-                    overlay_result.get("cue_count", 0),
-                    overlay_result.get("batch_count", 0),
+                    _burn_subtitles_batched_result.get("cue_count", 0),
+                    _burn_subtitles_batched_result.get("batch_count", 0),
                 )
             else:
-                error_msg = overlay_result.get("error", "Unknown error")
+                error_msg = _burn_subtitles_batched_result.get("error", "Unknown error")
                 logger.error("[Node7] 分批字幕烧录失败: %s", error_msg)
                 raise RuntimeError(f"字幕烧录失败: {error_msg}")
                 
@@ -1383,6 +1434,11 @@ def final_composition_node(
         }
         
         # 添加字幕样式信息到结果
+        # 使用实际渲染结果中的回退信息，而不是仅根据 resolve 阶段判断
+        burn_result = _burn_subtitles_batched_result
+        render_fallback_used = burn_result.get("render_fallback_used", False)
+        render_fallback_reasons = burn_result.get("render_fallback_reasons", [])
+        
         if subtitle_style is not None:
             result["subtitle_preset_id"] = subtitle_preset_id
             result["subtitle_font_id"] = subtitle_font_id
@@ -1390,8 +1446,12 @@ def final_composition_node(
             result["subtitle_style_id"] = subtitle_style.style_id
             result["subtitle_font_size"] = subtitle_style.font_size
             result["subtitle_stroke_width"] = subtitle_style.stroke_width
-            result["subtitle_fallback_used"] = False
-            result["subtitle_fallback_reason"] = None
+            # 使用实际渲染回退状态
+            result["subtitle_fallback_used"] = render_fallback_used
+            result["subtitle_fallback_reason"] = (
+                render_fallback_reasons[0]["reason"] if render_fallback_reasons else None
+            )
+            result["render_fallback_reasons"] = render_fallback_reasons
         else:
             result["subtitle_preset_id"] = subtitle_preset_id
             result["subtitle_font_id"] = subtitle_font_id
@@ -1399,13 +1459,18 @@ def final_composition_node(
             result["subtitle_style_id"] = subtitle_style_id
             result["subtitle_fallback_used"] = True
             result["subtitle_fallback_reason"] = _subtitle_meta.get("subtitle_fallback_reason", "style_id_missing_or_not_found")
+            result["render_fallback_reasons"] = []
+
+        # 添加实际渲染器信息
+        result["actual_renderer"] = burn_result.get("actual_renderer", "unknown")
+        result["actual_style_id"] = burn_result.get("actual_style_id")
 
         # 添加 batch_task_index 到结果（用于调试字幕轮换）
         result["batch_task_index"] = state.get("batch_task_index", state.get("variation_index"))
 
         logger.info(
             "[Node7] 字幕渲染结果: batch_task_index=%s, preset=%s, style=%s, font=%s, "
-            "font_size=%s, stroke_width=%s, fallback=%s, reason=%s",
+            "font_size=%s, stroke_width=%s, fallback=%s, reason=%s, actual_renderer=%s, actual_style_id=%s",
             result.get("batch_task_index"),
             result.get("subtitle_preset_id"),
             result.get("subtitle_style_id"),
@@ -1414,6 +1479,8 @@ def final_composition_node(
             result.get("subtitle_stroke_width"),
             result.get("subtitle_fallback_used"),
             result.get("subtitle_fallback_reason"),
+            result.get("actual_renderer"),
+            result.get("actual_style_id"),
         )
         
         # 如果有 BGM 警告，合并到 warnings 中

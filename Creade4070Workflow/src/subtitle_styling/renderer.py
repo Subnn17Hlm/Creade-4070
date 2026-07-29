@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 MIN_FONT_SIZE = 20
 # 最大行数
 MAX_LINES = 2
+# 字幕块中心 Y 位置比例（从画面顶部算起 75% 处）
+SUBTITLE_Y_RATIO = 0.75
 
 
 def wrap_text_by_pixel_width(
@@ -188,17 +190,34 @@ def render_subtitle_png(
             font = ImageFont.truetype(font_path, font_size)
         except Exception as e:
             result["error"] = f"加载字体失败: {e}"
+            result["render_fallback_used"] = True
+            result["render_fallback_reason"] = f"font_load_failed: {e}"
             return result
 
         # 创建透明背景
         img = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
 
-        # 计算文本位置
-        y_position = video_height - style.bottom_margin
-        line_height = font_size + style.line_spacing
-        total_text_height = len(lines) * line_height
-        start_y = y_position - total_text_height
+        # 计算文本位置：字幕块中心固定在画面 75% 高度处
+        anchor_y = int(video_height * SUBTITLE_Y_RATIO)
+        
+        # 使用实际字体度量计算行高（而不是 font_size + line_spacing）
+        sample_bbox = draw.textbbox((0, 0), lines[0] if lines else "测", font=font)
+        # bbox[1] 是字体的顶部偏移（top bearing），渲染时文本实际从 y + bbox[1] 开始
+        top_bearing = sample_bbox[1]
+        actual_line_height = sample_bbox[3] - sample_bbox[1]
+        line_spacing = max(style.line_spacing, 4)
+        
+        # 计算背景内边距
+        bg_padding = 8 if style.background_enabled else 0
+        bg_padding_vertical = bg_padding // 2
+        
+        # 计算所有行的总高度（包括顶部偏移和背景内边距）
+        total_text_height = len(lines) * actual_line_height + (len(lines) - 1) * line_spacing
+        # 整个字幕块的高度（包括背景内边距）
+        total_block_height = total_text_height + 2 * bg_padding_vertical
+        # 调整 start_y，使整个字幕块（包括背景）的中心在 anchor_y
+        start_y = anchor_y - total_block_height // 2 + bg_padding_vertical - top_bearing
 
         all_bbox = []
         for i, line in enumerate(lines):
@@ -209,18 +228,19 @@ def render_subtitle_png(
 
             # 居中
             x = (video_width - text_width) // 2
-            y = start_y + i * line_height
+            y = start_y + i * (actual_line_height + line_spacing)
 
             all_bbox.append((x, y, x + text_width, y + text_height))
 
             # 绘制背景（如果启用）
+            # 注意：文本实际从 y + top_bearing 开始渲染，背景需要覆盖实际文本区域
             if style.background_enabled:
                 bg_padding = 8
                 bg_rect = (
                     x - bg_padding,
-                    y - bg_padding // 2,
+                    y + top_bearing - bg_padding // 2,
                     x + text_width + bg_padding,
-                    y + text_height + bg_padding // 2,
+                    y + top_bearing + text_height + bg_padding // 2,
                 )
                 draw.rectangle(bg_rect, fill=style.background_color)
 
