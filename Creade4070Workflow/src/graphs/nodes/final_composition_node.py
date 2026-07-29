@@ -178,52 +178,106 @@ def _check_subtitle_filter(ffmpeg_path: str) -> bool:
         return False
 
 
+def _search_font_in_dir(search_root: "Path", filenames: list) -> Optional[str]:
+    """
+    在 search_root 下递归搜索指定文件名的字体文件。
+    按 filenames 列表的优先级顺序返回第一个找到的匹配文件。
+    文件名匹配不区分大小写。
+    使用 os.walk + bytes 路径处理可能的非 UTF-8 目录名（如 GBK 编码）。
+    返回找到的第一个匹配文件的绝对路径，未找到返回 None。
+    """
+    import os as _os
+    
+    if not search_root.is_dir():
+        return None
+    
+    # 先收集所有找到的字体文件
+    found_files = {}  # filename_lower -> full_path
+    search_root_bytes = _os.fsencode(str(search_root))
+    
+    for dirpath_bytes, _dirnames, filenames_bytes in _os.walk(search_root_bytes):
+        for fn_bytes in filenames_bytes:
+            try:
+                fn_str = fn_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    fn_str = fn_bytes.decode("gbk")
+                except UnicodeDecodeError:
+                    fn_str = fn_bytes.decode("latin-1")
+            fn_lower = fn_str.lower()
+            if fn_lower not in found_files:
+                full_path_bytes = _os.path.join(dirpath_bytes, fn_bytes)
+                try:
+                    full_path = full_path_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    full_path = full_path_bytes.decode("utf-8", errors="surrogateescape")
+                if _os.path.isfile(full_path) and _os.path.getsize(full_path) > 0:
+                    found_files[fn_lower] = full_path
+    
+    # 按优先级返回
+    for fn in filenames:
+        if fn.lower() in found_files:
+            logger.info("[Node7] 字体搜索 - 在 %s 下找到: %s", search_root, found_files[fn.lower()])
+            return found_files[fn.lower()]
+    
+    return None
+
+
 def _find_chinese_font() -> str:
-    """查找支持中文的字体 - 使用绝对路径定位"""
+    """
+    查找支持中文的字体。
+    优先从 assets/Fonts/（大写 F）递归搜索，兼容 GBK 编码子目录名。
+    回退到系统字体。
+    """
     from pathlib import Path
     
-    # 获取当前文件绝对路径
     current_file = Path(__file__).resolve()
     logger.info("[Node7] 字体查找 - __file__: %s", current_file)
     logger.info("[Node7] 字体查找 - cwd: %s", os.getcwd())
     
     # 从 src/graphs/nodes/final_composition_node.py 向上找到项目根目录
-    # 路径: src/graphs/nodes/ -> src/graphs/ -> src/ -> 项目根
     project_root = current_file.parent.parent.parent.parent
     logger.info("[Node7] 字体查找 - project_root (from __file__): %s", project_root)
     
-    # 构建字体候选路径列表
-    font_candidates = []
+    # 候选字体文件名（按优先级排列）
+    font_filenames = [
+        "ALIBABA-PUHUITI-BOLD.TTF",
+        "ALIBABA-PUHUITI-HEAVY.TTF",
+        "SOURCEHANSERIFCN-BOLD.OTF",
+        "SOURCEHANSERIFCN-HEAVY.OTF",
+        "NotoSansSC-Regular.otf",
+        "SmileySans-Oblique.ttf",
+    ]
     
-    # 1. 基于 __file__ 推导的绝对路径
-    font_candidates.append(str(project_root / "assets" / "fonts" / "NotoSansSC-Regular.otf"))
-    font_candidates.append(str(project_root / "assets" / "Fonts" / "黑体" / "ALIBABA-PUHUITI-BOLD.TTF"))
+    # 搜索目录列表（按优先级）
+    search_roots = []
+    
+    # 1. 基于 __file__ 推导的 assets/Fonts/
+    search_roots.append(project_root / "assets" / "Fonts")
     
     # 2. 生产部署目录
     production_root = Path("/opt/bytefaas/Creade4070Workflow")
-    font_candidates.append(str(production_root / "assets" / "fonts" / "NotoSansSC-Regular.otf"))
-    font_candidates.append(str(production_root / "assets" / "Fonts" / "黑体" / "ALIBABA-PUHUITI-BOLD.TTF"))
+    search_roots.append(production_root / "assets" / "Fonts")
     
     # 3. 环境变量
     workspace_path = os.getenv("COZE_WORKSPACE_PATH", "")
     if workspace_path:
-        font_candidates.append(os.path.join(workspace_path, "assets/fonts/NotoSansSC-Regular.otf"))
-        font_candidates.append(os.path.join(workspace_path, "assets/Fonts/黑体/ALIBABA-PUHUITI-BOLD.TTF"))
+        search_roots.append(Path(workspace_path) / "assets" / "Fonts")
     
-    logger.info("[Node7] 字体查找 - font_candidates: %s", font_candidates)
+    # 递归搜索字体文件
+    for search_root in search_roots:
+        if not search_root.is_dir():
+            logger.info("[Node7] 字体查找 - 目录不存在: %s", search_root)
+            continue
+        
+        found = _search_font_in_dir(search_root, font_filenames)
+        if found:
+            size = os.path.getsize(found)
+            logger.info("[Node7] 字体查找 - selected_font_path: %s (size=%d)", found, size)
+            return found
     
-    # 检查每个候选路径
-    for font_path in font_candidates:
-        if os.path.exists(font_path) and os.path.isfile(font_path):
-            size = os.path.getsize(font_path)
-            logger.info("[Node7] 字体查找 - %s: exists=True, is_file=True, size=%d", font_path, size)
-            if size > 0:
-                logger.info("[Node7] 字体查找 - selected_font_path: %s", font_path)
-                return font_path
-        else:
-            logger.info("[Node7] 字体查找 - %s: exists=%s", font_path, os.path.exists(font_path))
-    
-    # 扫描系统字体（作为最后手段）
+    # 回退：扫描系统字体
+    logger.info("[Node7] 字体查找 - assets/Fonts/ 未找到字体，扫描系统字体")
     font_dirs = [
         "/usr/share/fonts",
         "/usr/local/share/fonts",
@@ -380,7 +434,8 @@ def _render_subtitle_png(
         
         # 加载字体（必须使用指定字体，不允许回退）
         try:
-            font = ImageFont.truetype(font_path, font_size)
+            from subtitle_styling.font_pool import _to_pil_font_path
+            font = ImageFont.truetype(_to_pil_font_path(font_path), font_size)
         except Exception as e:
             result["error"] = f"加载字体失败: {e}"
             result["render_fallback_used"] = True

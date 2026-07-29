@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from subtitle_styling.font_pool import measure_text_width, validate_font
+from subtitle_styling.font_pool import measure_text_width, validate_font, _to_pil_font_path
 from subtitle_styling.style_pool import (
     SAFE_MARGIN_SIDE,
     VIDEO_HEIGHT,
@@ -187,7 +187,7 @@ def render_subtitle_png(
         # 加载字体
         font_size = result["font_size_used"]
         try:
-            font = ImageFont.truetype(font_path, font_size)
+            font = ImageFont.truetype(_to_pil_font_path(font_path), font_size)
         except Exception as e:
             result["error"] = f"加载字体失败: {e}"
             result["render_fallback_used"] = True

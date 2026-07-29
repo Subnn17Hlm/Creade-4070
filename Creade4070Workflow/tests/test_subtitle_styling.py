@@ -248,13 +248,14 @@ class TestDeterminism:
         tid = "restart-test-001"
         r1 = assign_subtitle_style(tid)
         # 模拟服务重启：重新计算
+        # 注意：实际代码使用 digest[:8] 选择 preset，不是 digest[:16] 选择 font
+        from subtitle_styling.presets import get_presets
         digest = hashlib.sha256(tid.encode("utf-8")).hexdigest()
-        enabled_fonts = get_enabled_fonts()
-        enabled_styles = get_enabled_styles()
-        font_index = int(digest[:16], 16) % len(enabled_fonts)
-        style_index = int(digest[16:32], 16) % len(enabled_styles)
-        assert r1.font_id == enabled_fonts[font_index].font_id
-        assert r1.style_id == enabled_styles[style_index].style_id
+        presets = get_presets()
+        preset_index = int(digest[:8], 16) % len(presets)
+        expected_preset = presets[preset_index]
+        assert r1.font_id == expected_preset.font_id
+        assert r1.style_id == expected_preset.style_id
 
 
 # ============================================================
