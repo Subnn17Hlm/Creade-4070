@@ -85,7 +85,7 @@ async def subtitle_style_selection_node(state: GlobalState) -> Dict[str, Any]:
     if variation_index is not None:
         # 显式传入（来自 batch_task_index），用于均衡轮换
         logger.info(f"使用 batch_task_index 作为 variation_index: {variation_index}")
-        task_index_for_assignment: Optional[int] = variation_index
+        task_index_for_assignment = variation_index
     else:
         # 历史任务缺失 variation_index → SHA-256 稳定回退
         preset_count = get_preset_count()
@@ -102,7 +102,6 @@ async def subtitle_style_selection_node(state: GlobalState) -> Dict[str, Any]:
             logger.warning(f"无法计算稳定回退索引（task_id 或 preset_count 为空），使用 0")
 
         # 不传 task_index 给 assign_subtitle_style，让它走内部的 hash 路径
-        # 但我们已经计算了 variation_index 用于持久化
         task_index_for_assignment = None
 
     try:
