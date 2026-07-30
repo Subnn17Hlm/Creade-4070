@@ -163,6 +163,12 @@ class GraphInput(BaseModel):
     platform: str = Field(default="抖音", description="平台")
     bgm_url: str = Field(default="", description="BGM链接")
     material_csv: str = Field(default="assets/asset_manifest_v2_bound.csv", description="素材标签CSV路径")
+    # 批量任务字段
+    batch_task_index: Optional[int] = Field(default=None, description="批量任务索引（CSV行号）")
+    task_id: Optional[str] = Field(default=None, description="任务ID")
+    variation_index: Optional[int] = Field(default=None, description="变体索引（用于字幕预设轮换）")
+    variation_seed: Optional[int] = Field(default=None, description="变体种子")
+    generation_id: Optional[str] = Field(default=None, description="生成ID")
 
 
 class GraphOutput(BaseModel):
