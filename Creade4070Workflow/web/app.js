@@ -282,7 +282,15 @@ function initCsvActions() {
         body: formData,
       });
 
-      const data = await res.json();
+      // Safely parse response - handle both JSON and non-JSON responses
+      let data;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        data = { error: text || `HTTP ${res.status}` };
+      }
 
       if (res.ok) {
         currentBatchId = data.batch_id;
@@ -297,13 +305,22 @@ function initCsvActions() {
           showBatchMonitor(data.batch_id);
           startBatchPolling(data.batch_id);
         } else {
-          const startData = await startRes.json();
-          alert(`批次创建成功，但启动失败: ${startData.error || startData.detail || '未知错误'}`);
+          const startContentType = startRes.headers.get('content-type') || '';
+          let startData;
+          if (startContentType.includes('application/json')) {
+            startData = await startRes.json();
+          } else {
+            const startText = await startRes.text();
+            startData = { error: startText || `HTTP ${startRes.status}` };
+          }
+          const errMsg = startData.detail?.error_message || startData.error || startData.detail || '未知错误';
+          alert(`批次创建成功，但启动失败: ${errMsg}`);
           showBatchMonitor(data.batch_id);
           startBatchPolling(data.batch_id);
         }
       } else {
-        alert(`提交失败: ${data.error || data.detail || '未知错误'}`);
+        const errMsg = data.detail?.error_message || data.error || data.detail || `HTTP ${res.status}`;
+        alert(`提交失败: ${errMsg}`);
       }
     } catch (e) {
       alert(`请求失败: ${e.message}`);

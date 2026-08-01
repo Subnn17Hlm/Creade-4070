@@ -171,7 +171,19 @@ async def create_batch(
     content = await file.read()
     
     # Validate CSV
-    result = validate_csv(content, filename=file.filename)
+    try:
+        result = validate_csv(content, filename=file.filename)
+    except Exception as e:
+        logger.error(f"CSV validation crashed: {type(e).__name__}: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=400,
+            content={
+                'detail': {
+                    'error_code': 'batch_csv_validation_crashed',
+                    'error_message': f'CSV 校验异常: {type(e).__name__}: {e}',
+                },
+            },
+        )
     
     if not result.success:
         # Build detailed error message
@@ -187,9 +199,11 @@ async def create_batch(
         return JSONResponse(
             status_code=400,
             content={
-                'error': f'CSV 校验失败: {error_summary}',
-                'errors': [e.to_dict() for e in result.errors],
-                'missing_columns': [col for col in ['script_text'] if col not in [h.strip() for h in (content.decode('utf-8').split('\n')[0].split(',') if content else [])]],
+                'detail': {
+                    'error_code': 'batch_csv_validation_failed',
+                    'error_message': f'CSV 校验失败: {error_summary}',
+                    'errors': [e.to_dict() for e in result.errors],
+                },
             },
         )
     
@@ -204,9 +218,14 @@ async def create_batch(
         )
     except Exception as e:
         logger.error(f"Failed to create batch: {type(e).__name__}: {str(e)}", exc_info=True)
-        raise HTTPException(
+        return JSONResponse(
             status_code=500,
-            detail={'error': f'创建批次失败: {str(e)}', 'type': type(e).__name__},
+            content={
+                'detail': {
+                    'error_code': 'batch_creation_failed',
+                    'error_message': f'创建批次失败: {type(e).__name__}: {str(e)}',
+                },
+            },
         )
     
     return {
