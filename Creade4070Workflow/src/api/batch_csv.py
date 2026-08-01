@@ -113,7 +113,7 @@ def validate_csv(content: bytes, filename: Optional[str] = None) -> CSVParseResu
             normalized_row = {k.strip(): v for k, v in row.items() if k is not None}
             
             # Check script_text (required)
-            script_text = normalized_row.get('script_text', '').strip()
+            script_text = (normalized_row.get('script_text') or '').strip()
             if not script_text:
                 errors.append(CSVValidationError(
                     row_number=row_number,
@@ -124,9 +124,9 @@ def validate_csv(content: bytes, filename: Optional[str] = None) -> CSVParseResu
             
             # Get or generate task_id
             # Support both task_id and script_id as aliases
-            task_id = normalized_row.get('task_id', '').strip()
+            task_id = (normalized_row.get('task_id') or '').strip()
             if not task_id:
-                task_id = normalized_row.get('script_id', '').strip()
+                task_id = (normalized_row.get('script_id') or '').strip()
             if not task_id:
                 # Auto-generate task_id if not provided
                 import uuid
@@ -143,7 +143,7 @@ def validate_csv(content: bytes, filename: Optional[str] = None) -> CSVParseResu
             seen_task_ids.add(task_id)
             
             # Get optional title
-            title = normalized_row.get('title', '').strip()
+            title = (normalized_row.get('title') or '').strip()
             
             # Add valid row
             rows.append({
