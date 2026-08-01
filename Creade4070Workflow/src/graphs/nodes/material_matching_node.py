@@ -88,6 +88,19 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "手累": ["痛点共鸣"], "烫头皮": ["痛点共鸣"],
     "真的会谢": ["痛点共鸣"], "会谢": ["痛点共鸣"],
     "告别": ["痛点共鸣"],
+    # 痛点子语义：体积大/占空间/塞不下
+    "太占空间": ["痛点共鸣"], "占空间": ["痛点共鸣"], "占地方": ["痛点共鸣"],
+    "太大": ["痛点共鸣"], "笨重": ["痛点共鸣"], "塞不下": ["痛点共鸣"],
+    "塞不进": ["痛点共鸣"], "放不进": ["痛点共鸣"], "装不下": ["痛点共鸣"],
+    "传统吹风机": ["痛点共鸣"], "老式吹风机": ["痛点共鸣"], "大吹风机": ["痛点共鸣"],
+    "行李箱塞不下": ["痛点共鸣"], "行李箱装不下": ["痛点共鸣"],
+    "出差携带": ["痛点共鸣"], "旅行携带": ["痛点共鸣"],
+    # 痛点子语义：风力小/吹干慢
+    "吹得慢": ["痛点共鸣"], "半天吹不干": ["痛点共鸣"],
+    # 痛点子语义：高温伤发
+    "烫头发": ["痛点共鸣"], "伤发": ["痛点共鸣"],
+    # 痛点子语义：酒店吹风机难用
+    "酒店吹风机": ["痛点共鸣"],
     
     # ==================== 手持大小对比 ====================
     "巴掌大": ["手持大小对比"], "巴掌大小": ["手持大小对比"],
@@ -98,7 +111,7 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "还没一瓶水重": ["手持大小对比"], "一瓶水": ["手持大小对比"],
     "轻巧": ["手持大小对比"], "超轻": ["手持大小对比"], "超薄": ["手持大小对比"],
     "巴掌": ["手持大小对比"],
-    "占空间": ["手持大小对比"], "体积小": ["手持大小对比"],
+    "体积小": ["手持大小对比"],
     
     # ==================== 手持展示 - 只用于明确出现手持产品的句子 ====================
     "拿在": ["手持展示"], "握在": ["手持展示"], "手里": ["手持展示"],
@@ -187,6 +200,168 @@ _KEYWORD_TO_TAG: Dict[str, List[str]] = {
     "焊在": ["放进行李箱", "旅行场景"], "焊在你的行李箱里": ["放进行李箱"],
     "也就一个科瑞德的事": ["产品展示", "CTA促单"],
 }
+
+# 痛点子语义关键词（用于细粒度匹配）
+_PAIN_POINT_SUBSEMANTICS = {
+    "体积大占空间": [
+        "占空间", "占地方", "太大", "笨重", "塞不下", "塞不进", "放不进",
+        "装不下", "传统吹风机", "老式吹风机", "大吹风机", "行李箱塞不下",
+        "行李箱装不下", "出差携带", "旅行携带", "太占空间",
+    ],
+    "风力小吹干慢": [
+        "风力小", "风小", "吹得慢", "半天吹不干", "吹不干",
+    ],
+    "高温伤发": [
+        "烫头发", "伤发", "毛躁", "打结", "稻草", "高温",
+    ],
+    "酒店吹风机难用": [
+        "酒店吹风机", "酒店的吹风机",
+    ],
+    "收纳不便": [
+        "收纳", "不好放", "放不稳",
+    ],
+    "噪声大": [
+        "噪声", "噪音", "太吵", "声音大",
+    ],
+}
+
+# 正负极性关键词
+_POLARITY_KEYWORDS = {
+    "negative_problem": [
+        "太占空间", "占空间", "占地方", "太大", "笨重", "塞不下", "塞不进",
+        "放不进", "装不下", "传统吹风机", "老式吹风机", "大吹风机", "毛躁",
+        "打结", "吹不干", "风小", "风力小", "烫头发", "伤发", "酒店吹风机",
+        "怕", "愁", "烦", "发愁", "手累", "烫头皮", "真的会谢",
+    ],
+    "positive_solution": [
+        "小巧", "便携", "折叠", "轻松", "顺滑", "快速", "吹干快",
+        "放进行李箱", "放进包包", "旅行", "出差", "神器", "告别",
+        "不占空间", "不占地方", "小体积", "轻便",
+    ],
+}
+
+
+def _detect_polarity(text: str) -> str:
+    """
+    检测文本的正负极性。
+    
+    Returns:
+        "negative_problem": 负向痛点（描述问题/痛点）
+        "positive_solution": 正向方案（描述解决方案/优点）
+        "neutral_demo": 中性展示
+    """
+    text_lower = text.lower()
+    
+    neg_count = sum(1 for kw in _POLARITY_KEYWORDS["negative_problem"] if kw in text_lower)
+    pos_count = sum(1 for kw in _POLARITY_KEYWORDS["positive_solution"] if kw in text_lower)
+    
+    if neg_count > pos_count:
+        return "negative_problem"
+    elif pos_count > neg_count:
+        return "positive_solution"
+    else:
+        return "neutral_demo"
+
+
+def _detect_pain_point_subsemantic(text: str) -> List[str]:
+    """
+    检测文本属于哪个痛点子语义类别。
+    
+    Returns:
+        匹配到的痛点子语义类别列表
+    """
+    text_lower = text.lower()
+    matched = []
+    
+    for category, keywords in _PAIN_POINT_SUBSEMANTICS.items():
+        for kw in keywords:
+            if kw in text_lower:
+                matched.append(category)
+                break
+    
+    return matched
+
+
+def _calculate_semantic_score(
+    sentence_text: str,
+    material: Dict[str, Any],
+    sentence_polarity: str,
+    sentence_subsemantics: List[str],
+) -> Dict[str, float]:
+    """
+    计算句子与素材之间的细粒度语义评分。
+    
+    Returns:
+        包含各项评分的字典：
+        - keyword_score: 关键词匹配得分
+        - description_score: 描述匹配得分
+        - polarity_score: 极性匹配得分
+        - subsemantic_score: 子语义匹配得分
+        - total_score: 总分
+    """
+    text_lower = sentence_text.lower()
+    description = (material.get("description") or "").lower()
+    secondary_tags_str = (material.get("secondary_tags") or "").lower()
+    verified_tags_str = (material.get("verified_tags") or "").lower()
+    all_tags = f"{secondary_tags_str} {verified_tags_str}"
+    
+    scores = {
+        "keyword_score": 0.0,
+        "description_score": 0.0,
+        "polarity_score": 0.0,
+        "subsemantic_score": 0.0,
+        "total_score": 0.0,
+    }
+    
+    # 1. 关键词匹配得分（句子中的关键词在素材标签中出现）
+    for kw in _KEYWORD_TO_TAG.keys():
+        if kw in text_lower:
+            if kw in all_tags:
+                scores["keyword_score"] += 0.3
+    
+    # 2. 描述匹配得分（句子关键词在素材描述中出现）
+    for kw in _KEYWORD_TO_TAG.keys():
+        if kw in text_lower:
+            if kw in description:
+                scores["description_score"] += 0.2
+    
+    # 3. 极性匹配得分
+    material_polarity = "neutral_demo"
+    if any(kw in description for kw in _POLARITY_KEYWORDS["negative_problem"]):
+        material_polarity = "negative_problem"
+    elif any(kw in description for kw in _POLARITY_KEYWORDS["positive_solution"]):
+        material_polarity = "positive_solution"
+    
+    if sentence_polarity == material_polarity:
+        scores["polarity_score"] = 0.3  # 极性完全匹配
+    elif sentence_polarity == "neutral_demo" or material_polarity == "neutral_demo":
+        scores["polarity_score"] = 0.1  # 一方中性，轻微匹配
+    else:
+        scores["polarity_score"] = -0.2  # 极性冲突，惩罚
+    
+    # 4. 子语义匹配得分（痛点类别匹配）
+    if sentence_subsemantics:
+        material_desc_lower = description
+        matched_subsemantics = 0
+        for subsem in sentence_subsemantics:
+            keywords = _PAIN_POINT_SUBSEMANTICS.get(subsem, [])
+            for kw in keywords:
+                if kw in material_desc_lower or kw in all_tags:
+                    matched_subsemantics += 1
+                    break
+        
+        if matched_subsemantics > 0:
+            scores["subsemantic_score"] = min(0.4, matched_subsemantics * 0.2)
+    
+    # 计算总分
+    scores["total_score"] = (
+        scores["keyword_score"] +
+        scores["description_score"] +
+        scores["polarity_score"] +
+        scores["subsemantic_score"]
+    )
+    
+    return scores
 
 
 def _generate_sentence_tag_mapping(
@@ -499,6 +674,154 @@ _STRONG_SEMANTIC_TAGS = {
     "风力展示", "护发效果", "折叠动作", "屏显调温", "手持大小对比",
     "CTA促单", "赠品展示", "包装展示", "旅行场景",
 }
+
+# 痛点子语义关键词（用于细粒度排序）
+_PAIN_POINT_SUBSEMANTICS = {
+    "体积大_占空间": ["占空间", "占地方", "太大", "笨重", "体积大", "塞不下", "塞不进", "放不进", "装不下", "拉不上"],
+    "旅行携带困难": ["出差", "旅行", "携带", "行李箱", "收纳", "出门"],
+    "风力小_吹干慢": ["风力小", "风小", "吹干慢", "吹不干", "等半天"],
+    "高温伤发": ["高温", "烫", "伤发", "毛躁", "干枯", "分叉"],
+    "酒店吹风机难用": ["酒店", "客房", "宾馆"],
+    "噪声大": ["噪声", "噪音", "太吵", "声音大"],
+}
+
+# 正向方案关键词（与痛点相对）
+_POSITIVE_SOLUTION_KEYWORDS = [
+    "小巧", "便携", "折叠", "轻松放", "可以放", "放进行李箱", "放进包包",
+    "不占空间", "不占地方", "收纳方便", "携带方便",
+]
+
+# 负向痛点关键词
+_NEGATIVE_PROBLEM_KEYWORDS = [
+    "传统", "太大", "笨重", "占空间", "占地方", "塞不下", "塞不进",
+    "放不进", "装不下", "拉不上", "吹干慢", "风力小", "高温", "伤发",
+    "毛躁", "干枯", "噪声", "噪音",
+]
+
+
+def _detect_polarity(text: str) -> str:
+    """
+    检测文本的语义极性：
+    - "negative_problem": 负向痛点（如"传统吹风机太大，塞不进行李箱"）
+    - "positive_solution": 正向方案（如"折叠吹风机小巧，可以放进行李箱"）
+    - "neutral_demo": 中性展示
+    """
+    text_lower = text.lower()
+    
+    negative_score = sum(1 for kw in _NEGATIVE_PROBLEM_KEYWORDS if kw in text_lower)
+    positive_score = sum(1 for kw in _POSITIVE_SOLUTION_KEYWORDS if kw in text_lower)
+    
+    if negative_score > positive_score and negative_score > 0:
+        return "negative_problem"
+    elif positive_score > negative_score and positive_score > 0:
+        return "positive_solution"
+    else:
+        return "neutral_demo"
+
+
+def _detect_pain_point_subtype(text: str) -> Optional[str]:
+    """
+    检测痛点子语义类型（仅对痛点共鸣类句子有效）
+    """
+    text_lower = text.lower()
+    for subtype, keywords in _PAIN_POINT_SUBSEMANTICS.items():
+        if any(kw in text_lower for kw in keywords):
+            return subtype
+    return None
+
+
+def _calculate_semantic_score(
+    material: Dict, 
+    sentence_text: str, 
+    required_tags: List[str],
+    sentence_polarity: str,
+    pain_point_subtype: Optional[str],
+) -> Dict[str, float]:
+    """
+    计算素材与句子的细粒度语义评分
+    
+    返回各维度分数明细：
+    - keyword_score: 关键词匹配分
+    - tag_score: 标签匹配分
+    - description_score: 描述语义匹配分
+    - polarity_score: 极性匹配分（正负向是否一致）
+    - pain_point_score: 痛点子语义匹配分
+    - repetition_penalty: 重复使用惩罚
+    - final_score: 最终加权分数
+    """
+    scores = {
+        "keyword_score": 0.0,
+        "tag_score": 0.0,
+        "description_score": 0.0,
+        "polarity_score": 0.0,
+        "pain_point_score": 0.0,
+        "repetition_penalty": 0.0,
+        "final_score": 0.0,
+    }
+    
+    mat_desc = material.get("description", "").lower()
+    mat_secondary_tags = " ".join(material.get("secondary_tags", [])).lower()
+    mat_verified_tags = " ".join(material.get("verified_tags", [])).lower()
+    mat_scene_keywords = material.get("scene_keywords", "").lower()
+    mat_all_text = f"{mat_desc} {mat_secondary_tags} {mat_verified_tags} {mat_scene_keywords}"
+    
+    # 1. 关键词匹配分
+    sentence_lower = sentence_text.lower()
+    for keyword in _KEYWORD_TO_TAG.keys():
+        if keyword in sentence_lower and keyword in mat_all_text:
+            scores["keyword_score"] += 0.4
+    
+    # 2. 标签匹配分
+    primary_tag = material.get("primary_scene_tag", "")
+    for req_tag in required_tags:
+        if req_tag == primary_tag:
+            scores["tag_score"] += 1.0
+        elif req_tag in material.get("secondary_tags", []) or req_tag in material.get("verified_tags", []):
+            scores["tag_score"] += 0.5
+    
+    # 3. 描述语义匹配分
+    sentence_words = set(sentence_lower.replace("，", " ").replace("。", " ").replace("的", " ").replace("了", " ").split())
+    desc_words = set(mat_desc.replace("，", " ").replace("。", " ").replace("的", " ").replace("了", " ").split())
+    overlap = len(sentence_words & desc_words)
+    if overlap > 0:
+        scores["description_score"] = min(overlap * 0.2, 1.0)
+    
+    # 4. 极性匹配分
+    mat_polarity = "neutral_demo"
+    if any(kw in mat_all_text for kw in _NEGATIVE_PROBLEM_KEYWORDS):
+        mat_polarity = "negative_problem"
+    elif any(kw in mat_all_text for kw in _POSITIVE_SOLUTION_KEYWORDS):
+        mat_polarity = "positive_solution"
+    
+    if sentence_polarity == mat_polarity:
+        scores["polarity_score"] = 1.0  # 完全匹配
+    elif sentence_polarity == "neutral_demo" or mat_polarity == "neutral_demo":
+        scores["polarity_score"] = 0.3  # 中性可接受
+    else:
+        scores["polarity_score"] = -0.5  # 极性冲突，惩罚
+    
+    # 5. 痛点子语义匹配分（仅对痛点共鸣类素材）
+    if pain_point_subtype and primary_tag == "痛点共鸣":
+        subtype_keywords = _PAIN_POINT_SUBSEMANTICS.get(pain_point_subtype, [])
+        subtype_match_count = sum(1 for kw in subtype_keywords if kw in mat_all_text)
+        if subtype_match_count > 0:
+            scores["pain_point_score"] = min(subtype_match_count * 0.5, 1.0)
+        else:
+            scores["pain_point_score"] = -0.3
+    
+    # 6. 计算最终加权分数
+    weights = {
+        "keyword_score": 1.0,
+        "tag_score": 1.5,
+        "description_score": 0.8,
+        "polarity_score": 1.2,
+        "pain_point_score": 1.0,
+    }
+    
+    final = sum(scores[k] * weights[k] for k in weights.keys())
+    scores["final_score"] = max(final, 0.01)
+    
+    return scores
 
 
 def _is_strong_semantic_short(text: str, tag: str) -> bool:
@@ -941,6 +1264,10 @@ def material_matching_node(
                         synonym_overlap += 1
                         break
 
+        # 检测句子极性和痛点子语义
+        sentence_polarity = _detect_polarity(sentence_text)
+        pain_point_subtype = _detect_pain_point_subtype(sentence_text) if "痛点" in " ".join(required_tags) else None
+        
         # 选择最佳素材
         # 优先选择未使用过的素材
         unused_candidates = [c for c in candidates if c["asset_id"] not in used_material_ids]
@@ -949,24 +1276,28 @@ def material_matching_node(
         # 当句子时长较短（< 1.5秒）时，优先选择duration_sec较短的素材
         is_short_sentence = target_duration < 1.5
         
-        # 辅助函数：计算素材与句子的业务匹配分数
+        # 辅助函数：计算素材与句子的业务匹配分数（使用新的细粒度语义评分）
         def _calculate_material_score(mat: Dict, sentence_text: str, is_short: bool) -> float:
             """
             计算素材与句子的业务匹配分数
-            - description 辅助匹配：description 中包含句子关键词则加分
-            - duration_sec 辅助匹配：短句优先短素材，长句优先长素材
-            仅返回业务分数，不含随机扰动。
+            使用新的细粒度语义评分系统，包括：
+            - 关键词匹配
+            - 标签匹配
+            - 描述语义匹配
+            - 极性匹配（正负向一致性）
+            - 痛点子语义匹配
+            - 时长匹配
             """
-            base_score = 0.0
-            mat_desc = mat.get("description", "").lower()
+            # 使用新的语义评分函数
+            semantic_scores = _calculate_semantic_score(
+                mat, sentence_text, required_tags, 
+                sentence_polarity, pain_point_subtype
+            )
+            base_score = semantic_scores["final_score"]
+            
             mat_duration = mat.get("duration_sec", 3.0)
             
-            # description 辅助匹配
-            for keyword in _KEYWORD_TO_TAG.keys():
-                if keyword in sentence_text.lower() and keyword in mat_desc:
-                    base_score += 0.3
-            
-            # duration_sec 辅助匹配
+            # duration_sec 辅助匹配（保留原有的时长匹配逻辑）
             if is_short:
                 if mat_duration <= 3.0:
                     base_score += 0.2
@@ -980,23 +1311,44 @@ def material_matching_node(
             
             return max(base_score, 0.1)
         
-        # Helper: select from scored candidates using stable weighted keys
+        # Helper: select from scored candidates using "accuracy first, then randomness" strategy
         def _select_from_scored(scored_list, seg_id="", seg_idx=0):
-            """Select material using Efraimidis-Spirakis stable weighted keys.
+            """Select material using accuracy-first strategy with randomness only among top candidates.
             
-            Each candidate gets a selection_key = stable_random^(1/weight).
-            Higher weight → key closer to 1 → more likely to be selected.
-            The selection is fully deterministic given task parameters.
+            Strategy:
+            1. Sort candidates by semantic score (descending)
+            2. Find the top score
+            3. Only candidates within TOP_POOL_THRESHOLD of the top score enter the random pool
+            4. If only one candidate is in the pool, select it deterministically
+            5. Otherwise, use Efraimidis-Spirakis weighted selection among the top pool
+            
+            This ensures accuracy first (high-score candidates are strongly preferred)
+            while allowing reasonable randomness among semantically equivalent candidates.
             """
             if not scored_list:
                 return None
             if len(scored_list) == 1:
                 return scored_list[0][0]
             
-            # Compute stable selection key for each candidate
+            # Sort by score descending
+            scored_list_sorted = sorted(scored_list, key=lambda x: x[1], reverse=True)
+            top_score = scored_list_sorted[0][1]
+            
+            # Build top pool: candidates within TOP_POOL_THRESHOLD of the top score
+            top_pool = []
+            for mat, score in scored_list_sorted:
+                if top_score - score <= TOP_POOL_THRESHOLD:
+                    top_pool.append((mat, score))
+            
+            # If only one candidate in top pool, select it deterministically
+            if len(top_pool) == 1:
+                return top_pool[0][0]
+            
+            # Compute stable selection key for each candidate in the top pool
             keyed = []
-            for mat, score in scored_list:
+            for mat, score in top_pool:
                 asset_id = mat.get("asset_id", "")
+                # Use score as weight (higher score = higher weight)
                 base_weight = max(float(score), 0.1) ** 2
                 # Priority boost
                 priority = int(mat.get("priority", 0))
@@ -1014,7 +1366,7 @@ def material_matching_node(
                     weight=base_weight,
                     stable_random=stable_random,
                 )
-                keyed.append((mat, selection_key))
+                keyed.append((mat, selection_key, score))
             
             # Select the candidate with the highest key
             keyed.sort(key=lambda x: x[1], reverse=True)
